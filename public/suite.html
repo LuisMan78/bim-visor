@@ -403,35 +403,18 @@ function enviarJSON(iframeId, loaderId) {
 
 function abrirDash() {
   if (!JSON_DATA) { toast('Carga primero el JSON', '#EF4444'); return; }
-  mostrarVista('dash');
-  document.getElementById('load-dash').style.display = 'flex';
-  const iframe = document.getElementById('iframe-dash');
-  if (!iframe.src || iframe.src === 'about:blank' || iframe.src === window.location.href) {
-    iframe.addEventListener('load', function handler() {
-      iframe.removeEventListener('load', handler);
-      setTimeout(() => enviarJSON('iframe-dash', 'load-dash'), 400);
-    });
-    iframe.src = 'BIMMonitorPro_Dashboard_v5_2_FINAL.html';
-  } else {
-    // Ya cargado — enviar directo
-    setTimeout(() => enviarJSON('iframe-dash', 'load-dash'), 200);
-  }
+  try {
+    sessionStorage.setItem('BIM_JSON_DATA', JSON.stringify(JSON_DATA));
+  } catch(e) {}
+  window.open('/dashboard.html', '_blank');
 }
 
 function abrirCampo() {
   if (!JSON_DATA) { toast('Carga primero el JSON', '#EF4444'); return; }
-  mostrarVista('campo');
-  document.getElementById('load-campo').style.display = 'flex';
-  const iframe = document.getElementById('iframe-campo');
-  if (!iframe.src || iframe.src === 'about:blank' || iframe.src === window.location.href) {
-    iframe.addEventListener('load', function handler() {
-      iframe.removeEventListener('load', handler);
-      setTimeout(() => enviarJSON('iframe-campo', 'load-campo'), 400);
-    });
-    iframe.src = 'BIMMonitorPro_Campo_v5_0.html';
-  } else {
-    setTimeout(() => enviarJSON('iframe-campo', 'load-campo'), 200);
-  }
+  try {
+    sessionStorage.setItem('BIM_JSON_DATA', JSON.stringify(JSON_DATA));
+  } catch(e) {}
+  window.open('/campo.html', '_blank');
 }
 
 function abrirVisor() {

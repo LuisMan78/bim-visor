@@ -5766,24 +5766,38 @@ function drawFooter(pdf, W, H, MX, num) {
 
 
 <script>
-// ── Receptor de datos desde la Suite ──────────────────
+// Receptor de datos desde la Suite via sessionStorage
+(function() {
+  var raw = sessionStorage.getItem('BIM_JSON_DATA');
+  if (!raw) return;
+  try {
+    var data = JSON.parse(raw);
+    window.addEventListener('load', function() {
+      setTimeout(function() {
+        if (window.BIM_DATA && typeof procesar === 'function') {
+          BIM_DATA.data = data;
+          BIM_DATA.data.elementos.forEach(function(e) {
+            e._est = normalizarEstado(e.estado_ejecucion || e.estado || '');
+          });
+          BIM_DATA.raw = BIM_DATA.data.elementos;
+          HOY = new Date();
+          var up = document.getElementById('up-screen');
+          if (up) up.style.display = 'none';
+          var dash = document.getElementById('dash');
+          if (dash) dash.style.display = 'block';
+          procesar();
+        }
+      }, 500);
+    });
+  } catch(e) { console.error('Error cargando datos:', e); }
+})();
+</script>
+
+<script>
 window.addEventListener('message', function(ev) {
   if (!ev.data || ev.data.tipo !== 'BIM_JSON_DATA') return;
-  try {
-    const data = ev.data.data;
-    BIM_DATA.data = data;
-    BIM_DATA.data.elementos.forEach(e => {
-      e._est = normalizarEstado(e.estado_ejecucion || e.estado || '');
-    });
-    BIM_DATA.raw = BIM_DATA.data.elementos;
-    HOY = new Date();
-    // Ocultar pantalla de carga y mostrar dashboard
-    const up = document.getElementById('up-screen');
-    if (up) up.style.display = 'none';
-    const dash = document.getElementById('dash');
-    if (dash) dash.style.display = 'block';
-    procesar();
-  } catch(err) { console.error('Error recibiendo JSON:', err); }
+  sessionStorage.setItem('BIM_JSON_DATA', JSON.stringify(ev.data.data));
+  location.reload();
 });
 </script>
 

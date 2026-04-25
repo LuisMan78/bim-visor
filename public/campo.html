@@ -1316,16 +1316,32 @@ function exportarJSON() {
 </script>
 
 <script>
-// ── Receptor de datos desde la Suite ──────────────────
+// Receptor de datos desde la Suite via sessionStorage
+(function() {
+  var raw = sessionStorage.getItem('BIM_JSON_DATA');
+  if (!raw) return;
+  try {
+    var data = JSON.parse(raw);
+    window.addEventListener('load', function() {
+      setTimeout(function() {
+        if (typeof irAResps === 'function') {
+          DATA = data;
+          DATA.elementos.forEach(function(e) {
+            e._est = normEst(e.estado_ejecucion || e.estado || '');
+          });
+          irAResps();
+        }
+      }, 500);
+    });
+  } catch(e) { console.error('Error cargando datos campo:', e); }
+})();
+</script>
+
+<script>
 window.addEventListener('message', function(ev) {
   if (!ev.data || ev.data.tipo !== 'BIM_JSON_DATA') return;
-  try {
-    DATA = ev.data.data;
-    DATA.elementos.forEach(e => {
-      e._est = normEst(e.estado_ejecucion || e.estado || '');
-    });
-    irAResps();
-  } catch(err) { console.error('Error recibiendo JSON campo:', err); }
+  sessionStorage.setItem('BIM_JSON_DATA', JSON.stringify(ev.data.data));
+  location.reload();
 });
 </script>
 
