@@ -1,16 +1,328 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="es">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>BIM Visor 3D — LF BIM Studio</title>
     <style>
-      * { margin: 0; padding: 0; }
-      body { background: #0A0A0B; overflow: hidden; }
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      body { background: #0A0A0B; color: #F4F4F0; font-family: 'Barlow', system-ui, sans-serif; overflow: hidden; height: 100vh; }
+      #visor-container { width: 100vw; height: 100vh; position: relative; }
+      canvas { display: block; }
+
+      /* ── TOPBAR ── */
+      #topbar {
+        position: absolute; top: 0; left: 0; right: 0; height: 52px;
+        background: rgba(10,10,11,0.92); border-bottom: 2px solid #FACC15;
+        backdrop-filter: blur(12px);
+        display: flex; align-items: center; gap: 16px; padding: 0 20px;
+        z-index: 100;
+      }
+      .tb-mark {
+        width: 34px; height: 34px; background: #FACC15; color: #0A0A0B;
+        display: flex; align-items: center; justify-content: center;
+        font-weight: 900; font-size: 13px; letter-spacing: 0.04em;
+        flex-shrink: 0;
+      }
+      .tb-title { font-size: 15px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; }
+      .tb-sub   { font-size: 10px; color: #FACC15; letter-spacing: 0.12em; text-transform: uppercase; margin-top: 1px; }
+      .tb-sep   { flex: 1; }
+      .tb-project { font-size: 12px; color: #9A9A95; font-style: italic; }
+
+      /* ── PANEL LATERAL IZQUIERDO ── */
+      #panel-left {
+        position: absolute; top: 52px; left: 0; bottom: 0; width: 380px;
+        background: rgba(17,17,19,0.95); border-right: 1px solid #27272A;
+        backdrop-filter: blur(8px);
+        display: flex; flex-direction: column;
+        z-index: 90; overflow: hidden;
+      }
+      .pl-section { padding: 10px 14px; border-bottom: 1px solid #27272A; }
+      .pl-label {
+        font-size: 9px; font-weight: 700; color: #FACC15;
+        letter-spacing: 0.2em; text-transform: uppercase; margin-bottom: 10px;
+        display: flex; align-items: center; gap: 8px;
+      }
+      .pl-label::before { content: ''; width: 16px; height: 1px; background: #FACC15; }
+
+      /* Drop zones */
+      .drop-zone {
+        border: 1px dashed #3F3F46; background: #18181B;
+        padding: 10px 12px; text-align: center; cursor: pointer;
+        transition: all 0.2s; margin-bottom: 6px;
+      }
+      .drop-zone:hover, .drop-zone.drag { border-color: #FACC15; background: #1A180A; }
+      .drop-zone.loaded { border-color: #22C55E; background: #052E16; }
+      .drop-zone input { display: none; }
+      .dz-icon { font-size: 18px; margin-bottom: 4px; }
+      .dz-txt { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #F4F4F0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; display: block; }
+      .dz-sub { font-size: 10px; color: #52525B; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; display: block; }
+
+      /* Botón cargar */
+      .btn-cargar {
+        width: 100%; padding: 12px; background: #FACC15; color: #0A0A0B;
+        border: none; font-size: 12px; font-weight: 800;
+        letter-spacing: 0.1em; text-transform: uppercase;
+        cursor: pointer; transition: all 0.2s;
+      }
+      .btn-cargar:hover { background: #FDE047; }
+      .btn-cargar:disabled { opacity: 0.3; cursor: not-allowed; }
+
+      /* Leyenda de estados */
+      .leyenda { display: flex; flex-direction: column; gap: 6px; }
+      .ley-item { display: flex; align-items: center; gap: 10px; font-size: 12px; }
+      .ley-dot { width: 14px; height: 14px; flex-shrink: 0; border-radius: 2px; }
+      .ley-label { color: #D4D4D4; }
+      .ley-count { margin-left: auto; font-size: 11px; font-weight: 700; font-variant-numeric: tabular-nums; }
+
+      /* Filtros */
+      .filtros { display: flex; flex-direction: column; gap: 6px; }
+      .filtro-btn {
+        width: 100%; padding: 9px 12px; background: #18181B;
+        border: 1px solid #27272A; color: #9A9A95;
+        font-size: 12px; font-weight: 700; letter-spacing: 0.06em;
+        text-transform: uppercase; cursor: pointer; text-align: left;
+        transition: all 0.15s; display: flex; align-items: center; gap: 10px;
+        border-left: 3px solid transparent;
+      }
+      .filtro-btn:hover { background: #1F1F23; color: #F4F4F0; border-left-color: #FACC15; }
+      .filtro-btn.active { background: #1A180A; border-color: #FACC15; border-left-color: #FACC15; color: #FACC15; }
+      .filtro-dot { width: 12px; height: 12px; border-radius: 2px; flex-shrink: 0; }
+
+      /* Stats resumen */
+      .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+      .stat-box { background: #18181B; border: 1px solid #27272A; padding: 10px 12px; border-top: 2px solid; }
+      .stat-val { font-size: 22px; font-weight: 800; line-height: 1; margin-bottom: 3px; font-variant-numeric: tabular-nums; }
+      .stat-lbl { font-size: 9px; color: #52525B; letter-spacing: 0.1em; text-transform: uppercase; }
+
+      /* ── PANEL INFO ELEMENTO (clic) ── */
+      #panel-info {
+        position: absolute; top: 62px; right: 10px;
+        width: 280px; background: rgba(17,17,19,0.97);
+        border: 1px solid #27272A; border-left: 3px solid #FACC15;
+        backdrop-filter: blur(12px);
+        z-index: 95; display: none;
+      }
+      .info-head {
+        padding: 12px 14px; border-bottom: 1px solid #27272A;
+        display: flex; justify-content: space-between; align-items: center;
+      }
+      .info-id { font-size: 11px; color: #FACC15; font-weight: 700; font-family: monospace; }
+      .info-close { cursor: pointer; color: #52525B; font-size: 16px; padding: 2px 6px; }
+      .info-close:hover { color: #F4F4F0; }
+      .info-body { padding: 12px 14px; display: flex; flex-direction: column; gap: 10px; }
+      .info-row { display: flex; flex-direction: column; gap: 2px; }
+      .info-row-label { font-size: 9px; color: #52525B; letter-spacing: 0.12em; text-transform: uppercase; }
+      .info-row-val { font-size: 13px; color: #F4F4F0; font-weight: 500; }
+      .info-estado {
+        display: inline-flex; align-items: center; gap: 6px;
+        padding: 4px 10px; font-size: 11px; font-weight: 700;
+        letter-spacing: 0.08em; text-transform: uppercase; border: 1px solid;
+      }
+      .info-dot { width: 8px; height: 8px; border-radius: 50%; }
+
+      /* ── LOADING OVERLAY ── */
+      #loading {
+        position: absolute; inset: 0; background: rgba(10,10,11,0.9);
+        display: none; align-items: center; justify-content: center;
+        flex-direction: column; gap: 16px; z-index: 200;
+      }
+      #loading.on { display: flex; }
+      .load-spinner {
+        width: 44px; height: 44px; border: 3px solid #27272A;
+        border-top-color: #FACC15; border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+      }
+      @keyframes spin { to { transform: rotate(360deg); } }
+      .load-txt { font-size: 13px; color: #9A9A95; letter-spacing: 0.08em; text-transform: uppercase; }
+
+      /* ── TOAST ── */
+      #toast {
+        position: absolute; bottom: 24px; right: 16px;
+        background: #18181B; border: 1px solid #27272A; border-left: 3px solid #FACC15;
+        padding: 12px 16px; font-size: 12px; font-weight: 600;
+        letter-spacing: 0.05em; text-transform: uppercase;
+        opacity: 0; transform: translateY(10px);
+        transition: all 0.3s; z-index: 300;
+      }
+      #toast.on { opacity: 1; transform: translateY(0); }
+
+      /* ── INSTRUCCIONES ── */
+      #instrucciones {
+        position: absolute; bottom: 16px; left: 396px;
+        font-size: 11px; color: #3F3F46;
+        font-family: monospace; letter-spacing: 0.05em;
+        z-index: 90; line-height: 1.8;
+      }
     </style>
   </head>
   <body>
-    <div id="visor-container" style="width:100vw;height:100vh;"></div>
+    <div id="visor-container">
+
+      <!-- TOPBAR -->
+      <div id="topbar">
+        <div class="tb-mark">LF</div>
+        <div>
+          <div class="tb-title">BIM Visor 3D</div>
+          <div class="tb-sub">LF BIM Studio · That Open Engine</div>
+        </div>
+        <div class="tb-sep"></div>
+        <div class="tb-project" id="tb-project">Carga un modelo IFC y un JSON de avance</div>
+      </div>
+
+      <!-- PANEL IZQUIERDO -->
+      <div id="panel-left">
+
+        <!-- Carga IFC -->
+        <div class="pl-section">
+          <div class="pl-label">Modelo IFC</div>
+          <div class="drop-zone" id="dz-ifc"
+               ondragover="dzOver(event,'dz-ifc')" ondragleave="dzOut('dz-ifc')" ondrop="dzDrop(event,'ifc')"
+               onclick="document.getElementById('input-ifc').click()">
+            <input type="file" id="input-ifc" accept=".ifc" onchange="cargarIFC(this.files[0])"/>
+            <div class="dz-icon">🏗</div>
+            <div class="dz-txt" id="dz-ifc-txt">Cargar archivo IFC</div>
+            <div class="dz-sub">Exportado desde Revit</div>
+          </div>
+        </div>
+
+        <!-- Carga JSON -->
+        <div class="pl-section">
+          <div class="pl-label">JSON de avance</div>
+          <div class="drop-zone" id="dz-json"
+               ondragover="dzOver(event,'dz-json')" ondragleave="dzOut('dz-json')" ondrop="dzDrop(event,'json')"
+               onclick="document.getElementById('input-json').click()">
+            <input type="file" id="input-json" accept=".json" onchange="cargarJSON(this.files[0])"/>
+            <div class="dz-icon">📊</div>
+            <div class="dz-txt" id="dz-json-txt">Cargar JSON de avance</div>
+            <div class="dz-sub">BIMMonitorPro_Avance_*.json</div>
+          </div>
+          <button class="btn-cargar" id="btn-colorear" disabled onclick="colorearModelo()">
+            ⚡ Colorear por estado
+          </button>
+          <button class="btn-cargar" id="btn-reset" disabled onclick="resetColores()"
+            style="margin-top:6px;background:#18181B;color:#9A9A95;border:1px solid #3F3F46">
+            ✕ Resetear colores
+          </button>
+          <button class="btn-cargar" id="btn-export-frag" disabled
+            style="margin-top:6px;background:#18181B;color:#FACC15;border:1px solid #FACC15">
+            ↓ Exportar .frag (carga rápida)
+          </button>
+        </div>
+
+        <!-- Stats -->
+        <div class="pl-section">
+          <div class="pl-label">Resumen</div>
+          <div class="stats-grid">
+            <div class="stat-box" style="border-top-color:#FACC15">
+              <div class="stat-val" id="st-total" style="color:#FACC15">—</div>
+              <div class="stat-lbl">Total</div>
+            </div>
+            <div class="stat-box" style="border-top-color:#22C55E">
+              <div class="stat-val" id="st-pct" style="color:#22C55E">—</div>
+              <div class="stat-lbl">Avance</div>
+            </div>
+            <div class="stat-box" style="border-top-color:#FB923C">
+              <div class="stat-val" id="st-proc" style="color:#FB923C">—</div>
+              <div class="stat-lbl">En proceso</div>
+            </div>
+            <div class="stat-box" style="border-top-color:#EF4444">
+              <div class="stat-val" id="st-late" style="color:#EF4444">—</div>
+              <div class="stat-lbl">Atrasados</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Leyenda / Filtros -->
+        <div class="pl-section" style="flex:1;overflow-y:auto">
+          <div class="pl-label">Filtrar por estado</div>
+          <div class="filtros">
+            <button class="filtro-btn active" onclick="filtrarEstado('todos',this)">
+              <span class="filtro-dot" style="background:#FACC15"></span>
+              Todos los elementos
+            </button>
+            <button class="filtro-btn" onclick="filtrarEstado('Terminado',this)">
+              <span class="filtro-dot" style="background:#22C55E"></span>
+              Terminado
+            </button>
+            <button class="filtro-btn" onclick="filtrarEstado('Inspeccionado',this)">
+              <span class="filtro-dot" style="background:#38BDF8"></span>
+              Inspeccionado
+            </button>
+            <button class="filtro-btn" onclick="filtrarEstado('En proceso',this)">
+              <span class="filtro-dot" style="background:#FB923C"></span>
+              En proceso
+            </button>
+            <button class="filtro-btn" onclick="filtrarEstado('No iniciado',this)">
+              <span class="filtro-dot" style="background:#52525B"></span>
+              No iniciado
+            </button>
+            <button class="filtro-btn" onclick="filtrarEstado('atrasado',this)">
+              <span class="filtro-dot" style="background:#EF4444"></span>
+              ⚠ Atrasados
+            </button>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- PANEL INFO ELEMENTO -->
+      <div id="panel-info">
+        <div class="info-head">
+          <span class="info-id" id="info-id">—</span>
+          <span class="info-close" onclick="cerrarInfo()">✕</span>
+        </div>
+        <div class="info-body">
+          <div class="info-row">
+            <span class="info-row-label">Estado</span>
+            <span id="info-estado-badge"></span>
+          </div>
+          <div class="info-row">
+            <span class="info-row-label">Categoría</span>
+            <span class="info-row-val" id="info-cat">—</span>
+          </div>
+          <div class="info-row">
+            <span class="info-row-label">Nivel</span>
+            <span class="info-row-val" id="info-nivel">—</span>
+          </div>
+          <div class="info-row">
+            <span class="info-row-label">Responsable</span>
+            <span class="info-row-val" id="info-resp">—</span>
+          </div>
+          <div class="info-row">
+            <span class="info-row-label">Frente de trabajo</span>
+            <span class="info-row-val" id="info-frente">—</span>
+          </div>
+          <div class="info-row">
+            <span class="info-row-label">Avance</span>
+            <span class="info-row-val" id="info-pct">—</span>
+          </div>
+          <div class="info-row">
+            <span class="info-row-label">Fin plan / Fin real</span>
+            <span class="info-row-val" id="info-fechas">—</span>
+          </div>
+          <div class="info-row" id="info-obs-row" style="display:none">
+            <span class="info-row-label">Observaciones</span>
+            <span class="info-row-val" id="info-obs" style="font-size:11px;color:#9A9A95;line-height:1.5">—</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- LOADING -->
+      <div id="loading">
+        <div class="load-spinner"></div>
+        <div class="load-txt" id="loading-txt">Cargando modelo...</div>
+      </div>
+
+      <!-- INSTRUCCIONES -->
+      <div id="instrucciones">
+        Click izquierdo + arrastrar: rotar · Rueda: zoom · Click derecho + arrastrar: pan · Click en elemento: info
+      </div>
+
+      <!-- TOAST -->
+      <div id="toast" id="toast-msg">—</div>
+
+    </div>
     <script type="module" src="/src/main.js"></script>
   </body>
 </html>
