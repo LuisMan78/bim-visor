@@ -3,14 +3,14 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>LF BIM Studio</title>
+    <title>BIM Visor 3D — LF BIM Studio</title>
     <style>
       * { margin: 0; padding: 0; }
       body { background: #0A0A0B; overflow: hidden; }
-      iframe { width: 100vw; height: 100vh; border: none; display: block; }
     </style>
   </head>
   <body>
-    <iframe src="/suite.html"></iframe>
+    <div id="visor-container" style="width:100vw;height:100vh;"></div>
+    <script type="module" src="/src/main.js"></script>
   </body>
 </html>

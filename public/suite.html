@@ -313,7 +313,7 @@ html, body { height: 100%; overflow: hidden; background: #0A0A0B; }
 <!-- ══ VISOR 3D ══════════════════════════════════════ -->
 <div class="view" id="view-visor" style="position:fixed;inset:0;">
   <iframe class="tool-iframe" id="iframe-visor"
-    src="/visor"
+    src="http://localhost:5173"
     style="position:absolute;inset:0;width:100%;height:100%;border:none;">
   </iframe>
   <div id="visor-offline" style="display:none;position:absolute;inset:0;background:#0A0A0B;align-items:center;justify-content:center;flex-direction:column;gap:16px;font-family:JetBrains Mono,monospace;text-align:center;padding:24px;">
@@ -411,7 +411,7 @@ function abrirDash() {
       iframe.removeEventListener('load', handler);
       setTimeout(() => enviarJSON('iframe-dash', 'load-dash'), 400);
     });
-    iframe.src = '/dashboard.html';
+    iframe.src = 'BIMMonitorPro_Dashboard_v5_2_FINAL.html';
   } else {
     // Ya cargado — enviar directo
     setTimeout(() => enviarJSON('iframe-dash', 'load-dash'), 200);
@@ -428,7 +428,7 @@ function abrirCampo() {
       iframe.removeEventListener('load', handler);
       setTimeout(() => enviarJSON('iframe-campo', 'load-campo'), 400);
     });
-    iframe.src = '/campo.html';
+    iframe.src = 'BIMMonitorPro_Campo_v5_0.html';
   } else {
     setTimeout(() => enviarJSON('iframe-campo', 'load-campo'), 200);
   }
@@ -441,10 +441,10 @@ function abrirVisor() {
   if (offline) offline.style.display = 'none';
 
   // Intentar cargar — si falla mostrar mensaje offline
-  fetch('/visor', { mode: 'no-cors' })
+  fetch('http://localhost:5173', { mode: 'no-cors' })
     .then(() => {
       // Servidor disponible — el iframe ya tiene src fijo
-      iframe.src = '/visor';
+      iframe.src = 'http://localhost:5173';
     })
     .catch(() => {
       // Servidor no disponible
@@ -456,8 +456,8 @@ function reintentarVisor() {
   const offline = document.getElementById('visor-offline');
   const iframe  = document.getElementById('iframe-visor');
   if (offline) offline.style.display = 'none';
-  fetch('/visor', { mode: 'no-cors' })
-    .then(() => { iframe.src = '/visor'; })
+  fetch('http://localhost:5173', { mode: 'no-cors' })
+    .then(() => { iframe.src = 'http://localhost:5173'; })
     .catch(() => { if (offline) offline.style.display = 'flex'; });
 }
 
