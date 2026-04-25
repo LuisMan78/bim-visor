@@ -7,6 +7,11 @@ const __dirname = dirname(fileURLToPath(import.meta.url))
 
 app.use(express.static(join(__dirname, 'dist')))
 
+// Ruta específica para el visor
+app.get('/visor', (req, res) => {
+  res.sendFile(join(__dirname, 'dist', 'index.html'))
+})
+
 app.get('/{*path}', (req, res) => {
   res.sendFile(join(__dirname, 'dist', 'index.html'))
 })
