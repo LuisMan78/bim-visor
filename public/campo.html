@@ -1,0 +1,1333 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+<meta name="mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<title>BIM Campo — LF BIM Studio</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;500;600;700;800;900&family=Barlow:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet"/>
+<style>
+/* ═══════════════════════════════════════════════
+   PALETA Y TOKENS
+═══════════════════════════════════════════════ */
+:root {
+  --bg:         #0A0A0B;
+  --bg2:        #111113;
+  --bg3:        #18181B;
+  --bg4:        #1F1F23;
+  --line:       #27272A;
+  --line2:      #3F3F46;
+  --txt:        #FAFAFA;
+  --txt2:       #A1A1AA;
+  --txt3:       #52525B;
+
+  --signal:     #FACC15;   /* amarillo construcción */
+  --signal-d:   #CA8A04;
+  --signal-bg:  #1C1A09;
+
+  --done:       #22C55E;
+  --done-bg:    #052E16;
+  --insp:       #38BDF8;
+  --insp-bg:    #082F49;
+  --proc:       #FACC15;
+  --proc-bg:    #1C1A09;
+  --pend:       #52525B;
+  --pend-bg:    #18181B;
+  --late:       #EF4444;
+  --late-bg:    #2D0A0A;
+
+  --font-h: 'Barlow Condensed', sans-serif;
+  --font-b: 'Barlow', sans-serif;
+  --font-m: 'JetBrains Mono', monospace;
+
+  --r: 6px;
+  --safe-bottom: env(safe-area-inset-bottom, 16px);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(--txt); font-family: var(--font-b); -webkit-font-smoothing: antialiased; }
+
+/* ═══════════════════════════════════════════════
+   PANTALLAS
+═══════════════════════════════════════════════ */
+.screen { position: fixed; inset: 0; display: flex; flex-direction: column; overflow: hidden; }
+.screen.hidden { display: none; }
+
+/* ═══════════════════════════════════════════════
+   PANTALLA 1 — CARGA DEL JSON
+═══════════════════════════════════════════════ */
+#s-load {
+  background:
+    radial-gradient(ellipse 80% 50% at 50% -10%, rgba(250,204,21,0.08) 0%, transparent 60%),
+    var(--bg);
+  align-items: center; justify-content: center;
+  padding: 24px;
+}
+
+.load-logo {
+  display: flex; align-items: center; gap: 12px;
+  margin-bottom: 48px;
+}
+.load-mark {
+  width: 44px; height: 44px;
+  background: var(--signal); color: var(--bg);
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-h); font-weight: 900; font-size: 16px;
+  position: relative;
+}
+.load-mark::after {
+  content: ''; position: absolute; inset: -3px;
+  border: 1px solid rgba(250,204,21,0.3);
+}
+.load-brand { font-family: var(--font-h); font-weight: 700; font-size: 20px; letter-spacing: 0.05em; text-transform: uppercase; color: var(--txt); }
+.load-sub   { font-family: var(--font-m); font-size: 10px; color: var(--signal); letter-spacing: 0.15em; text-transform: uppercase; margin-top: 2px; }
+
+.load-card {
+  width: 100%; max-width: 400px;
+  background: var(--bg3);
+  border: 1px solid var(--line2);
+  padding: 32px 28px;
+  position: relative;
+}
+.load-card::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+  background: var(--signal);
+}
+
+.load-title {
+  font-family: var(--font-h); font-weight: 800; font-size: 32px;
+  color: var(--txt); text-transform: uppercase;
+  letter-spacing: -0.01em; line-height: 1; margin-bottom: 8px;
+}
+.load-desc {
+  font-size: 14px; color: var(--txt2); line-height: 1.6; margin-bottom: 28px;
+}
+
+.drop-zone {
+  border: 2px dashed var(--line2);
+  background: var(--bg4);
+  padding: 36px 20px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-bottom: 16px;
+  position: relative;
+}
+.drop-zone.drag, .drop-zone:active { border-color: var(--signal); background: var(--signal-bg); }
+.drop-zone input { display: none; }
+.drop-icon {
+  width: 52px; height: 52px; background: var(--signal); color: var(--bg);
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-h); font-size: 22px; font-weight: 900;
+  margin: 0 auto 14px;
+}
+.drop-txt  { font-family: var(--font-h); font-size: 18px; font-weight: 700; color: var(--txt); text-transform: uppercase; margin-bottom: 4px; }
+.drop-hint { font-family: var(--font-m); font-size: 10px; color: var(--txt3); letter-spacing: 0.08em; }
+
+.btn-load {
+  width: 100%; padding: 18px;
+  background: var(--signal); color: var(--bg);
+  border: none; font-family: var(--font-h);
+  font-size: 15px; font-weight: 800;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  cursor: pointer; transition: all 0.2s;
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+}
+.btn-load:active { background: var(--signal-d); transform: scale(0.98); }
+
+/* ═══════════════════════════════════════════════
+   PANTALLA 2 — SELECCIÓN DE RESPONSABLE
+═══════════════════════════════════════════════ */
+#s-resp {
+  background: var(--bg);
+}
+.resp-header {
+  background: var(--bg2);
+  border-bottom: 1px solid var(--line);
+  padding: 20px 20px 16px;
+  position: relative;
+}
+.resp-header::after {
+  content: ''; position: absolute; bottom: -1px; left: 0; right: 0;
+  height: 2px; background: var(--signal);
+}
+.resp-header-top {
+  display: flex; align-items: center; gap: 10px; margin-bottom: 14px;
+}
+.resp-mark {
+  width: 34px; height: 34px; background: var(--signal); color: var(--bg);
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-h); font-size: 13px; font-weight: 900;
+}
+.resp-brand { font-family: var(--font-h); font-weight: 700; font-size: 15px; letter-spacing: 0.05em; text-transform: uppercase; }
+.resp-tag   { font-family: var(--font-m); font-size: 9px; color: var(--signal); letter-spacing: 0.12em; text-transform: uppercase; margin-top: 1px; }
+
+.resp-proyecto { font-family: var(--font-m); font-size: 11px; color: var(--txt2); letter-spacing: 0.05em; }
+.resp-proyecto strong { color: var(--signal); }
+
+.resp-title {
+  padding: 20px 20px 12px;
+  font-family: var(--font-h); font-weight: 800;
+  font-size: 24px; color: var(--txt);
+  text-transform: uppercase; letter-spacing: 0.02em;
+}
+.resp-sub { font-family: var(--font-b); font-size: 13px; color: var(--txt2); padding: 0 20px 16px; }
+
+.resp-search {
+  margin: 0 16px 12px;
+  background: var(--bg3); border: 1px solid var(--line2);
+  display: flex; align-items: center; gap: 10px;
+  padding: 12px 14px;
+}
+.resp-search input {
+  flex: 1; background: none; border: none; outline: none;
+  font-family: var(--font-b); font-size: 14px; color: var(--txt);
+}
+.resp-search input::placeholder { color: var(--txt3); }
+.resp-search-ico { font-family: var(--font-m); font-size: 14px; color: var(--txt3); }
+
+.resp-list {
+  flex: 1; overflow-y: auto; padding: 0 16px 16px;
+}
+.resp-list::-webkit-scrollbar { width: 3px; }
+.resp-list::-webkit-scrollbar-thumb { background: var(--line2); }
+
+.resp-item {
+  display: flex; align-items: center; gap: 14px;
+  padding: 16px 16px;
+  background: var(--bg3);
+  border: 1px solid var(--line);
+  margin-bottom: 8px;
+  cursor: pointer;
+  transition: all 0.15s;
+  position: relative;
+}
+.resp-item::before {
+  content: ''; position: absolute; left: 0; top: 0; bottom: 0;
+  width: 3px; background: var(--signal); transform: scaleY(0);
+  transition: transform 0.15s;
+}
+.resp-item:active { background: var(--bg4); transform: scale(0.98); }
+.resp-item:active::before { transform: scaleY(1); }
+
+.resp-avatar {
+  width: 44px; height: 44px; flex-shrink: 0;
+  background: var(--signal); color: var(--bg);
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-h); font-size: 15px; font-weight: 800;
+}
+.resp-item-name {
+  font-family: var(--font-h); font-size: 16px; font-weight: 700;
+  color: var(--txt); text-transform: uppercase; letter-spacing: 0.02em;
+}
+.resp-item-meta {
+  font-family: var(--font-m); font-size: 10px; color: var(--txt2);
+  letter-spacing: 0.04em; margin-top: 3px;
+}
+.resp-item-arrow { margin-left: auto; color: var(--signal); font-size: 18px; }
+
+/* ═══════════════════════════════════════════════
+   PANTALLA 3 — CAMPO (PRINCIPAL)
+═══════════════════════════════════════════════ */
+#s-campo { background: var(--bg); }
+
+/* TOPBAR */
+.campo-top {
+  background: var(--bg2);
+  border-bottom: 1px solid var(--line);
+  padding: 14px 16px;
+  display: flex; align-items: center; gap: 12px;
+  flex-shrink: 0;
+  position: relative;
+}
+.campo-top::after {
+  content: ''; position: absolute; bottom: -1px; left: 0; right: 0;
+  height: 2px; background: var(--signal);
+}
+.campo-back {
+  width: 36px; height: 36px; border: 1px solid var(--line2);
+  background: var(--bg3); color: var(--txt2);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px; cursor: pointer; flex-shrink: 0;
+  transition: all 0.15s;
+}
+.campo-back:active { background: var(--bg4); color: var(--txt); }
+.campo-top-info { flex: 1; min-width: 0; }
+.campo-top-name {
+  font-family: var(--font-h); font-size: 16px; font-weight: 800;
+  color: var(--txt); text-transform: uppercase; letter-spacing: 0.02em;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.campo-top-meta {
+  font-family: var(--font-m); font-size: 10px; color: var(--txt2);
+  letter-spacing: 0.05em; margin-top: 2px;
+}
+.campo-export-btn {
+  width: 36px; height: 36px;
+  background: var(--signal); color: var(--bg);
+  border: none; display: flex; align-items: center; justify-content: center;
+  font-size: 16px; cursor: pointer; flex-shrink: 0;
+  transition: all 0.15s;
+}
+.campo-export-btn:active { background: var(--signal-d); transform: scale(0.95); }
+
+/* PROGRESS BAR */
+.campo-progress {
+  background: var(--bg3);
+  border-bottom: 1px solid var(--line);
+  padding: 10px 16px;
+  flex-shrink: 0;
+}
+.campo-progress-top {
+  display: flex; justify-content: space-between;
+  align-items: baseline; margin-bottom: 7px;
+}
+.campo-progress-lbl { font-family: var(--font-m); font-size: 10px; color: var(--txt2); letter-spacing: 0.1em; text-transform: uppercase; }
+.campo-progress-val { font-family: var(--font-h); font-size: 18px; font-weight: 800; color: var(--signal); }
+.campo-bar { height: 5px; background: var(--bg4); border-radius: 2px; overflow: hidden; }
+.campo-bar-fill { height: 100%; background: var(--signal); border-radius: 2px; transition: width 0.6s cubic-bezier(0.22,1,0.36,1); }
+.campo-stats {
+  display: grid; grid-template-columns: repeat(4, 1fr);
+  gap: 8px; margin-top: 8px;
+}
+.campo-stat {
+  background: var(--bg4); padding: 7px 8px;
+  border: 1px solid var(--line); border-top: 2px solid;
+}
+.campo-stat.s-term { border-top-color: var(--done); }
+.campo-stat.s-proc { border-top-color: var(--proc); }
+.campo-stat.s-pend { border-top-color: var(--pend); }
+.campo-stat.s-late { border-top-color: var(--late); }
+.campo-stat-val { font-family: var(--font-h); font-size: 20px; font-weight: 800; line-height: 1; }
+.campo-stat.s-term .campo-stat-val { color: var(--done); }
+.campo-stat.s-proc .campo-stat-val { color: var(--proc); }
+.campo-stat.s-pend .campo-stat-val { color: var(--pend); }
+.campo-stat.s-late .campo-stat-val { color: var(--late); }
+.campo-stat-lbl { font-family: var(--font-m); font-size: 9px; color: var(--txt3); letter-spacing: 0.06em; text-transform: uppercase; margin-top: 2px; }
+
+/* FILTROS */
+.campo-filters {
+  padding: 10px 16px;
+  display: flex; gap: 8px;
+  flex-shrink: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+  background: var(--bg2);
+  border-bottom: 1px solid var(--line);
+}
+.campo-filters::-webkit-scrollbar { display: none; }
+.filt-btn {
+  padding: 7px 14px; white-space: nowrap;
+  background: var(--bg3); border: 1px solid var(--line2);
+  font-family: var(--font-h); font-size: 12px; font-weight: 700;
+  color: var(--txt2); letter-spacing: 0.08em; text-transform: uppercase;
+  cursor: pointer; transition: all 0.15s; flex-shrink: 0;
+}
+.filt-btn.active {
+  background: var(--signal); border-color: var(--signal);
+  color: var(--bg);
+}
+
+/* LISTA DE ELEMENTOS */
+.campo-list {
+  flex: 1; overflow-y: auto;
+  padding: 10px 12px calc(var(--safe-bottom) + 70px);
+}
+.campo-list::-webkit-scrollbar { width: 2px; }
+.campo-list::-webkit-scrollbar-thumb { background: var(--line2); }
+
+/* TARJETA DE ELEMENTO */
+.elem-card {
+  background: var(--bg3);
+  border: 1px solid var(--line);
+  margin-bottom: 10px;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.2s;
+}
+.elem-card::before {
+  content: ''; position: absolute; left: 0; top: 0; bottom: 0;
+  width: 4px;
+}
+.elem-card.est-Terminado::before    { background: var(--done); }
+.elem-card.est-Inspeccionado::before{ background: var(--insp); }
+.elem-card.est-En-proceso::before   { background: var(--proc); }
+.elem-card.est-No-iniciado::before  { background: var(--pend); }
+.elem-card.atrasado::before         { background: var(--late); }
+
+/* Efecto flash al cambiar estado */
+@keyframes flash-done { 0%,100%{background:var(--bg3)} 50%{background:var(--done-bg)} }
+@keyframes flash-proc { 0%,100%{background:var(--bg3)} 50%{background:var(--proc-bg)} }
+.elem-card.flash-done { animation: flash-done 0.5s ease; }
+.elem-card.flash-proc { animation: flash-proc 0.5s ease; }
+
+.elem-head {
+  padding: 14px 14px 10px 18px;
+  display: flex; justify-content: space-between; align-items: flex-start;
+}
+.elem-id {
+  font-family: var(--font-m); font-size: 11px;
+  color: var(--signal); font-weight: 600; letter-spacing: 0.06em;
+  margin-bottom: 3px;
+}
+.elem-cat {
+  font-family: var(--font-h); font-size: 17px; font-weight: 800;
+  color: var(--txt); text-transform: uppercase; letter-spacing: 0.02em;
+  line-height: 1.1;
+}
+.elem-nivel { font-family: var(--font-m); font-size: 11px; color: var(--txt2); margin-top: 3px; }
+.elem-frente { font-family: var(--font-b); font-size: 12px; color: var(--txt3); margin-top: 2px; }
+
+.elem-badge {
+  padding: 5px 10px; font-family: var(--font-h);
+  font-size: 11px; font-weight: 700;
+  letter-spacing: 0.08em; text-transform: uppercase;
+  border: 1px solid; flex-shrink: 0;
+}
+.elem-badge.est-Terminado     { background: var(--done-bg); color: var(--done); border-color: var(--done); }
+.elem-badge.est-Inspeccionado { background: var(--insp-bg); color: var(--insp); border-color: var(--insp); }
+.elem-badge.est-En-proceso    { background: var(--proc-bg); color: var(--proc); border-color: var(--proc); }
+.elem-badge.est-No-iniciado   { background: var(--pend-bg); color: var(--pend); border-color: var(--pend); }
+
+/* Barra de avance */
+.elem-avance-row {
+  padding: 0 18px 10px;
+  display: flex; align-items: center; gap: 10px;
+}
+.elem-avance-track {
+  flex: 1; height: 6px; background: var(--bg4);
+  border: 1px solid var(--line); overflow: hidden;
+}
+.elem-avance-fill { height: 100%; background: var(--proc); transition: width 0.4s ease; }
+.elem-avance-pct {
+  font-family: var(--font-h); font-size: 16px; font-weight: 800;
+  color: var(--txt2); min-width: 38px; text-align: right;
+}
+.elem-avance-pct.done { color: var(--done); }
+
+/* BOTONES DE ACCIÓN */
+.elem-actions {
+  display: grid; grid-template-columns: 1fr 1fr 1fr;
+  border-top: 1px solid var(--line);
+  gap: 0;
+}
+.elem-btn {
+  padding: 13px 8px;
+  background: var(--bg4); border: none;
+  font-family: var(--font-h); font-size: 12px; font-weight: 700;
+  letter-spacing: 0.06em; text-transform: uppercase;
+  cursor: pointer; transition: all 0.15s;
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  border-right: 1px solid var(--line);
+}
+.elem-btn:last-child { border-right: none; }
+.elem-btn:active { transform: scale(0.97); }
+.elem-btn.btn-term { color: var(--done); }
+.elem-btn.btn-term:active { background: var(--done-bg); }
+.elem-btn.btn-pct  { color: var(--proc); }
+.elem-btn.btn-pct:active  { background: var(--proc-bg); }
+.elem-btn.btn-prob { color: var(--late); }
+.elem-btn.btn-prob:active { background: var(--late-bg); }
+.elem-btn.btn-foto { color: var(--insp); }
+.elem-btn.btn-foto:active { background: var(--insp-bg); }
+.elem-btn-ico { font-size: 20px; line-height: 1; }
+.elem-btn-lbl { font-size: 10px; }
+
+/* Elemento sin acciones (ya terminado) */
+.elem-done-banner {
+  padding: 12px 18px;
+  border-top: 1px solid var(--line);
+  display: flex; align-items: center; gap: 10px;
+  background: var(--done-bg);
+}
+.elem-done-banner-txt {
+  font-family: var(--font-h); font-size: 13px; font-weight: 700;
+  color: var(--done); text-transform: uppercase; letter-spacing: 0.05em;
+}
+
+/* Fotos adjuntas */
+.elem-fotos {
+  padding: 8px 18px 10px;
+  display: flex; gap: 6px; flex-wrap: wrap;
+}
+.foto-thumb {
+  width: 52px; height: 52px; object-fit: cover;
+  border: 1px solid var(--line2); cursor: pointer;
+  background: var(--bg4);
+}
+.foto-thumb-add {
+  width: 52px; height: 52px;
+  border: 1px dashed var(--line2);
+  display: flex; align-items: center; justify-content: center;
+  color: var(--txt3); font-size: 22px; cursor: pointer;
+  background: var(--bg4); transition: all 0.15s;
+}
+.foto-thumb-add:active { border-color: var(--insp); color: var(--insp); background: var(--insp-bg); }
+
+/* Sin elementos */
+.empty-state {
+  padding: 60px 24px; text-align: center;
+}
+.empty-ico { font-size: 48px; margin-bottom: 16px; opacity: 0.4; }
+.empty-txt { font-family: var(--font-h); font-size: 22px; font-weight: 700; color: var(--txt2); text-transform: uppercase; margin-bottom: 8px; }
+.empty-sub { font-family: var(--font-b); font-size: 14px; color: var(--txt3); }
+
+/* ── FAB: botón flotante de exportar ── */
+.fab {
+  position: fixed; bottom: calc(var(--safe-bottom) + 20px); right: 16px;
+  width: 56px; height: 56px;
+  background: var(--signal); color: var(--bg);
+  border: none; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 24px; cursor: pointer; z-index: 100;
+  box-shadow: 0 4px 16px rgba(250,204,21,0.35);
+  transition: all 0.2s;
+}
+.fab:active { transform: scale(0.93); }
+
+/* ═══════════════════════════════════════════════
+   MODAL — ACTUALIZAR %
+═══════════════════════════════════════════════ */
+.modal-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.8);
+  backdrop-filter: blur(8px);
+  z-index: 200;
+  display: flex; align-items: flex-end;
+  transition: opacity 0.25s;
+}
+.modal-overlay.hidden { display: none; }
+
+.modal-sheet {
+  width: 100%; background: var(--bg3);
+  border-top: 1px solid var(--line2);
+  padding: 0 0 calc(var(--safe-bottom) + 16px);
+  animation: slideUp 0.3s cubic-bezier(0.22,1,0.36,1);
+}
+@keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+
+.modal-handle {
+  width: 40px; height: 4px; background: var(--line2);
+  border-radius: 2px; margin: 14px auto 20px;
+}
+.modal-title {
+  font-family: var(--font-h); font-size: 20px; font-weight: 800;
+  color: var(--txt); text-transform: uppercase; letter-spacing: 0.03em;
+  padding: 0 20px; margin-bottom: 4px;
+}
+.modal-sub {
+  font-family: var(--font-m); font-size: 10px; color: var(--txt2);
+  padding: 0 20px; letter-spacing: 0.06em; margin-bottom: 24px;
+}
+
+/* Slider de % */
+.pct-display {
+  font-family: var(--font-h); font-size: 72px; font-weight: 900;
+  color: var(--signal); text-align: center; line-height: 1;
+  letter-spacing: -0.02em; margin-bottom: 20px;
+}
+.pct-slider-wrap { padding: 0 24px; margin-bottom: 28px; }
+.pct-slider {
+  -webkit-appearance: none; appearance: none;
+  width: 100%; height: 8px;
+  background: var(--bg4); border-radius: 4px; outline: none;
+}
+.pct-slider::-webkit-slider-thumb {
+  -webkit-appearance: none; appearance: none;
+  width: 32px; height: 32px; border-radius: 50%;
+  background: var(--signal); cursor: pointer;
+  box-shadow: 0 2px 8px rgba(250,204,21,0.4);
+}
+.pct-slider::-moz-range-thumb {
+  width: 32px; height: 32px; border-radius: 50%;
+  background: var(--signal); cursor: pointer; border: none;
+}
+.pct-presets {
+  display: grid; grid-template-columns: repeat(5,1fr);
+  gap: 8px; padding: 0 20px; margin-bottom: 20px;
+}
+.pct-preset {
+  padding: 10px; background: var(--bg4); border: 1px solid var(--line2);
+  font-family: var(--font-h); font-size: 14px; font-weight: 700;
+  color: var(--txt2); text-align: center; cursor: pointer;
+  transition: all 0.15s;
+}
+.pct-preset:active { background: var(--proc-bg); color: var(--proc); border-color: var(--proc); }
+
+.modal-btns {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 10px; padding: 0 20px;
+}
+.modal-btn {
+  padding: 16px; border: none;
+  font-family: var(--font-h); font-size: 14px; font-weight: 800;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  cursor: pointer; transition: all 0.15s;
+}
+.modal-btn:active { transform: scale(0.97); }
+.modal-btn.cancel { background: var(--bg4); color: var(--txt2); }
+.modal-btn.confirm { background: var(--signal); color: var(--bg); }
+
+/* ═══════════════════════════════════════════════
+   MODAL — REPORTAR PROBLEMA
+═══════════════════════════════════════════════ */
+.prob-tipos {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 8px; padding: 0 20px; margin-bottom: 18px;
+}
+.prob-tipo {
+  padding: 12px; border: 1px solid var(--line2);
+  background: var(--bg4); cursor: pointer;
+  font-family: var(--font-h); font-size: 13px; font-weight: 700;
+  color: var(--txt2); text-align: center; text-transform: uppercase;
+  letter-spacing: 0.05em; transition: all 0.15s;
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+}
+.prob-tipo.selected { background: var(--late-bg); color: var(--late); border-color: var(--late); }
+.prob-tipo:active { opacity: 0.7; }
+.prob-tipo-ico { font-size: 22px; }
+.prob-textarea {
+  display: block; width: calc(100% - 40px); margin: 0 20px 16px;
+  background: var(--bg4); border: 1px solid var(--line2);
+  color: var(--txt); padding: 14px; font-family: var(--font-b);
+  font-size: 14px; resize: none; height: 100px; outline: none;
+}
+.prob-textarea:focus { border-color: var(--late); }
+.prob-textarea::placeholder { color: var(--txt3); }
+
+/* ═══════════════════════════════════════════════
+   MODAL — FOTO
+═══════════════════════════════════════════════ */
+.foto-opciones {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 10px; padding: 0 20px 20px;
+}
+.foto-opt {
+  padding: 24px 16px; border: 1px solid var(--line2);
+  background: var(--bg4); cursor: pointer;
+  display: flex; flex-direction: column; align-items: center; gap: 10px;
+  transition: all 0.15s;
+}
+.foto-opt:active { background: var(--insp-bg); border-color: var(--insp); }
+.foto-opt-ico { font-size: 36px; }
+.foto-opt-lbl { font-family: var(--font-h); font-size: 14px; font-weight: 700; color: var(--txt); text-transform: uppercase; letter-spacing: 0.06em; }
+.foto-input { display: none; }
+
+/* ═══════════════════════════════════════════════
+   MODAL — VISOR FOTO
+═══════════════════════════════════════════════ */
+#modal-foto-view .modal-overlay { align-items: center; }
+.foto-view-img {
+  max-width: 90%; max-height: 70vh;
+  object-fit: contain;
+  border: 1px solid var(--line2);
+}
+.foto-view-close {
+  position: fixed; top: 24px; right: 24px;
+  width: 44px; height: 44px; background: var(--bg3);
+  border: 1px solid var(--line2);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px; cursor: pointer; color: var(--txt);
+}
+
+/* ═══════════════════════════════════════════════
+   TOAST
+═══════════════════════════════════════════════ */
+.toast {
+  position: fixed; bottom: calc(var(--safe-bottom) + 80px); left: 16px; right: 16px;
+  background: var(--bg3); border: 1px solid var(--line2);
+  padding: 14px 16px;
+  font-family: var(--font-h); font-size: 14px; font-weight: 700;
+  color: var(--txt); letter-spacing: 0.05em; text-transform: uppercase;
+  display: flex; align-items: center; gap: 12px;
+  transform: translateY(20px); opacity: 0;
+  transition: all 0.3s; z-index: 300;
+  border-left: 3px solid var(--signal);
+}
+.toast.on { transform: translateY(0); opacity: 1; }
+.toast.t-done { border-left-color: var(--done); }
+.toast.t-late { border-left-color: var(--late); }
+.toast.t-insp { border-left-color: var(--insp); }
+.toast-ico { font-size: 18px; }
+
+/* ═══════════════════════════════════════════════
+   ADAPTACIONES DESKTOP
+═══════════════════════════════════════════════ */
+@media (min-width: 640px) {
+  #s-load { background: var(--bg); }
+  .load-card { box-shadow: 0 8px 32px rgba(0,0,0,0.5); }
+  .campo-list { padding-bottom: 100px; }
+  .elem-card { max-width: 640px; margin-left: auto; margin-right: auto; }
+  .modal-sheet { max-width: 480px; margin: 0 auto; border: 1px solid var(--line2); border-bottom: none; border-radius: 12px 12px 0 0; }
+}
+</style>
+</head>
+<body>
+
+<!-- ═══ PANTALLA 1: CARGA ═══════════════════ -->
+<div class="screen" id="s-load">
+  <div class="load-logo">
+    <div class="load-mark">LF</div>
+    <div>
+      <div class="load-brand">LF BIM Studio</div>
+      <div class="load-sub">Campo · v5.0</div>
+    </div>
+  </div>
+
+  <div class="load-card">
+    <div class="load-title">Vista<br/>de Campo</div>
+    <div class="load-desc">Carga el JSON del proyecto y accede a tus elementos asignados para actualizar estados, % de avance, fotos y reportar problemas desde obra.</div>
+
+    <div class="drop-zone" id="drop-zone"
+         ondragover="dz(event,1)" ondragleave="dz(event,0)" ondrop="dzDrop(event)"
+         onclick="document.getElementById('file-in').click()">
+      <input type="file" id="file-in" accept=".json" onchange="loadFile(this.files[0])"/>
+      <div class="drop-icon">↑</div>
+      <div class="drop-txt">Seleccionar JSON</div>
+      <div class="drop-hint">BIMMonitorPro_Avance_YYYYMMDD.json</div>
+    </div>
+
+    <button class="btn-load" onclick="document.getElementById('file-in').click()">
+      <span>Abrir archivo</span>
+      <span>→</span>
+    </button>
+  </div>
+</div>
+
+<!-- ═══ PANTALLA 2: SELECCIÓN RESPONSABLE ═══ -->
+<div class="screen hidden" id="s-resp">
+  <div class="resp-header">
+    <div class="resp-header-top">
+      <div class="resp-mark">LF</div>
+      <div>
+        <div class="resp-brand">BIM Campo</div>
+        <div class="resp-tag">Selecciona tu nombre</div>
+      </div>
+    </div>
+    <div class="resp-proyecto">
+      <strong id="rp-nombre">—</strong> · <span id="rp-fecha">—</span>
+    </div>
+  </div>
+
+  <div class="resp-title">¿Quién eres?</div>
+  <div class="resp-sub">Selecciona tu nombre para ver los elementos que tienes asignados hoy.</div>
+
+  <div class="resp-search">
+    <span class="resp-search-ico">⌕</span>
+    <input type="text" id="resp-search-in" placeholder="Buscar responsable..." oninput="filtrarResps()"/>
+  </div>
+
+  <div class="resp-list" id="resp-list"></div>
+</div>
+
+<!-- ═══ PANTALLA 3: CAMPO ════════════════════ -->
+<div class="screen hidden" id="s-campo">
+
+  <!-- Topbar -->
+  <div class="campo-top">
+    <div class="campo-back" onclick="irAResps()">←</div>
+    <div class="campo-top-info">
+      <div class="campo-top-name" id="ct-name">—</div>
+      <div class="campo-top-meta" id="ct-meta">—</div>
+    </div>
+    <div class="campo-export-btn" onclick="exportarJSON()" title="Exportar cambios">↓</div>
+  </div>
+
+  <!-- Progreso -->
+  <div class="campo-progress">
+    <div class="campo-progress-top">
+      <span class="campo-progress-lbl">Mi avance hoy</span>
+      <span class="campo-progress-val" id="cp-pct">0%</span>
+    </div>
+    <div class="campo-bar"><div class="campo-bar-fill" id="cp-bar" style="width:0%"></div></div>
+    <div class="campo-stats">
+      <div class="campo-stat s-term">
+        <div class="campo-stat-val" id="cs-term">0</div>
+        <div class="campo-stat-lbl">Terminados</div>
+      </div>
+      <div class="campo-stat s-proc">
+        <div class="campo-stat-val" id="cs-proc">0</div>
+        <div class="campo-stat-lbl">En proceso</div>
+      </div>
+      <div class="campo-stat s-pend">
+        <div class="campo-stat-val" id="cs-pend">0</div>
+        <div class="campo-stat-lbl">Pendientes</div>
+      </div>
+      <div class="campo-stat s-late">
+        <div class="campo-stat-val" id="cs-late">0</div>
+        <div class="campo-stat-lbl">Atrasados</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filtros rápidos -->
+  <div class="campo-filters">
+    <button class="filt-btn active" onclick="filtrar('todos',this)">Todos</button>
+    <button class="filt-btn" onclick="filtrar('En proceso',this)">En proceso</button>
+    <button class="filt-btn" onclick="filtrar('No iniciado',this)">Pendientes</button>
+    <button class="filt-btn" onclick="filtrar('Terminado',this)">Terminados</button>
+    <button class="filt-btn" onclick="filtrar('atrasado',this)">⚠ Atrasados</button>
+  </div>
+
+  <!-- Lista elementos -->
+  <div class="campo-list" id="campo-list"></div>
+
+</div>
+
+<!-- ═══════════════════════════════════════
+   MODALES
+═══════════════════════════════════════ -->
+
+<!-- Modal: Actualizar % -->
+<div class="modal-overlay hidden" id="modal-pct" onclick="cerrarModal('modal-pct',event)">
+  <div class="modal-sheet" onclick="e=>e.stopPropagation()">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="mp-titulo">Actualizar avance</div>
+    <div class="modal-sub" id="mp-sub">—</div>
+    <div class="pct-display" id="mp-display">0%</div>
+    <div class="pct-slider-wrap">
+      <input type="range" class="pct-slider" id="mp-slider" min="0" max="100" value="0" oninput="sliderChange(this.value)"/>
+    </div>
+    <div class="pct-presets">
+      <div class="pct-preset" onclick="setPct(25)">25%</div>
+      <div class="pct-preset" onclick="setPct(50)">50%</div>
+      <div class="pct-preset" onclick="setPct(60)">60%</div>
+      <div class="pct-preset" onclick="setPct(75)">75%</div>
+      <div class="pct-preset" onclick="setPct(90)">90%</div>
+    </div>
+    <div class="modal-btns">
+      <button class="modal-btn cancel" onclick="cerrarModal('modal-pct')">Cancelar</button>
+      <button class="modal-btn confirm" onclick="confirmarPct()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Reportar problema -->
+<div class="modal-overlay hidden" id="modal-prob" onclick="cerrarModal('modal-prob',event)">
+  <div class="modal-sheet" onclick="e=>e.stopPropagation()">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Reportar problema</div>
+    <div class="modal-sub" id="prob-sub">—</div>
+    <div class="prob-tipos">
+      <div class="prob-tipo" onclick="selTipo(this,'Material')"><span class="prob-tipo-ico">📦</span>Material</div>
+      <div class="prob-tipo" onclick="selTipo(this,'Clima')"><span class="prob-tipo-ico">🌧</span>Clima</div>
+      <div class="prob-tipo" onclick="selTipo(this,'Equipo')"><span class="prob-tipo-ico">🔧</span>Equipo</div>
+      <div class="prob-tipo" onclick="selTipo(this,'Inspector')"><span class="prob-tipo-ico">📋</span>Inspector</div>
+      <div class="prob-tipo" onclick="selTipo(this,'Interferencia')"><span class="prob-tipo-ico">⚠️</span>Interferencia</div>
+      <div class="prob-tipo" onclick="selTipo(this,'Accidente')"><span class="prob-tipo-ico">🚨</span>Accidente</div>
+    </div>
+    <textarea class="prob-textarea" id="prob-text" placeholder="Describe el problema detalladamente..."></textarea>
+    <div class="modal-btns">
+      <button class="modal-btn cancel" onclick="cerrarModal('modal-prob')">Cancelar</button>
+      <button class="modal-btn confirm" style="background:var(--late)" onclick="confirmarProblema()">Reportar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Foto -->
+<div class="modal-overlay hidden" id="modal-foto" onclick="cerrarModal('modal-foto',event)">
+  <div class="modal-sheet" onclick="e=>e.stopPropagation()">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Adjuntar foto</div>
+    <div class="modal-sub" id="foto-sub">—</div>
+    <div class="foto-opciones">
+      <div class="foto-opt" onclick="document.getElementById('foto-camara').click()">
+        <span class="foto-opt-ico">📷</span>
+        <span class="foto-opt-lbl">Cámara</span>
+        <input type="file" class="foto-input" id="foto-camara" accept="image/*" capture="environment" onchange="fotoSeleccionada(this)"/>
+      </div>
+      <div class="foto-opt" onclick="document.getElementById('foto-galeria').click()">
+        <span class="foto-opt-ico">🖼</span>
+        <span class="foto-opt-lbl">Galería</span>
+        <input type="file" class="foto-input" id="foto-galeria" accept="image/*" onchange="fotoSeleccionada(this)"/>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Ver foto -->
+<div class="modal-overlay hidden" id="modal-foto-view" style="align-items:center;justify-content:center">
+  <div class="foto-view-close" onclick="cerrarModal('modal-foto-view')">✕</div>
+  <img class="foto-view-img" id="foto-view-img" src="" alt=""/>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast">
+  <span class="toast-ico" id="toast-ico">✓</span>
+  <span id="toast-msg">—</span>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════
+// ESTADO GLOBAL
+// ═══════════════════════════════════════════════
+let DATA     = null;   // JSON completo del proyecto
+let RESP     = null;   // Responsable seleccionado
+let MIS_ELEM = [];     // Elementos del responsable
+let FILT     = 'todos';
+let ELEM_ACT = null;   // Elemento activo en modal
+let TIPO_PROB= null;   // Tipo de problema seleccionado
+let CAMBIOS  = 0;      // Cantidad de cambios realizados
+const HOY    = new Date();
+
+// ── Utilidades ──────────────────────────────────
+const $ = id => document.getElementById(id);
+const show = id => $(id).classList.remove('hidden');
+const hide = id => $(id).classList.add('hidden');
+
+function fmtDate(d) {
+  if (!d) return '—';
+  const m = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+  return d.getDate() + ' ' + m[d.getMonth()] + ' ' + d.getFullYear();
+}
+
+function parseF(s) {
+  if (!s) return null;
+  const m1 = s.toString().match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (m1) return new Date(+m1[1], +m1[2]-1, +m1[3]);
+  const m2 = s.toString().match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+  if (m2) return new Date(+m2[3], +m2[2]-1, +m2[1]);
+  return null;
+}
+
+function normEst(raw) {
+  if (!raw) return 'Sin estado';
+  const n = raw.toString().normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
+  if (n==='terminado'||n==='terminada') return 'Terminado';
+  if (n==='inspeccionado'||n==='aprobado') return 'Inspeccionado';
+  if (n==='en proceso'||n==='en construccion'||n==='activo') return 'En proceso';
+  if (n==='no iniciado'||n==='pendiente'||n==='sin iniciar') return 'No iniciado';
+  return raw.trim();
+}
+
+function toast(msg, tipo='ok', ico='✓') {
+  const t = $('toast');
+  $('toast-ico').textContent = ico;
+  $('toast-msg').textContent = msg;
+  t.className = 'toast on' + (tipo==='done'?' t-done':tipo==='late'?' t-late':tipo==='insp'?' t-insp':'');
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => t.classList.remove('on'), 3000);
+}
+
+// ═══════════════════════════════════════════════
+// PANTALLA 1: CARGA DEL JSON
+// ═══════════════════════════════════════════════
+function dz(e, over) { e.preventDefault(); $('drop-zone').classList.toggle('drag',!!over); }
+function dzDrop(e) {
+  e.preventDefault(); $('drop-zone').classList.remove('drag');
+  const f = e.dataTransfer.files[0];
+  if (f && f.name.endsWith('.json')) loadFile(f);
+}
+
+function loadFile(file) {
+  if (!file) return;
+  const r = new FileReader();
+  r.onload = ev => {
+    try {
+      const d = JSON.parse(ev.target.result);
+      const data = d.elementos ? d : { proyecto:'Proyecto', empresa:'LF BIM Studio', autor:'', fecha_gen:'', elementos: Array.isArray(d)?d:[] };
+      data.elementos.forEach(e => { e._est = normEst(e.estado_ejecucion||e.estado||''); });
+      DATA = data;
+      irAResps();
+    } catch { toast('JSON inválido','late','✗'); }
+  };
+  r.readAsText(file);
+}
+
+// ═══════════════════════════════════════════════
+// PANTALLA 2: SELECCIÓN DE RESPONSABLE
+// ═══════════════════════════════════════════════
+function irAResps() {
+  hide('s-load'); hide('s-campo'); show('s-resp');
+  $('rp-nombre').textContent = DATA.proyecto || '—';
+  $('rp-fecha').textContent  = DATA.fecha_gen || '—';
+  renderResps();
+}
+
+function renderResps(q='') {
+  const responsables = {};
+  DATA.elementos.forEach(e => {
+    const r = (e.responsable||'').trim();
+    if (!r) return;
+    if (!responsables[r]) responsables[r] = { t:0, term:0, proc:0, pend:0 };
+    responsables[r].t++;
+    const est = e._est;
+    if (est==='Terminado'||est==='Inspeccionado') responsables[r].term++;
+    else if (est==='En proceso') responsables[r].proc++;
+    else responsables[r].pend++;
+  });
+
+  const filtrados = Object.entries(responsables).filter(([r]) =>
+    r.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').includes(
+      q.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+    )
+  ).sort(([a],[b]) => a.localeCompare(b));
+
+  const colores = ['#FACC15','#38BDF8','#22C55E','#FB7185','#A78BFA','#FB923C'];
+
+  $('resp-list').innerHTML = filtrados.map(([r, d], i) => {
+    const ini = r.replace(/Ing\.|Arq\.|Dr\./gi,'').trim().split(/\s+/).filter(Boolean).slice(0,2).map(s=>s[0]).join('').toUpperCase()||'??';
+    const pct  = d.t>0 ? Math.round(d.term/d.t*100) : 0;
+    const col  = colores[i%6];
+    return `<div class="resp-item" onclick="selResp('${r.replace(/'/g,"\\'")}')">
+      <div class="resp-avatar" style="background:${col};color:#0A0A0B">${ini}</div>
+      <div>
+        <div class="resp-item-name">${r}</div>
+        <div class="resp-item-meta">${d.t} elementos · ${d.term} terminados · ${pct}% completado</div>
+      </div>
+      <span class="resp-item-arrow">›</span>
+    </div>`;
+  }).join('') || '<div style="padding:32px;text-align:center;font-family:var(--font-h);color:var(--txt3);font-size:16px;text-transform:uppercase">Sin resultados</div>';
+}
+
+function filtrarResps() { renderResps($('resp-search-in').value); }
+
+function selResp(r) {
+  RESP = r;
+  MIS_ELEM = DATA.elementos.filter(e => (e.responsable||'').trim() === r);
+  irACampo();
+}
+
+// ═══════════════════════════════════════════════
+// PANTALLA 3: CAMPO
+// ═══════════════════════════════════════════════
+function irACampo() {
+  hide('s-resp'); show('s-campo');
+  $('ct-name').textContent = RESP;
+  $('ct-meta').textContent = DATA.proyecto + ' · ' + fmtDate(HOY);
+  FILT = 'todos';
+  document.querySelectorAll('.filt-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.filt-btn')[0].classList.add('active');
+  renderCampo();
+}
+
+function actualizarStats() {
+  const term = MIS_ELEM.filter(e => e._est==='Terminado'||e._est==='Inspeccionado').length;
+  const proc = MIS_ELEM.filter(e => e._est==='En proceso').length;
+  const pend = MIS_ELEM.filter(e => e._est==='No iniciado').length;
+  const late = MIS_ELEM.filter(e => {
+    if (e._est==='Terminado'||e._est==='Inspeccionado') return false;
+    const f = parseF(e.fecha_fin_plan); return f && f < HOY;
+  }).length;
+  const pct  = MIS_ELEM.length>0 ? Math.round(term/MIS_ELEM.length*100) : 0;
+
+  $('cp-pct').textContent = pct+'%';
+  $('cp-bar').style.width = pct+'%';
+  $('cs-term').textContent = term;
+  $('cs-proc').textContent = proc;
+  $('cs-pend').textContent = pend;
+  $('cs-late').textContent = late;
+}
+
+function renderCampo() {
+  actualizarStats();
+
+  let elems = [...MIS_ELEM];
+  if (FILT === 'atrasado') {
+    elems = elems.filter(e => {
+      if (e._est==='Terminado'||e._est==='Inspeccionado') return false;
+      const f = parseF(e.fecha_fin_plan); return f && f < HOY;
+    });
+  } else if (FILT !== 'todos') {
+    elems = elems.filter(e => e._est === FILT);
+  }
+
+  // Ordenar: En proceso primero, luego No iniciado, luego Terminado
+  const orden = { 'En proceso':0, 'No iniciado':1, 'Sin estado':2, 'Terminado':3, 'Inspeccionado':4 };
+  elems.sort((a,b) => (orden[a._est]||2) - (orden[b._est]||2));
+
+  if (!elems.length) {
+    $('campo-list').innerHTML = `
+      <div class="empty-state">
+        <div class="empty-ico">📋</div>
+        <div class="empty-txt">Sin elementos</div>
+        <div class="empty-sub">No hay elementos con este filtro</div>
+      </div>`;
+    return;
+  }
+
+  const COL_EST = {
+    'Terminado':    { bg:'var(--done-bg)',  c:'var(--done)',  txt:'TERMINADO' },
+    'Inspeccionado':{ bg:'var(--insp-bg)',  c:'var(--insp)',  txt:'INSPECCIONADO' },
+    'En proceso':   { bg:'var(--proc-bg)',  c:'var(--proc)',  txt:'EN PROCESO' },
+    'No iniciado':  { bg:'var(--pend-bg)',  c:'var(--pend)',  txt:'NO INICIADO' },
+    'Sin estado':   { bg:'var(--pend-bg)',  c:'var(--txt3)',  txt:'SIN ESTADO' },
+  };
+
+  $('campo-list').innerHTML = elems.map(e => {
+    const est  = e._est || 'Sin estado';
+    const col  = COL_EST[est] || COL_EST['Sin estado'];
+    const pct  = parseInt(e.porcentaje_avance||'0')||0;
+    const atras = (() => { if (est==='Terminado'||est==='Inspeccionado') return false; const f=parseF(e.fecha_fin_plan); return f&&f<HOY; })();
+    const done  = est==='Terminado'||est==='Inspeccionado';
+    const estCls= est.replace(/ /g,'-');
+    const fotos = e._fotos || [];
+
+    // Botones de acción según estado
+    let botonesHTML = '';
+    if (!done) {
+      botonesHTML = `
+        <div class="elem-actions">
+          <button class="elem-btn btn-term" onclick="marcarTerminado(${e.element_id})">
+            <span class="elem-btn-ico">✓</span>
+            <span class="elem-btn-lbl">Terminado</span>
+          </button>
+          <button class="elem-btn btn-pct" onclick="abrirPct(${e.element_id})">
+            <span class="elem-btn-ico">%</span>
+            <span class="elem-btn-lbl">Avance</span>
+          </button>
+          <button class="elem-btn btn-foto" onclick="abrirFoto(${e.element_id})">
+            <span class="elem-btn-ico">📷</span>
+            <span class="elem-btn-lbl">Foto</span>
+          </button>
+        </div>
+        <div class="elem-actions" style="border-top:none;padding-top:0">
+          <button class="elem-btn btn-prob" onclick="abrirProblema(${e.element_id})" style="grid-column:1/-1;border-right:none">
+            <span class="elem-btn-ico">⚠</span>
+            <span class="elem-btn-lbl">Reportar problema</span>
+          </button>
+        </div>`;
+    } else {
+      botonesHTML = `
+        <div class="elem-done-banner">
+          <span style="color:var(--done);font-size:20px">✓</span>
+          <span class="elem-done-banner-txt">Elemento completado</span>
+          <button class="elem-btn btn-foto" style="margin-left:auto;border:1px solid var(--line2);border-radius:0;padding:6px 10px" onclick="abrirFoto(${e.element_id})">
+            <span style="font-size:16px">📷</span>
+          </button>
+        </div>`;
+    }
+
+    const fotosHTML = fotos.length ? `
+      <div class="elem-fotos">
+        ${fotos.map(f => `<img class="foto-thumb" src="${f}" onclick="verFoto('${f}')" alt="foto"/>`).join('')}
+      </div>` : '';
+
+    const obsHTML = e.observaciones ? `
+      <div style="padding:0 18px 10px;font-size:12px;color:var(--txt3);font-family:var(--font-b);line-height:1.5;border-top:1px dashed var(--line)">
+        ${e.observaciones.substring(0,120)}${e.observaciones.length>120?'…':''}
+      </div>` : '';
+
+    return `
+      <div class="elem-card est-${estCls}${atras?' atrasado':''}" id="card-${e.element_id}">
+        <div class="elem-head">
+          <div>
+            <div class="elem-id">#${e.element_id}${atras?' · ⚠ ATRASADO':''}</div>
+            <div class="elem-cat">${e.categoria||'—'}</div>
+            <div class="elem-nivel">${e.nivel||'—'}</div>
+            <div class="elem-frente">${e.frente_trabajo||'—'}</div>
+          </div>
+          <span class="elem-badge est-${estCls}" style="background:${col.bg};color:${col.c};border-color:${col.c}">${col.txt}</span>
+        </div>
+        <div class="elem-avance-row">
+          <div class="elem-avance-track">
+            <div class="elem-avance-fill" style="width:${pct}%"></div>
+          </div>
+          <span class="elem-avance-pct ${done?'done':''}">${pct}%</span>
+        </div>
+        ${obsHTML}
+        ${fotosHTML}
+        ${botonesHTML}
+      </div>`;
+  }).join('');
+}
+
+function filtrar(f, btn) {
+  FILT = f;
+  document.querySelectorAll('.filt-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderCampo();
+}
+
+// ═══════════════════════════════════════════════
+// ACCIONES SOBRE ELEMENTOS
+// ═══════════════════════════════════════════════
+function getElem(id) {
+  return MIS_ELEM.find(e => String(e.element_id) === String(id));
+}
+
+function marcarTerminado(id) {
+  const e = getElem(id);
+  if (!e) return;
+  if (e._est==='Terminado'||e._est==='Inspeccionado') { toast('Ya está marcado como terminado','done','✓'); return; }
+
+  e._est = 'Terminado';
+  e.estado_ejecucion = 'Terminado';
+  e.porcentaje_avance = '100';
+  e._modificado = true;
+  CAMBIOS++;
+
+  // Fecha real
+  const hoy = HOY.toISOString().slice(0,10);
+  if (!e.fecha_inicio_real) e.fecha_inicio_real = hoy;
+  e.fecha_fin_real = hoy;
+
+  // Flash
+  const card = $('card-'+id);
+  if (card) { card.classList.add('flash-done'); setTimeout(()=>card.classList.remove('flash-done'),500); }
+
+  toast('Marcado como TERMINADO','done','✓');
+  renderCampo();
+
+  // Haptic si disponible
+  if (navigator.vibrate) navigator.vibrate([50,30,50]);
+}
+
+// ── Modal % ──────────────────────────────────
+function abrirPct(id) {
+  const e = getElem(id);
+  if (!e) return;
+  ELEM_ACT = e;
+  const pct = parseInt(e.porcentaje_avance||'0')||0;
+  $('mp-titulo').textContent = e.categoria + ' #' + e.element_id;
+  $('mp-sub').textContent = e.nivel + ' · ' + e.frente_trabajo;
+  $('mp-slider').value = pct;
+  $('mp-display').textContent = pct + '%';
+  show('modal-pct');
+}
+
+function sliderChange(v) { $('mp-display').textContent = v + '%'; }
+function setPct(v) { $('mp-slider').value = v; $('mp-display').textContent = v + '%'; }
+
+function confirmarPct() {
+  if (!ELEM_ACT) return;
+  const pct = parseInt($('mp-slider').value);
+  ELEM_ACT.porcentaje_avance = String(pct);
+  if (pct > 0 && ELEM_ACT._est === 'No iniciado') {
+    ELEM_ACT._est = 'En proceso';
+    ELEM_ACT.estado_ejecucion = 'En proceso';
+    if (!ELEM_ACT.fecha_inicio_real) ELEM_ACT.fecha_inicio_real = HOY.toISOString().slice(0,10);
+  }
+  if (pct === 100) {
+    ELEM_ACT._est = 'Terminado';
+    ELEM_ACT.estado_ejecucion = 'Terminado';
+    ELEM_ACT.fecha_fin_real = HOY.toISOString().slice(0,10);
+  }
+  ELEM_ACT._modificado = true;
+  CAMBIOS++;
+  cerrarModal('modal-pct');
+  toast('Avance actualizado: ' + pct + '%', 'ok', '%');
+  renderCampo();
+}
+
+// ── Modal Problema ────────────────────────────
+function abrirProblema(id) {
+  const e = getElem(id);
+  if (!e) return;
+  ELEM_ACT = e;
+  TIPO_PROB = null;
+  document.querySelectorAll('.prob-tipo').forEach(t => t.classList.remove('selected'));
+  $('prob-text').value = '';
+  $('prob-sub').textContent = e.categoria + ' #' + e.element_id + ' · ' + e.nivel;
+  show('modal-prob');
+}
+
+function selTipo(el, tipo) {
+  document.querySelectorAll('.prob-tipo').forEach(t => t.classList.remove('selected'));
+  el.classList.add('selected');
+  TIPO_PROB = tipo;
+}
+
+function confirmarProblema() {
+  if (!TIPO_PROB) { toast('Selecciona el tipo de problema','late','!'); return; }
+  const txt = $('prob-text').value.trim();
+  if (!ELEM_ACT) return;
+
+  const obs = `[${TIPO_PROB.toUpperCase()} - ${HOY.toISOString().slice(0,10)}] ${txt || 'Sin descripción adicional.'}`;
+  ELEM_ACT.observaciones = (ELEM_ACT.observaciones ? ELEM_ACT.observaciones + ' | ' : '') + obs;
+  ELEM_ACT._modificado = true;
+  CAMBIOS++;
+
+  cerrarModal('modal-prob');
+  toast('Problema reportado: ' + TIPO_PROB,'late','⚠');
+  renderCampo();
+  if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
+}
+
+// ── Modal Foto ───────────────────────────────
+function abrirFoto(id) {
+  const e = getElem(id);
+  if (!e) return;
+  ELEM_ACT = e;
+  $('foto-sub').textContent = e.categoria + ' #' + e.element_id + ' · ' + e.nivel;
+  show('modal-foto');
+}
+
+function fotoSeleccionada(input) {
+  const file = input.files[0];
+  if (!file || !ELEM_ACT) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    if (!ELEM_ACT._fotos) ELEM_ACT._fotos = [];
+    ELEM_ACT._fotos.push(ev.target.result);
+    ELEM_ACT._modificado = true;
+    CAMBIOS++;
+    cerrarModal('modal-foto');
+    toast('Foto adjuntada correctamente','insp','📷');
+    renderCampo();
+  };
+  reader.readAsDataURL(file);
+}
+
+function verFoto(src) {
+  $('foto-view-img').src = src;
+  show('modal-foto-view');
+}
+
+// ── Modales ──────────────────────────────────
+function cerrarModal(id, event) {
+  if (event && event.target !== $(id)) return;
+  hide(id);
+  ELEM_ACT = null;
+  TIPO_PROB = null;
+}
+
+// ═══════════════════════════════════════════════
+// EXPORTAR JSON ACTUALIZADO
+// ═══════════════════════════════════════════════
+function exportarJSON() {
+  if (!DATA) return;
+
+  const modificados = DATA.elementos.filter(e => e._modificado).length;
+  if (modificados === 0) { toast('Sin cambios que exportar','late','!'); return; }
+
+  // Limpiar campos internos antes de exportar
+  const exportData = JSON.parse(JSON.stringify(DATA));
+  exportData.elementos.forEach(e => {
+    delete e._est;
+    delete e._modificado;
+    // Mantener _fotos como base64 en el JSON
+  });
+  exportData.fecha_gen = HOY.toISOString().slice(0,10);
+  exportData.version   = 'BIM Monitor Pro v5.0 — Vista Campo';
+
+  const blob = new Blob([JSON.stringify(exportData, null, 2)], {type:'application/json'});
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url;
+  a.download = `BIMCampo_${(DATA.proyecto||'Proyecto').replace(/[^\w\-]/g,'_')}_${HOY.toISOString().slice(0,10)}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+
+  toast(modificados + ' elementos exportados','done','↓');
+}
+</script>
+
+<script>
+// ── Receptor de datos desde la Suite ──────────────────
+window.addEventListener('message', function(ev) {
+  if (!ev.data || ev.data.tipo !== 'BIM_JSON_DATA') return;
+  try {
+    DATA = ev.data.data;
+    DATA.elementos.forEach(e => {
+      e._est = normEst(e.estado_ejecucion || e.estado || '');
+    });
+    irAResps();
+  } catch(err) { console.error('Error recibiendo JSON campo:', err); }
+});
+</script>
+
+</body>
+</html>
