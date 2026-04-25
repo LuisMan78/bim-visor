@@ -5,17 +5,17 @@ import { dirname, join } from 'path'
 const app = express()
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
-app.use(express.static(join(__dirname, 'dist')))
-
-// Ruta raíz → Suite
+// Rutas especificas ANTES del static
 app.get('/', (req, res) => {
   res.sendFile(join(__dirname, 'dist', 'suite.html'))
 })
 
-// Ruta visor → index.html (visor 3D)
 app.get('/visor', (req, res) => {
   res.sendFile(join(__dirname, 'dist', 'index.html'))
 })
+
+// Static para assets JS, CSS, etc
+app.use(express.static(join(__dirname, 'dist')))
 
 app.get('/{*path}', (req, res) => {
   res.sendFile(join(__dirname, 'dist', 'suite.html'))
