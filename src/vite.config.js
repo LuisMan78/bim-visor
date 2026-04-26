@@ -11,9 +11,11 @@ export default defineConfig({
     port: 5173
   },
   build: {
+    chunkSizeWarningLimit: 10000,
     rollupOptions: {
       input: {
-        main: resolve(__dirname, 'index.html'),
+        main:     resolve(__dirname, 'index.html'),
+        vaciados: resolve(__dirname, 'vaciados_entry.html'),
       }
     }
   }

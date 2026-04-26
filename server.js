@@ -14,6 +14,10 @@ app.get('/visor', (req, res) => {
   res.sendFile(join(__dirname, 'dist', 'index.html'))
 })
 
+app.get('/vaciados', (req, res) => {
+  res.sendFile(join(__dirname, 'dist', 'vaciados_entry.html'))
+})
+
 // Static para assets JS, CSS, etc
 app.use(express.static(join(__dirname, 'dist')))
 
