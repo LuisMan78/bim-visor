@@ -92,7 +92,7 @@ html, body { height: 100%; overflow: hidden; background: #0A0A0B; }
 .home-drop-sub { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #52525B; }
 
 /* Cards */
-.home-cards { display: grid; grid-template-columns: repeat(3,1fr); gap: 20px; width: 100%; max-width: 960px; }
+.home-cards { display: grid; grid-template-columns: repeat(4,1fr); gap: 16px; width: 100%; max-width: 1200px; }
 
 .tool-card {
   background: #111113; border: 1px solid #27272A;
@@ -202,6 +202,10 @@ html, body { height: 100%; overflow: hidden; background: #0A0A0B; }
   .home-cards { grid-template-columns: 1fr; max-width: 480px; }
   .home-topbar, .home-hero, .home-footer { padding-left: 24px; padding-right: 24px; }
 }
+.tool-card.t-vaciados::before { background: #22C55E; }
+.tool-card:hover.t-vaciados { box-shadow: 0 12px 40px rgba(34,197,94,0.12); border-color: rgba(34,197,94,0.2); }
+.tool-card.t-vaciados .tool-ico { border-color: rgba(34,197,94,0.3); color: #22C55E; }
+.tool-card.t-vaciados:hover .tool-arrow { color: #22C55E; }
 </style>
 </head>
 <body>
@@ -224,7 +228,7 @@ html, body { height: 100%; overflow: hidden; background: #0A0A0B; }
 
   <div class="home-hero">
     <div class="home-title">BIM <span>Monitor</span> Pro</div>
-    <div class="home-subtitle">Control de avance · Vista de campo · Visor 3D</div>
+    <div class="home-subtitle">Control de avance · Vista de campo · Visor 3D · Vaciados</div>
 
     <!-- Carga JSON -->
     <div class="home-loader">
@@ -275,6 +279,19 @@ html, body { height: 100%; overflow: hidden; background: #0A0A0B; }
           <span class="tool-tag">IFC</span>
           <span class="tool-tag">3D</span>
           <span class="tool-tag">Colores</span>
+        </div>
+        <div class="tool-arrow">→</div>
+      </div>
+
+      <div class="tool-card t-vaciados disabled" id="card-vaciados" onclick="abrirVaciados()">
+        <div class="tool-badge" style="background:#052E16;color:#22C55E;border-color:rgba(34,197,94,0.3);">+ IFC</div>
+        <div class="tool-ico">🧪</div>
+        <div class="tool-name">Control de<br/>Vaciados</div>
+        <div class="tool-desc">Registro de coladas, trazabilidad de cilindros y alertas NSR-10. Modelo 3D coloreado por estado de vaciado.</div>
+        <div class="tool-tags">
+          <span class="tool-tag">NSR-10</span>
+          <span class="tool-tag">Cilindros</span>
+          <span class="tool-tag">Trazabilidad</span>
         </div>
         <div class="tool-arrow">→</div>
       </div>
@@ -382,6 +399,7 @@ function cargarJSON(file) {
       // Habilitar cards
       document.getElementById('card-dash').classList.remove('disabled');
       document.getElementById('card-campo').classList.remove('disabled');
+      document.getElementById('card-vaciados').classList.remove('disabled');
 
       toast('✓ ' + total.toLocaleString('es-CO') + ' elementos cargados', '#22C55E');
 
@@ -415,6 +433,11 @@ function abrirCampo() {
     sessionStorage.setItem('BIM_JSON_DATA', JSON.stringify(JSON_DATA));
   } catch(e) {}
   window.open('/campo.html', '_blank');
+}
+
+function abrirVaciados() {
+  try { sessionStorage.setItem('BIM_JSON_DATA', JSON.stringify(JSON_DATA)); } catch(e) {}
+  window.open('/vaciados.html', '_blank');
 }
 
 function abrirVisor() {
