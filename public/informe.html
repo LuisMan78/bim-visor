@@ -1,0 +1,1153 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Informe Mensual — LF BIM Studio</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=Barlow:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{background:#0A0A0B;color:#F4F4F0;font-family:'Barlow',sans-serif;-webkit-font-smoothing:antialiased;min-height:100vh;}
+
+#topbar{position:sticky;top:0;z-index:100;background:rgba(10,10,11,0.97);border-bottom:2px solid #FACC15;display:flex;align-items:center;gap:14px;padding:0 24px;height:52px;backdrop-filter:blur(12px);}
+.tb-mark{width:34px;height:34px;background:#FACC15;color:#0A0A0B;display:flex;align-items:center;justify-content:center;font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:11px;flex-shrink:0;}
+.tb-title{font-size:14px;font-weight:700;letter-spacing:0.04em;text-transform:uppercase;}
+.tb-sub{font-size:9px;color:#FACC15;letter-spacing:0.14em;text-transform:uppercase;margin-top:1px;font-family:'JetBrains Mono',monospace;}
+.tb-sep{flex:1;}
+.btn-gen{padding:10px 24px;background:#FACC15;color:#0A0A0B;border:none;font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:800;letter-spacing:0.1em;text-transform:uppercase;cursor:pointer;transition:all 0.2s;}
+.btn-gen:hover{background:#FDE047;}
+
+#main{max-width:1100px;margin:0 auto;padding:24px;}
+
+/* Configuración */
+#config{background:#111113;border:1px solid #27272A;padding:24px;margin-bottom:24px;}
+.config-title{font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;color:#FACC15;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:16px;display:flex;align-items:center;gap:8px;}
+.config-title::before{content:'';width:16px;height:1px;background:#FACC15;}
+.config-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;}
+.form-group{margin-bottom:0;}
+.form-label{font-size:9px;color:#52525B;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:4px;display:block;font-family:'JetBrains Mono',monospace;}
+.form-input{width:100%;padding:8px 10px;background:#18181B;border:1px solid #27272A;color:#F4F4F0;font-size:12px;font-family:'Barlow',sans-serif;outline:none;}
+.form-input:focus{border-color:#FACC15;}
+.form-textarea{width:100%;padding:8px 10px;background:#18181B;border:1px solid #27272A;color:#F4F4F0;font-size:12px;font-family:'Barlow',sans-serif;outline:none;resize:vertical;min-height:60px;}
+.form-textarea:focus{border-color:#FACC15;}
+.form-select{width:100%;padding:8px 10px;background:#18181B;border:1px solid #27272A;color:#F4F4F0;font-size:12px;font-family:'Barlow',sans-serif;outline:none;cursor:pointer;}
+
+/* Carga archivos */
+.drop-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:16px;}
+.drop-zone{border:1px dashed #3F3F46;background:#18181B;padding:16px;text-align:center;cursor:pointer;transition:all 0.2s;}
+.drop-zone:hover,.drop-zone.drag{border-color:#FACC15;background:#1A180A;}
+.drop-zone.loaded{border-style:solid;border-color:#22C55E;background:#052E16;}
+.drop-zone input{display:none;}
+.dz-ico{font-size:22px;margin-bottom:4px;}
+.dz-txt{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#F4F4F0;}
+.dz-sub{font-size:9px;color:#52525B;font-family:'JetBrains Mono',monospace;margin-top:2px;}
+
+/* Preview */
+#preview{display:none;}
+.section{background:#111113;border:1px solid #27272A;margin-bottom:16px;}
+.section-header{padding:12px 16px;border-bottom:1px solid #27272A;display:flex;align-items:center;gap:10px;}
+.section-title{font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#FACC15;}
+.section-body{padding:16px;}
+
+/* KPI grid */
+.kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;}
+.kpi{background:#18181B;border:1px solid #27272A;padding:14px;border-top:2px solid;}
+.kpi-val{font-family:'Barlow Condensed',sans-serif;font-size:28px;font-weight:900;line-height:1;}
+.kpi-lbl{font-size:9px;color:#52525B;letter-spacing:0.1em;text-transform:uppercase;margin-top:3px;font-family:'JetBrains Mono',monospace;}
+
+/* Curva S */
+#canvas-s{width:100%;height:180px;background:#18181B;border:1px solid #27272A;}
+
+/* Tabla */
+table{width:100%;border-collapse:collapse;font-size:11px;}
+th{padding:7px 10px;background:#18181B;color:#52525B;font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:0.1em;text-transform:uppercase;text-align:left;border-bottom:1px solid #27272A;}
+td{padding:7px 10px;border-bottom:1px solid #18181B;color:#F4F4F0;}
+tr:hover td{background:#18181B;}
+.badge{font-size:8px;font-weight:700;padding:2px 8px;letter-spacing:0.06em;text-transform:uppercase;}
+.b-green{background:#052E16;color:#22C55E;border:1px solid #22C55E;}
+.b-orange{background:#1C1208;color:#FB923C;border:1px solid #FB923C;}
+.b-red{background:#2D0A0A;color:#EF4444;border:1px solid #EF4444;}
+.b-blue{background:#082F49;color:#38BDF8;border:1px solid #38BDF8;}
+.b-gray{background:#18181B;color:#52525B;border:1px solid #27272A;}
+
+/* Fotos */
+.fotos-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;}
+.foto-slot{border:1px dashed #27272A;background:#18181B;aspect-ratio:4/3;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;transition:all 0.2s;position:relative;overflow:hidden;}
+.foto-slot:hover{border-color:#FACC15;}
+.foto-slot.filled{border-style:solid;border-color:#27272A;}
+.foto-slot img{width:100%;height:100%;object-fit:cover;}
+.foto-slot input{display:none;}
+.foto-overlay{position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,0.7);padding:4px 6px;font-size:9px;color:#9A9A95;font-family:'JetBrains Mono',monospace;}
+.foto-add-ico{font-size:20px;color:#3F3F46;}
+.foto-add-txt{font-size:9px;color:#3F3F46;font-family:'JetBrains Mono',monospace;margin-top:4px;}
+
+/* Observaciones */
+.obs-input{width:100%;padding:10px;background:#18181B;border:1px solid #27272A;color:#F4F4F0;font-size:12px;font-family:'Barlow',sans-serif;outline:none;resize:vertical;min-height:80px;}
+.obs-input:focus{border-color:#FACC15;}
+
+#toast{position:fixed;bottom:20px;right:20px;background:#18181B;border:1px solid #27272A;border-left:3px solid #FACC15;padding:10px 16px;font-size:11px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;opacity:0;transform:translateY(8px);transition:all 0.3s;z-index:500;font-family:'Barlow Condensed',sans-serif;}
+#toast.on{opacity:1;transform:translateY(0);}
+
+::-webkit-scrollbar{width:4px;}
+::-webkit-scrollbar-track{background:#111113;}
+::-webkit-scrollbar-thumb{background:#27272A;}
+
+@media(max-width:900px){.config-grid{grid-template-columns:1fr 1fr;}.drop-row{grid-template-columns:1fr;}.kpi-grid{grid-template-columns:1fr 1fr;}.fotos-grid{grid-template-columns:repeat(2,1fr);}}
+</style>
+</head>
+<body>
+
+<div id="topbar">
+  <div class="tb-mark">IM</div>
+  <div>
+    <div class="tb-title">Informe Mensual de Avance</div>
+    <div class="tb-sub">LF BIM Studio · Reporte ejecutivo para cliente e interventoría</div>
+  </div>
+  <div class="tb-sep"></div>
+  <button class="btn-gen" onclick="generarPDF()">↓ Generar PDF</button>
+</div>
+
+<div id="main">
+
+  <!-- CONFIGURACIÓN -->
+  <div id="config">
+    <div class="config-title">Configuración del informe</div>
+    <div class="config-grid" style="margin-bottom:16px;">
+      <div class="form-group">
+        <label class="form-label">Proyecto</label>
+        <input class="form-input" id="cfg-proyecto" placeholder="ENF-GR2-P00-MFD-EST-110"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Empresa constructora</label>
+        <input class="form-input" id="cfg-empresa" placeholder="Nombre de la empresa"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Interventoría</label>
+        <input class="form-input" id="cfg-interventoria" placeholder="Nombre de la interventoría"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Mes del informe</label>
+        <input class="form-input" id="cfg-mes" type="month"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Ingeniero residente BIM</label>
+        <input class="form-input" id="cfg-residente" placeholder="Ing. Luis Manuel Fuentes Perez"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Coordinador BIM</label>
+        <input class="form-input" id="cfg-coordinador" placeholder="Nombre del coordinador"/>
+      </div>
+    </div>
+
+    <!-- Cargar archivos -->
+    <div class="config-title">Cargar datos</div>
+    <div class="drop-row">
+      <div class="drop-zone" id="dz-avance" onclick="document.getElementById('in-avance').click()"
+           ondragover="dzOver(event,'dz-avance')" ondragleave="dzOut('dz-avance')" ondrop="dzDrop(event,'avance')">
+        <input type="file" id="in-avance" accept=".json" onchange="cargarAvance(this.files[0])"/>
+        <div class="dz-ico">📊</div>
+        <div class="dz-txt" id="dz-avance-txt">JSON de avance</div>
+        <div class="dz-sub">BIMMonitorPro_Avance_*.json</div>
+      </div>
+      <div class="drop-zone" id="dz-vaciados" onclick="document.getElementById('in-vaciados').click()"
+           ondragover="dzOver(event,'dz-vaciados')" ondragleave="dzOut('dz-vaciados')" ondrop="dzDrop(event,'vaciados')">
+        <input type="file" id="in-vaciados" accept=".json" onchange="cargarVaciados(this.files[0])"/>
+        <div class="dz-ico">🧪</div>
+        <div class="dz-txt" id="dz-vaciados-txt">JSON de vaciados</div>
+        <div class="dz-sub">ControlVaciados_*.json</div>
+      </div>
+      <div class="drop-zone" id="dz-ncr" onclick="document.getElementById('in-ncr').click()"
+           ondragover="dzOver(event,'dz-ncr')" ondragleave="dzOut('dz-ncr')" ondrop="dzDrop(event,'ncr')">
+        <input type="file" id="in-ncr" accept=".json" onchange="cargarNCR(this.files[0])"/>
+        <div class="dz-ico">📋</div>
+        <div class="dz-txt" id="dz-ncr-txt">JSON de NCR</div>
+        <div class="dz-sub">RegistroNCR_*.json (opcional)</div>
+      </div>
+    </div>
+
+    <!-- Observaciones -->
+    <div class="config-title">Observaciones generales del mes</div>
+    <textarea class="obs-input" id="cfg-obs" placeholder="Describe los hitos del mes, logros importantes, problemas encontrados y acciones tomadas..."></textarea>
+  </div>
+
+  <!-- PREVIEW -->
+  <div id="preview">
+
+    <!-- 1. Resumen ejecutivo -->
+    <div class="section">
+      <div class="section-header">
+        <div class="section-title">1. Resumen ejecutivo</div>
+      </div>
+      <div class="section-body">
+        <div class="kpi-grid">
+          <div class="kpi" style="border-top-color:#FACC15;">
+            <div class="kpi-val" id="kpi-total" style="color:#FACC15;">—</div>
+            <div class="kpi-lbl">Total elementos</div>
+          </div>
+          <div class="kpi" style="border-top-color:#22C55E;">
+            <div class="kpi-val" id="kpi-avance" style="color:#22C55E;">—</div>
+            <div class="kpi-lbl">% Avance</div>
+          </div>
+          <div class="kpi" style="border-top-color:#FB923C;">
+            <div class="kpi-val" id="kpi-proceso" style="color:#FB923C;">—</div>
+            <div class="kpi-lbl">En proceso</div>
+          </div>
+          <div class="kpi" style="border-top-color:#EF4444;">
+            <div class="kpi-val" id="kpi-atrasados" style="color:#EF4444;">—</div>
+            <div class="kpi-lbl">Atrasados</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2. Curva S -->
+    <div class="section">
+      <div class="section-header">
+        <div class="section-title">2. Curva S — Avance real vs planificado</div>
+      </div>
+      <div class="section-body">
+        <canvas id="canvas-s"></canvas>
+      </div>
+    </div>
+
+    <!-- 3. Avance por categoría -->
+    <div class="section">
+      <div class="section-header">
+        <div class="section-title">3. Avance por categoría estructural</div>
+      </div>
+      <div class="section-body">
+        <table>
+          <thead><tr><th>Categoría</th><th>Total</th><th>Terminado</th><th>En proceso</th><th>No iniciado</th><th>Atrasado</th><th>% Avance</th></tr></thead>
+          <tbody id="tabla-categorias"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- 4. Vaciados del mes -->
+    <div class="section" id="section-vaciados">
+      <div class="section-header">
+        <div class="section-title">4. Control de vaciados del mes</div>
+      </div>
+      <div class="section-body">
+        <table>
+          <thead><tr><th>ID Colada</th><th>Fecha</th><th>Proveedor</th><th>F'c (MPa)</th><th>Volumen (m³)</th><th>Cilindros 28d</th><th>Estado</th></tr></thead>
+          <tbody id="tabla-vaciados"></tbody>
+        </table>
+        <div id="vaciados-vacio" style="color:#3F3F46;text-align:center;padding:16px;font-size:11px;">Sin datos de vaciados cargados</div>
+      </div>
+    </div>
+
+    <!-- 5. NCR -->
+    <div class="section" id="section-ncr">
+      <div class="section-header">
+        <div class="section-title">5. No Conformidades (NCR)</div>
+      </div>
+      <div class="section-body">
+        <div class="kpi-grid" style="margin-bottom:16px;">
+          <div class="kpi" style="border-top-color:#EF4444;"><div class="kpi-val" id="ncr-abiertas" style="color:#EF4444;">0</div><div class="kpi-lbl">Abiertas</div></div>
+          <div class="kpi" style="border-top-color:#FB923C;"><div class="kpi-val" id="ncr-correccion" style="color:#FB923C;">0</div><div class="kpi-lbl">En corrección</div></div>
+          <div class="kpi" style="border-top-color:#22C55E;"><div class="kpi-val" id="ncr-cerradas" style="color:#22C55E;">0</div><div class="kpi-lbl">Cerradas</div></div>
+          <div class="kpi" style="border-top-color:#52525B;"><div class="kpi-val" id="ncr-total" style="color:#52525B;">0</div><div class="kpi-lbl">Total</div></div>
+        </div>
+        <table>
+          <thead><tr><th>ID NCR</th><th>Fecha</th><th>Título</th><th>Categoría</th><th>Severidad</th><th>Responsable</th><th>Estado</th></tr></thead>
+          <tbody id="tabla-ncr"></tbody>
+        </table>
+        <div id="ncr-vacio" style="color:#3F3F46;text-align:center;padding:16px;font-size:11px;">Sin datos de NCR cargados</div>
+      </div>
+    </div>
+
+    <!-- 6. RFI -->
+    <div class="section">
+      <div class="section-header">
+        <div class="section-title">6. Solicitudes de información (RFI)</div>
+      </div>
+      <div class="section-body">
+        <div id="rfi-info" style="color:#3F3F46;text-align:center;padding:16px;font-size:11px;">Los RFI se cargan automáticamente desde localStorage</div>
+        <table id="tabla-rfi-wrap" style="display:none;">
+          <thead><tr><th>ID RFI</th><th>Fecha</th><th>Asunto</th><th>Dirigido a</th><th>Impacto</th><th>Estado</th></tr></thead>
+          <tbody id="tabla-rfi"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- 7. Fotos de avance -->
+    <div class="section">
+      <div class="section-header">
+        <div class="section-title">7. Registro fotográfico del mes</div>
+      </div>
+      <div class="section-body">
+        <div class="fotos-grid" id="fotos-grid">
+          <!-- Se generan dinámicamente -->
+        </div>
+        <div style="font-size:10px;color:#3F3F46;font-family:'JetBrains Mono',monospace;margin-top:8px;">Haz click en cualquier slot para agregar una foto · Máximo 8 fotos</div>
+      </div>
+    </div>
+
+    <!-- 8. Observaciones y firma -->
+    <div class="section">
+      <div class="section-header">
+        <div class="section-title">8. Observaciones y conclusiones</div>
+      </div>
+      <div class="section-body">
+        <textarea class="obs-input" id="obs-final" placeholder="Observaciones adicionales, conclusiones del mes y recomendaciones para el siguiente período..."></textarea>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ══════════════════════════════════════════════════════
+// ESTADO
+// ══════════════════════════════════════════════════════
+let DATA_AVANCE   = null;
+let DATA_VACIADOS = null;
+let DATA_NCR      = null;
+let DATA_RFI      = null;
+let FOTOS = new Array(8).fill(null);
+
+// Cargar RFI y NCR desde localStorage automáticamente
+try { DATA_RFI = JSON.parse(localStorage.getItem('LF_RFI_DATA') || '[]'); } catch(e) { DATA_RFI = []; }
+try {
+  const ncrRaw = JSON.parse(localStorage.getItem('LF_NCR_DATA') || '[]');
+  DATA_NCR = { ncrs: ncrRaw };
+} catch(e) { DATA_NCR = null; }
+
+// ── Helpers ───────────────────────────────────────────
+function parseF(s) {
+  if (!s) return null;
+  const m = s.toString().match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  return m ? new Date(+m[1],+m[2]-1,+m[3]) : null;
+}
+function normEst(raw) {
+  if (!raw) return 'No iniciado';
+  const n = raw.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
+  if (n==='terminado'||n==='terminada') return 'Terminado';
+  if (n==='inspeccionado'||n==='aprobado') return 'Inspeccionado';
+  if (n==='en proceso') return 'En proceso';
+  if (n==='no iniciado'||n==='pendiente') return 'No iniciado';
+  return raw.trim();
+}
+function dzOver(e,id){e.preventDefault();document.getElementById(id).classList.add('drag');}
+function dzOut(id){document.getElementById(id).classList.remove('drag');}
+function dzDrop(e,tipo){
+  e.preventDefault();
+  const id='dz-'+tipo;
+  document.getElementById(id).classList.remove('drag');
+  const f=e.dataTransfer.files[0]; if(!f) return;
+  if(tipo==='avance') cargarAvance(f);
+  if(tipo==='vaciados') cargarVaciados(f);
+  if(tipo==='ncr') cargarNCR(f);
+}
+
+// ── Carga archivos ────────────────────────────────────
+window.cargarAvance = function(file) {
+  const r = new FileReader();
+  r.onload = ev => {
+    try {
+      const raw = JSON.parse(ev.target.result);
+      DATA_AVANCE = raw.elementos ? raw : null;
+      if (!DATA_AVANCE) { toast('JSON de avance inválido'); return; }
+      DATA_AVANCE.elementos.forEach(el => {
+        el._est = normEst(el.estado_ejecucion || el.estado || '');
+        el._fin = parseF(el.fecha_fin_plan);
+      });
+      document.getElementById('dz-avance').classList.add('loaded');
+      document.getElementById('dz-avance-txt').textContent = '✓ ' + (DATA_AVANCE.proyecto || file.name);
+      document.getElementById('cfg-proyecto').value = DATA_AVANCE.proyecto || '';
+      actualizarPreview();
+      toast('✓ Avance cargado — ' + DATA_AVANCE.elementos.length + ' elementos');
+    } catch(e) { toast('JSON inválido'); }
+  };
+  r.readAsText(file);
+};
+
+window.cargarVaciados = function(file) {
+  const r = new FileReader();
+  r.onload = ev => {
+    try {
+      DATA_VACIADOS = JSON.parse(ev.target.result);
+      document.getElementById('dz-vaciados').classList.add('loaded');
+      document.getElementById('dz-vaciados-txt').textContent = '✓ ' + file.name;
+      actualizarPreview();
+      toast('✓ Vaciados cargados');
+    } catch(e) { toast('JSON de vaciados inválido'); }
+  };
+  r.readAsText(file);
+};
+
+window.cargarNCR = function(file) {
+  const r = new FileReader();
+  r.onload = ev => {
+    try {
+      DATA_NCR = JSON.parse(ev.target.result);
+      document.getElementById('dz-ncr').classList.add('loaded');
+      document.getElementById('dz-ncr-txt').textContent = '✓ ' + file.name;
+      actualizarPreview();
+      toast('✓ NCR cargadas');
+    } catch(e) { toast('JSON de NCR inválido'); }
+  };
+  r.readAsText(file);
+};
+
+// ── Preview ───────────────────────────────────────────
+function actualizarPreview() {
+  if (!DATA_AVANCE) return;
+  document.getElementById('preview').style.display = 'block';
+
+  const hoy = new Date(); hoy.setHours(0,0,0,0);
+  const els = DATA_AVANCE.elementos;
+  const total = els.length;
+  const term = els.filter(e=>e._est==='Terminado'||e._est==='Inspeccionado').length;
+  const proc = els.filter(e=>e._est==='En proceso').length;
+  const atras = els.filter(e=>{
+    if(e._est==='Terminado'||e._est==='Inspeccionado') return false;
+    return e._fin && e._fin < hoy;
+  }).length;
+
+  document.getElementById('kpi-total').textContent = total.toLocaleString('es-CO');
+  document.getElementById('kpi-avance').textContent = Math.round(term/total*100) + '%';
+  document.getElementById('kpi-proceso').textContent = proc;
+  document.getElementById('kpi-atrasados').textContent = atras;
+
+  // Categorías
+  const cats = {};
+  els.forEach(el => {
+    const c = el.categoria || 'Sin categoría';
+    if (!cats[c]) cats[c] = {total:0,term:0,proc:0,nini:0,atras:0};
+    cats[c].total++;
+    const atrasado = (el._est!=='Terminado'&&el._est!=='Inspeccionado') && el._fin && el._fin < hoy;
+    if (el._est==='Terminado'||el._est==='Inspeccionado') cats[c].term++;
+    else if (atrasado) cats[c].atras++;
+    else if (el._est==='En proceso') cats[c].proc++;
+    else cats[c].nini++;
+  });
+
+  document.getElementById('tabla-categorias').innerHTML = Object.entries(cats)
+    .sort((a,b)=>b[1].total-a[1].total)
+    .map(([cat, d]) => {
+      const pct = Math.round(d.term/d.total*100);
+      const color = pct>=80?'#22C55E':pct>=50?'#FB923C':'#EF4444';
+      return `<tr>
+        <td style="font-weight:700;">${cat}</td>
+        <td>${d.total}</td>
+        <td style="color:#22C55E;font-weight:700;">${d.term}</td>
+        <td style="color:#FB923C;">${d.proc}</td>
+        <td style="color:#52525B;">${d.nini}</td>
+        <td style="color:#EF4444;">${d.atras}</td>
+        <td style="color:${color};font-weight:700;font-family:'JetBrains Mono',monospace;">${pct}%</td>
+      </tr>`;
+    }).join('');
+
+  // Curva S
+  dibujarCurvaS(els, hoy);
+
+  // Vaciados
+  renderVaciados();
+
+  // NCR
+  renderNCR();
+
+  // RFI
+  renderRFI();
+
+  // Fotos
+  renderFotos();
+}
+
+function dibujarCurvaS(els, hoy) {
+  const canvas = document.getElementById('canvas-s');
+  const ctx = canvas.getContext('2d');
+  canvas.width = canvas.offsetWidth * window.devicePixelRatio;
+  canvas.height = 180 * window.devicePixelRatio;
+  ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+  const W = canvas.offsetWidth, H = 180;
+
+  ctx.fillStyle = '#18181B';
+  ctx.fillRect(0,0,W,H);
+
+  // Calcular datos por semana
+  const fechas = els.map(e=>e._fin).filter(Boolean).sort((a,b)=>a-b);
+  if (!fechas.length) return;
+
+  const inicio = fechas[0];
+  const fin = fechas[fechas.length-1];
+  const semanas = Math.ceil((fin-inicio)/(7*24*60*60*1000)) + 1;
+  const puntosPlan = [], puntosReal = [];
+
+  for (let i=0; i<=semanas; i++) {
+    const fechaSem = new Date(inicio.getTime() + i*7*24*60*60*1000);
+    const planAcc = els.filter(e=>e._fin && e._fin <= fechaSem).length;
+    const realAcc = els.filter(e=>(e._est==='Terminado'||e._est==='Inspeccionado') && e._fin && e._fin <= fechaSem).length;
+    puntosPlan.push({x: i/semanas, y: planAcc/els.length});
+    puntosReal.push({x: i/semanas, y: realAcc/els.length});
+  }
+
+  const PAD = 30;
+  const plotW = W - PAD*2, plotH = H - PAD*2;
+
+  // Grid
+  ctx.strokeStyle = '#27272A';
+  ctx.lineWidth = 0.5;
+  for (let i=0; i<=4; i++) {
+    const y = PAD + plotH - (i/4)*plotH;
+    ctx.beginPath(); ctx.moveTo(PAD,y); ctx.lineTo(PAD+plotW,y); ctx.stroke();
+    ctx.fillStyle = '#52525B';
+    ctx.font = '9px JetBrains Mono';
+    ctx.fillText((i*25)+'%', 2, y+3);
+  }
+
+  // Línea plan
+  ctx.beginPath();
+  ctx.strokeStyle = '#38BDF8';
+  ctx.lineWidth = 1.5;
+  ctx.setLineDash([4,4]);
+  puntosPlan.forEach((p,i) => {
+    const x = PAD + p.x*plotW, y = PAD + plotH - p.y*plotH;
+    i===0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y);
+  });
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Línea real
+  ctx.beginPath();
+  ctx.strokeStyle = '#22C55E';
+  ctx.lineWidth = 2;
+  puntosReal.forEach((p,i) => {
+    const x = PAD + p.x*plotW, y = PAD + plotH - p.y*plotH;
+    i===0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y);
+  });
+  ctx.stroke();
+
+  // Leyenda
+  ctx.fillStyle = '#38BDF8'; ctx.fillRect(W-120, 8, 20, 2);
+  ctx.fillStyle = '#9A9A95'; ctx.font = '9px Barlow'; ctx.fillText('Planificado', W-96, 12);
+  ctx.fillStyle = '#22C55E'; ctx.fillRect(W-120, 20, 20, 2);
+  ctx.fillStyle = '#9A9A95'; ctx.fillText('Real', W-96, 24);
+}
+
+function renderVaciados() {
+  const tbody = document.getElementById('tabla-vaciados');
+  const vacio = document.getElementById('vaciados-vacio');
+  const vaciados = DATA_VACIADOS?.vaciados || [];
+
+  if (!vaciados.length) {
+    tbody.innerHTML = ''; vacio.style.display = 'block'; return;
+  }
+  vacio.style.display = 'none';
+
+  const mes = document.getElementById('cfg-mes').value;
+  const filtrados = mes
+    ? vaciados.filter(v => v.fecha && v.fecha.startsWith(mes))
+    : vaciados;
+
+  tbody.innerHTML = filtrados.map(v => {
+    const estCls = {aprobado:'b-green',pendiente:'b-orange',reprobado:'b-red'}[v.estado]||'b-gray';
+    return `<tr>
+      <td style="font-weight:700;font-family:'JetBrains Mono',monospace;color:#FACC15;">${v.id}</td>
+      <td>${v.fecha}</td>
+      <td>${v.proveedor||'—'}</td>
+      <td>${v.fc||'—'}</td>
+      <td>${v.volumen||'—'}</td>
+      <td style="font-family:'JetBrains Mono',monospace;">${v.cil28 ? v.cil28+' MPa' : '—'}</td>
+      <td><span class="badge ${estCls}">${v.estado?.toUpperCase()||'—'}</span></td>
+    </tr>`;
+  }).join('');
+}
+
+function renderNCR() {
+  const tbody = document.getElementById('tabla-ncr');
+  const vacio = document.getElementById('ncr-vacio');
+  const ncrs = DATA_NCR?.ncrs || [];
+
+  document.getElementById('ncr-total').textContent = ncrs.length;
+  document.getElementById('ncr-abiertas').textContent = ncrs.filter(n=>n.estado==='Abierta').length;
+  document.getElementById('ncr-correccion').textContent = ncrs.filter(n=>n.estado==='En corrección').length;
+  document.getElementById('ncr-cerradas').textContent = ncrs.filter(n=>n.estado==='Cerrada').length;
+
+  if (!ncrs.length) {
+    tbody.innerHTML = ''; vacio.style.display = 'block'; return;
+  }
+  vacio.style.display = 'none';
+  tbody.innerHTML = ncrs.map(n => {
+    const estCls = {Abierta:'b-red','En corrección':'b-orange',Cerrada:'b-green',Rechazada:'b-gray'}[n.estado]||'b-gray';
+    const sevCls = {Crítica:'b-red',Mayor:'b-orange',Menor:'b-gray',Observación:'b-blue'}[n.severidad]||'b-gray';
+    return `<tr>
+      <td style="font-weight:700;font-family:'JetBrains Mono',monospace;color:#EF4444;">${n.id}</td>
+      <td>${n.fecha}</td>
+      <td>${n.titulo?.substring(0,40)||'—'}</td>
+      <td>${n.categoria||'—'}</td>
+      <td><span class="badge ${sevCls}">${n.severidad||'—'}</span></td>
+      <td>${n.responsable||'—'}</td>
+      <td><span class="badge ${estCls}">${n.estado||'—'}</span></td>
+    </tr>`;
+  }).join('');
+}
+
+function renderRFI() {
+  const rfis = Array.isArray(DATA_RFI) ? DATA_RFI : (DATA_RFI?.rfis || []);
+  const info = document.getElementById('rfi-info');
+  const tabla = document.getElementById('tabla-rfi-wrap');
+  const tbody = document.getElementById('tabla-rfi');
+  if (!rfis.length) { info.style.display='block'; tabla.style.display='none'; return; }
+  info.style.display='none'; tabla.style.display='table';
+  tbody.innerHTML = rfis.map(r => {
+    const estCls = {Abierto:'b-blue',Respondido:'b-green',Cerrado:'b-gray'}[r.estado]||'b-gray';
+    const impCls = {Alto:'b-red',Medio:'b-orange',Bajo:'b-gray'}[r.impacto]||'b-gray';
+    return `<tr>
+      <td style="font-weight:700;font-family:'JetBrains Mono',monospace;color:#38BDF8;">${r.id}</td>
+      <td>${r.fecha}</td>
+      <td>${r.titulo?.substring(0,40)||'—'}</td>
+      <td>${r.dirigido||'—'}</td>
+      <td><span class="badge ${impCls}">${r.impacto||'—'}</span></td>
+      <td><span class="badge ${estCls}">${r.estado||'—'}</span></td>
+    </tr>`;
+  }).join('');
+}
+
+function renderFotos() {
+  const grid = document.getElementById('fotos-grid');
+  grid.innerHTML = FOTOS.map((f, i) => {
+    if (f) {
+      return `<div class="foto-slot filled" onclick="document.getElementById('foto-${i}').click()">
+        <img src="${f.data}" alt="Foto ${i+1}"/>
+        <div class="foto-overlay">${f.nombre}</div>
+        <input type="file" id="foto-${i}" accept="image/*" style="display:none;" onchange="actualizarFoto(${i}, this.files[0])"/>
+      </div>`;
+    }
+    return `<div class="foto-slot" onclick="document.getElementById('foto-${i}').click()">
+      <input type="file" id="foto-${i}" accept="image/*" style="display:none;" onchange="actualizarFoto(${i}, this.files[0])"/>
+      <div class="foto-add-ico">📷</div>
+      <div class="foto-add-txt">Foto ${i+1}</div>
+    </div>`;
+  }).join('');
+}
+
+window.actualizarFoto = function(i, file) {
+  if (!file) return;
+  const r = new FileReader();
+  r.onload = ev => {
+    FOTOS[i] = { nombre: file.name, data: ev.target.result };
+    renderFotos();
+    toast('✓ Foto ' + (i+1) + ' cargada');
+  };
+  r.readAsDataURL(file);
+};
+
+// ── Generar PDF ───────────────────────────────────────
+window.generarPDF = function() {
+  if (!DATA_AVANCE) { toast('⚠ Carga primero el JSON de avance'); return; }
+  toast('Generando PDF...');
+
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ unit:'mm', format:'a4' });
+  const W = 210, H = 297;
+  let page = 1;
+
+  function nuevaPagina() {
+    doc.addPage();
+    page++;
+    // Header en cada página
+    doc.setFillColor(248,248,248);
+    doc.rect(0,0,W,10,'F');
+    doc.setTextColor(120,120,120);
+    doc.setFont('helvetica','normal');
+    doc.setFontSize(7);
+    doc.text('LF BIM Studio  ·  Informe Mensual de Avance  ·  ' + (document.getElementById('cfg-proyecto').value||'Proyecto'), 10, 6);
+    doc.text('Pág. ' + page, W-10, 6, {align:'right'});
+    doc.setDrawColor(220,220,220);
+    doc.line(0,10,W,10);
+    return 18;
+  }
+
+  // ── PORTADA ──
+  doc.setFillColor(26,26,26);
+  doc.rect(0,0,W,H,'F');
+  doc.setFillColor(250,204,21);
+  doc.rect(0,0,8,H,'F');
+  doc.setFillColor(17,17,17);
+  doc.rect(8,0,W-8,H,'F');
+
+  // Año watermark
+  doc.setTextColor(30,30,30);
+  doc.setFont('helvetica','bold');
+  doc.setFontSize(120);
+  doc.text('2026', W/2+4, H/2+30, {align:'center'});
+
+  // Contenido portada
+  doc.setTextColor(250,204,21);
+  doc.setFontSize(9);
+  doc.setFont('helvetica','normal');
+  doc.text('LF BIM STUDIO', 22, 40);
+  doc.setFontSize(32);
+  doc.setFont('helvetica','bold');
+  doc.text('INFORME', 22, 60);
+  doc.text('MENSUAL', 22, 76);
+  doc.text('DE AVANCE', 22, 92);
+
+  doc.setTextColor(180,180,180);
+  doc.setFont('helvetica','normal');
+  doc.setFontSize(10);
+
+  const mes = document.getElementById('cfg-mes').value;
+  const mesNombre = mes ? new Date(mes+'-01').toLocaleDateString('es-CO',{month:'long',year:'numeric'}).toUpperCase() : 'MES EN CURSO';
+  doc.text(mesNombre, 22, 108);
+
+  doc.setFillColor(40,40,40);
+  doc.rect(22, 130, W-32, 0.5, 'F');
+
+  const proyecto = document.getElementById('cfg-proyecto').value || 'Proyecto';
+  const empresa  = document.getElementById('cfg-empresa').value || 'Empresa constructora';
+  const interv   = document.getElementById('cfg-interventoria').value || '—';
+  const resid    = document.getElementById('cfg-residente').value || 'Ing. Luis Manuel Fuentes Perez';
+
+  doc.setTextColor(250,204,21);
+  doc.setFont('helvetica','bold');
+  doc.setFontSize(8);
+  doc.text('PROYECTO', 22, 142);
+  doc.setTextColor(220,220,220);
+  doc.setFont('helvetica','normal');
+  doc.setFontSize(11);
+  doc.text(proyecto, 22, 150);
+
+  doc.setTextColor(100,100,100);
+  doc.setFontSize(8);
+  doc.text('EMPRESA CONSTRUCTORA', 22, 162);
+  doc.setTextColor(180,180,180);
+  doc.setFontSize(10);
+  doc.text(empresa, 22, 169);
+
+  doc.setTextColor(100,100,100);
+  doc.setFontSize(8);
+  doc.text('INTERVENTORÍA', 22, 181);
+  doc.setTextColor(180,180,180);
+  doc.setFontSize(10);
+  doc.text(interv, 22, 188);
+
+  doc.setTextColor(100,100,100);
+  doc.setFontSize(8);
+  doc.text('RESIDENTE BIM', 22, 200);
+  doc.setTextColor(180,180,180);
+  doc.setFontSize(10);
+  doc.text(resid, 22, 207);
+
+  doc.setFillColor(250,204,21);
+  doc.rect(0,H-16,8,16,'F');
+  doc.setTextColor(100,100,100);
+  doc.setFontSize(7);
+  doc.text('Generado con LF BIM Studio  ·  ' + new Date().toLocaleDateString('es-CO'), 22, H-6);
+
+  // ── PÁG 2: RESUMEN EJECUTIVO ──
+  let y = nuevaPagina();
+
+  doc.setFillColor(250,204,21);
+  doc.rect(10, y, 190, 7, 'F');
+  doc.setTextColor(26,26,26);
+  doc.setFont('helvetica','bold');
+  doc.setFontSize(9);
+  doc.text('1. RESUMEN EJECUTIVO', 14, y+5);
+  y += 12;
+
+  // KPIs
+  const hoy = new Date(); hoy.setHours(0,0,0,0);
+  const els = DATA_AVANCE.elementos;
+  const total = els.length;
+  const term = els.filter(e=>e._est==='Terminado'||e._est==='Inspeccionado').length;
+  const proc = els.filter(e=>e._est==='En proceso').length;
+  const atras = els.filter(e=>{
+    if(e._est==='Terminado'||e._est==='Inspeccionado') return false;
+    return e._fin && e._fin < hoy;
+  }).length;
+  const pct = Math.round(term/total*100);
+
+  const kpis = [
+    {v:total.toString(),l:'Total elementos',c:[250,204,21]},
+    {v:pct+'%',l:'Avance general',c:[34,197,94]},
+    {v:proc.toString(),l:'En proceso',c:[251,146,60]},
+    {v:atras.toString(),l:'Atrasados',c:[239,68,68]},
+  ];
+  kpis.forEach((k,i) => {
+    const x = 10 + i*48;
+    doc.setFillColor(245,245,245);
+    doc.rect(x, y, 44, 20, 'F');
+    doc.setFillColor(k.c[0],k.c[1],k.c[2]);
+    doc.rect(x, y, 44, 1.5, 'F');
+    doc.setTextColor(k.c[0],k.c[1],k.c[2]);
+    doc.setFont('helvetica','bold');
+    doc.setFontSize(20);
+    doc.text(k.v, x+22, y+13, {align:'center'});
+    doc.setTextColor(100,100,100);
+    doc.setFont('helvetica','normal');
+    doc.setFontSize(6);
+    doc.text(k.l.toUpperCase(), x+22, y+18, {align:'center'});
+  });
+  y += 26;
+
+  // Observaciones
+  const obs = document.getElementById('cfg-obs').value;
+  if (obs) {
+    doc.setFillColor(250,248,240);
+    doc.setDrawColor(220,200,150);
+    const obsLines = doc.splitTextToSize(obs, 182);
+    const obsH = Math.min(obsLines.length, 8)*5 + 8;
+    doc.roundedRect(10, y, 190, obsH, 1, 1, 'FD');
+    doc.setFillColor(250,204,21);
+    doc.rect(10, y, 2, obsH, 'F');
+    doc.setTextColor(50,50,50);
+    doc.setFont('helvetica','normal');
+    doc.setFontSize(9);
+    doc.text(obsLines.slice(0,8), 16, y+6);
+    y += obsH + 8;
+  }
+
+  // Avance por categoría
+  doc.setFillColor(240,240,240);
+  doc.rect(10, y, 190, 6, 'F');
+  doc.setTextColor(50,50,50);
+  doc.setFont('helvetica','bold');
+  doc.setFontSize(8);
+  doc.text('2. AVANCE POR CATEGORÍA ESTRUCTURAL', 14, y+4.5);
+  y += 10;
+
+  const cats = {};
+  els.forEach(el => {
+    const c = el.categoria || 'Sin categoría';
+    if (!cats[c]) cats[c] = {total:0,term:0,proc:0,nini:0,atras:0};
+    cats[c].total++;
+    const atrasado = (el._est!=='Terminado'&&el._est!=='Inspeccionado') && el._fin && el._fin < hoy;
+    if (el._est==='Terminado'||el._est==='Inspeccionado') cats[c].term++;
+    else if (atrasado) cats[c].atras++;
+    else if (el._est==='En proceso') cats[c].proc++;
+    else cats[c].nini++;
+  });
+
+  // Encabezado tabla
+  const colW = [60,18,22,22,22,20,26];
+  const colX = [10,70,88,110,132,154,174];
+  const headers = ['Categoría','Total','Terminado','En proceso','No iniciado','Atrasado','% Avance'];
+  doc.setFillColor(26,26,26);
+  doc.rect(10, y, 190, 7, 'F');
+  headers.forEach((h,i) => {
+    doc.setTextColor(200,200,200);
+    doc.setFont('helvetica','bold');
+    doc.setFontSize(6.5);
+    doc.text(h, colX[i]+2, y+5);
+  });
+  y += 7;
+
+  Object.entries(cats).sort((a,b)=>b[1].total-a[1].total).forEach(([ cat, d ], ri) => {
+    const pctC = Math.round(d.term/d.total*100);
+    const cColor = pctC>=80?[34,197,94]:pctC>=50?[251,146,60]:[239,68,68];
+    doc.setFillColor(ri%2===0?250:245, ri%2===0?250:245, ri%2===0?250:245);
+    doc.rect(10, y, 190, 7, 'F');
+    const vals = [cat, d.total, d.term, d.proc, d.nini, d.atras, pctC+'%'];
+    const colors = [
+      [30,30,30],[80,80,80],[34,163,74],[194,100,20],[80,80,80],[200,40,40],cColor
+    ];
+    vals.forEach((v, i) => {
+      doc.setTextColor(colors[i][0],colors[i][1],colors[i][2]);
+      doc.setFont('helvetica', i===0||i===6?'bold':'normal');
+      doc.setFontSize(8);
+      doc.text(v.toString(), colX[i]+2, y+5);
+    });
+    // Barra de progreso
+    doc.setFillColor(220,220,220);
+    doc.rect(colX[6]+14, y+2, 12, 3, 'F');
+    doc.setFillColor(cColor[0],cColor[1],cColor[2]);
+    doc.rect(colX[6]+14, y+2, 12*pctC/100, 3, 'F');
+    y += 7;
+    if (y > 260) { y = nuevaPagina(); }
+  });
+  y += 6;
+
+  // ── Vaciados ──
+  const vaciados = DATA_VACIADOS?.vaciados || [];
+  if (vaciados.length) {
+    if (y > 220) { y = nuevaPagina(); }
+    doc.setFillColor(240,240,240);
+    doc.rect(10, y, 190, 6, 'F');
+    doc.setTextColor(50,50,50);
+    doc.setFont('helvetica','bold');
+    doc.setFontSize(8);
+    doc.text('3. CONTROL DE VACIADOS', 14, y+4.5);
+    y += 10;
+
+    const vHeaders = ['ID Colada','Fecha','Proveedor','F\'c (MPa)','Vol (m³)','Cil. 28d','Estado'];
+    const vColX = [10,38,66,110,130,150,170];
+    doc.setFillColor(26,26,26);
+    doc.rect(10, y, 190, 7, 'F');
+    vHeaders.forEach((h,i) => {
+      doc.setTextColor(200,200,200);
+      doc.setFont('helvetica','bold');
+      doc.setFontSize(6.5);
+      doc.text(h, vColX[i]+1, y+5);
+    });
+    y += 7;
+
+    vaciados.forEach((v,ri) => {
+      if (y > 260) { y = nuevaPagina(); }
+      doc.setFillColor(ri%2===0?250:245,ri%2===0?250:245,ri%2===0?250:245);
+      doc.rect(10, y, 190, 7, 'F');
+      const estC = v.estado==='aprobado'?[34,163,74]:v.estado==='reprobado'?[200,40,40]:[194,100,20];
+      const vals = [v.id, v.fecha||'—', (v.proveedor||'—').substring(0,18), v.fc||'—', v.volumen||'—', v.cil28?v.cil28+' MPa':'—', v.estado?.toUpperCase()||'—'];
+      vals.forEach((val,i) => {
+        const tc6=i===6?estC:[60,60,60]; doc.setTextColor(tc6[0],tc6[1],tc6[2]);
+        doc.setFont('helvetica', i===0||i===6?'bold':'normal');
+        doc.setFontSize(7.5);
+        doc.text(val.toString(), vColX[i]+1, y+5);
+      });
+      y += 7;
+    });
+    y += 6;
+  }
+
+  // ── NCR ──
+  const ncrs = DATA_NCR?.ncrs || [];
+  if (ncrs.length) {
+    if (y > 220) { y = nuevaPagina(); }
+    doc.setFillColor(240,240,240);
+    doc.rect(10, y, 190, 6, 'F');
+    doc.setTextColor(50,50,50);
+    doc.setFont('helvetica','bold');
+    doc.setFontSize(8);
+    doc.text('4. NO CONFORMIDADES (NCR)', 14, y+4.5);
+    y += 10;
+
+    // Resumen NCR
+    const nKpis = [
+      {v:ncrs.length.toString(),l:'Total',c:[80,80,80]},
+      {v:ncrs.filter(n=>n.estado==='Abierta').length.toString(),l:'Abiertas',c:[200,40,40]},
+      {v:ncrs.filter(n=>n.estado==='En corrección').length.toString(),l:'En corrección',c:[194,100,20]},
+      {v:ncrs.filter(n=>n.estado==='Cerrada').length.toString(),l:'Cerradas',c:[34,163,74]},
+    ];
+    nKpis.forEach((k,i) => {
+      const x = 10 + i*48;
+      doc.setFillColor(248,248,248);
+      doc.rect(x, y, 44, 14, 'F');
+      doc.setFillColor(k.c[0],k.c[1],k.c[2]);
+      doc.rect(x, y, 44, 1, 'F');
+      doc.setTextColor(k.c[0],k.c[1],k.c[2]);
+      doc.setFont('helvetica','bold');
+      doc.setFontSize(16);
+      doc.text(k.v, x+22, y+10, {align:'center'});
+      doc.setTextColor(100,100,100);
+      doc.setFont('helvetica','normal');
+      doc.setFontSize(6);
+      doc.text(k.l.toUpperCase(), x+22, y+13, {align:'center'});
+    });
+    y += 20;
+
+    const nHeaders = ['ID NCR','Fecha','Título','Categoría','Severidad','Responsable','Estado'];
+    const nColX = [10,28,50,110,138,158,186];
+    doc.setFillColor(26,26,26);
+    doc.rect(10, y, 190, 7, 'F');
+    nHeaders.forEach((h,i) => {
+      doc.setTextColor(200,200,200);
+      doc.setFont('helvetica','bold');
+      doc.setFontSize(6.5);
+      doc.text(h, nColX[i]+1, y+5);
+    });
+    y += 7;
+
+    ncrs.forEach((n,ri) => {
+      if (y > 260) { y = nuevaPagina(); }
+      doc.setFillColor(ri%2===0?250:245,ri%2===0?250:245,ri%2===0?250:245);
+      doc.rect(10, y, 190, 7, 'F');
+      const estC = n.estado==='Cerrada'?[34,163,74]:n.estado==='Abierta'?[200,40,40]:[194,100,20];
+      const vals = [n.id, n.fecha||'—', (n.titulo||'—').substring(0,28), n.categoria||'—', n.severidad||'—', (n.responsable||'—').substring(0,16), n.estado||'—'];
+      vals.forEach((v,i) => {
+        const tcN=i===6?estC:i===0?[200,40,40]:[60,60,60]; doc.setTextColor(tcN[0],tcN[1],tcN[2]);
+        doc.setFont('helvetica', i===0||i===6?'bold':'normal');
+        doc.setFontSize(7);
+        doc.text(v.toString(), nColX[i]+1, y+5);
+      });
+      y += 7;
+    });
+    y += 6;
+  }
+
+  // ── RFI ──
+  const rfis = Array.isArray(DATA_RFI) ? DATA_RFI : (DATA_RFI?.rfis || []);
+  if (rfis.length) {
+    if (y > 220) { y = nuevaPagina(); }
+    doc.setFillColor(240,240,240);
+    doc.rect(10, y, 190, 6, 'F');
+    doc.setTextColor(50,50,50);
+    doc.setFont('helvetica','bold');
+    doc.setFontSize(8);
+    doc.text('5. SOLICITUDES DE INFORMACIÓN (RFI)', 14, y+4.5);
+    y += 10;
+
+    const rHeaders = ['ID RFI','Fecha','Asunto','Dirigido a','Impacto','Estado'];
+    const rColX = [10,28,50,120,152,172];
+    doc.setFillColor(26,26,26);
+    doc.rect(10, y, 190, 7, 'F');
+    rHeaders.forEach((h,i) => {
+      doc.setTextColor(200,200,200);
+      doc.setFont('helvetica','bold');
+      doc.setFontSize(6.5);
+      doc.text(h, rColX[i]+1, y+5);
+    });
+    y += 7;
+
+    rfis.forEach((r,ri) => {
+      if (y > 260) { y = nuevaPagina(); }
+      doc.setFillColor(ri%2===0?250:245,ri%2===0?250:245,ri%2===0?250:245);
+      doc.rect(10, y, 190, 7, 'F');
+      const estC = r.estado==='Cerrado'?[34,163,74]:r.estado==='Respondido'?[34,163,74]:[56,189,248];
+      const vals = [r.id, r.fecha||'—', (r.titulo||'—').substring(0,34), (r.dirigido||'—').substring(0,18), r.impacto||'—', r.estado||'—'];
+      vals.forEach((v,i) => {
+        const tcR=i===5?estC:i===0?[56,149,200]:[60,60,60]; doc.setTextColor(tcR[0],tcR[1],tcR[2]);
+        doc.setFont('helvetica', i===0||i===5?'bold':'normal');
+        doc.setFontSize(7);
+        doc.text(v.toString(), rColX[i]+1, y+5);
+      });
+      y += 7;
+    });
+    y += 6;
+  }
+
+  // ── FOTOS ──
+  const fotosValidas = FOTOS.filter(Boolean);
+  if (fotosValidas.length) {
+    y = nuevaPagina();
+    doc.setFillColor(240,240,240);
+    doc.rect(10, y, 190, 6, 'F');
+    doc.setTextColor(50,50,50);
+    doc.setFont('helvetica','bold');
+    doc.setFontSize(8);
+    doc.text('6. REGISTRO FOTOGRÁFICO', 14, y+4.5);
+    y += 12;
+
+    const fW = 88, fH = 60;
+    fotosValidas.slice(0,8).forEach((f, i) => {
+      const col = i%2, row = Math.floor(i/2);
+      const fx = 10 + col*(fW+10);
+      const fy = y + row*(fH+14);
+      try {
+        doc.addImage(f.data, 'JPEG', fx, fy, fW, fH);
+        doc.setFillColor(240,240,240);
+        doc.rect(fx, fy+fH, fW, 8, 'F');
+        doc.setTextColor(80,80,80);
+        doc.setFont('helvetica','normal');
+        doc.setFontSize(6.5);
+        doc.text(f.nombre.substring(0,30), fx+2, fy+fH+5.5);
+      } catch(e) {}
+    });
+    y += Math.ceil(fotosValidas.length/2)*(fH+14) + 6;
+  }
+
+  // ── OBSERVACIONES FINALES ──
+  const obsFinal = document.getElementById('obs-final').value;
+  if (obsFinal) {
+    if (y > 220) { y = nuevaPagina(); }
+    doc.setFillColor(240,240,240);
+    doc.rect(10, y, 190, 6, 'F');
+    doc.setTextColor(50,50,50);
+    doc.setFont('helvetica','bold');
+    doc.setFontSize(8);
+    doc.text('7. OBSERVACIONES Y CONCLUSIONES', 14, y+4.5);
+    y += 10;
+    doc.setFillColor(250,250,250);
+    doc.setDrawColor(220,220,220);
+    const obsLines = doc.splitTextToSize(obsFinal, 182);
+    const obsH = Math.min(obsLines.length,10)*5+8;
+    doc.roundedRect(10,y,190,obsH,1,1,'FD');
+    doc.setFillColor(250,204,21);
+    doc.rect(10,y,2,obsH,'F');
+    doc.setTextColor(50,50,50);
+    doc.setFont('helvetica','normal');
+    doc.setFontSize(9);
+    doc.text(obsLines.slice(0,10),16,y+6);
+    y += obsH+10;
+  }
+
+  // ── FIRMAS ──
+  if (y > 230) { y = nuevaPagina(); }
+  doc.setFillColor(240,240,240);
+  doc.rect(10, y, 190, 6, 'F');
+  doc.setTextColor(50,50,50);
+  doc.setFont('helvetica','bold');
+  doc.setFontSize(8);
+  doc.text('FIRMAS DE APROBACIÓN', 14, y+4.5);
+  y += 12;
+
+  const firmantes = [
+    document.getElementById('cfg-residente').value || 'Ing. Residente BIM',
+    document.getElementById('cfg-coordinador').value || 'Coordinador BIM',
+    document.getElementById('cfg-interventoria').value || 'Interventoría',
+  ];
+  firmantes.forEach((f,i) => {
+    const x = 10 + i*66;
+    doc.setFillColor(248,248,248);
+    doc.setDrawColor(220,220,220);
+    doc.roundedRect(x,y,60,28,1,1,'FD');
+    doc.setDrawColor(180,180,180);
+    doc.line(x+5,y+20,x+55,y+20);
+    doc.setTextColor(120,120,120);
+    doc.setFont('helvetica','normal');
+    doc.setFontSize(6.5);
+    doc.text(f.substring(0,28), x+30, y+24, {align:'center'});
+    doc.setTextColor(80,80,80);
+    doc.setFont('helvetica','bold');
+    doc.setFontSize(7);
+    doc.text(i===0?'RESIDENTE BIM':i===1?'COORDINADOR BIM':'INTERVENTORÍA', x+30, y+6, {align:'center'});
+  });
+
+  // Footer última página
+  doc.setFillColor(26,26,26);
+  doc.rect(0,H-12,W,12,'F');
+  doc.setFillColor(250,204,21);
+  doc.rect(0,H-12,W,1,'F');
+  doc.setTextColor(150,150,150);
+  doc.setFont('helvetica','normal');
+  doc.setFontSize(7);
+  doc.text('LF BIM Studio  ·  Ing. Luis Manuel Fuentes Perez  ·  Generado: ' + new Date().toLocaleDateString('es-CO'), W/2, H-5, {align:'center'});
+
+  const fecha = new Date().toISOString().split('T')[0];
+  const proy = (document.getElementById('cfg-proyecto').value||'Proyecto').replace(/[^\w]/g,'_');
+  doc.save('InformeMensual_' + proy + '_' + fecha + '.pdf');
+  toast('✓ Informe generado correctamente');
+};
+
+// ── Toast ─────────────────────────────────────────────
+function toast(msg) {
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('on');
+  clearTimeout(t._t); t._t=setTimeout(()=>t.classList.remove('on'),3500);
+}
+
+// ── Init ──────────────────────────────────────────────
+document.getElementById('cfg-mes').value = new Date().toISOString().substring(0,7);
+document.getElementById('cfg-residente').value = 'Ing. Luis Manuel Fuentes Perez';
+
+// Cargar desde sessionStorage si viene de la Suite
+(function() {
+  const raw = sessionStorage.getItem('BIM_JSON_DATA');
+  if (raw) try {
+    const data = JSON.parse(raw);
+    DATA_AVANCE = data.elementos ? data : null;
+    if (DATA_AVANCE) {
+      DATA_AVANCE.elementos.forEach(el => {
+        el._est = normEst(el.estado_ejecucion || el.estado || '');
+        el._fin = parseF(el.fecha_fin_plan);
+      });
+      document.getElementById('dz-avance').classList.add('loaded');
+      document.getElementById('dz-avance-txt').textContent = '✓ ' + (DATA_AVANCE.proyecto||'Proyecto');
+      document.getElementById('cfg-proyecto').value = DATA_AVANCE.proyecto || '';
+      actualizarPreview();
+    }
+  } catch(e) {}
+})();
+
+// Actualizar preview cuando cambie el mes
+document.getElementById('cfg-mes').addEventListener('change', () => {
+  if (DATA_AVANCE) actualizarPreview();
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,919 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>NCR — No Conformidades · LF BIM Studio</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=Barlow:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;background:#0A0A0B;color:#F4F4F0;font-family:'Barlow',sans-serif;-webkit-font-smoothing:antialiased;}
+
+/* ── LAYOUT ── */
+#app{display:grid;grid-template-rows:52px 1fr;height:100vh;}
+#content{display:grid;grid-template-columns:420px 1fr;overflow:hidden;}
+
+/* ── TOPBAR ── */
+#topbar{
+  background:rgba(10,10,11,0.97);border-bottom:2px solid #EF4444;
+  display:flex;align-items:center;gap:14px;padding:0 20px;
+  backdrop-filter:blur(12px);z-index:100;
+}
+.tb-mark{width:34px;height:34px;background:#EF4444;color:#fff;display:flex;align-items:center;justify-content:center;font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:11px;flex-shrink:0;}
+.tb-title{font-size:14px;font-weight:700;letter-spacing:0.04em;text-transform:uppercase;}
+.tb-sub{font-size:9px;color:#EF4444;letter-spacing:0.14em;text-transform:uppercase;margin-top:1px;font-family:'JetBrains Mono',monospace;}
+.tb-sep{flex:1;}
+.tb-stats{display:flex;gap:20px;}
+.tb-stat{text-align:center;}
+.tb-stat-val{font-size:18px;font-weight:800;font-family:'Barlow Condensed',sans-serif;line-height:1;}
+.tb-stat-lbl{font-size:8px;color:#52525B;letter-spacing:0.1em;text-transform:uppercase;font-family:'JetBrains Mono',monospace;}
+
+/* ── PANEL IZQUIERDO ── */
+#panel{background:#111113;border-right:1px solid #1F1F23;overflow-y:auto;display:flex;flex-direction:column;}
+.panel-section{padding:14px 16px;border-bottom:1px solid #1F1F23;}
+.panel-label{font-size:9px;font-weight:700;color:#EF4444;letter-spacing:0.2em;text-transform:uppercase;margin-bottom:10px;display:flex;align-items:center;gap:8px;font-family:'JetBrains Mono',monospace;}
+.panel-label::before{content:'';width:14px;height:1px;background:#EF4444;}
+
+/* Tabs */
+.tabs{display:flex;gap:2px;margin-bottom:0;}
+.tab{flex:1;padding:8px;background:#18181B;border:1px solid #27272A;color:#52525B;font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;cursor:pointer;text-align:center;transition:all 0.15s;font-family:'Barlow Condensed',sans-serif;}
+.tab:hover{border-color:#EF4444;color:#EF4444;}
+.tab.active{background:#2D0A0A;border-color:#EF4444;color:#EF4444;}
+
+/* Formulario */
+.form-group{margin-bottom:10px;}
+.form-label{font-size:9px;color:#52525B;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:4px;display:block;font-family:'JetBrains Mono',monospace;}
+.form-input{width:100%;padding:8px 10px;background:#18181B;border:1px solid #27272A;color:#F4F4F0;font-size:12px;font-family:'Barlow',sans-serif;transition:border-color 0.15s;outline:none;}
+.form-input:focus{border-color:#EF4444;}
+.form-input::placeholder{color:#3F3F46;}
+.form-textarea{width:100%;padding:8px 10px;background:#18181B;border:1px solid #27272A;color:#F4F4F0;font-size:12px;font-family:'Barlow',sans-serif;outline:none;resize:vertical;min-height:70px;}
+.form-textarea:focus{border-color:#EF4444;}
+.form-select{width:100%;padding:8px 10px;background:#18181B;border:1px solid #27272A;color:#F4F4F0;font-size:12px;font-family:'Barlow',sans-serif;outline:none;cursor:pointer;}
+.form-select:focus{border-color:#EF4444;}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+
+/* Botones */
+.btn-primary{width:100%;padding:12px;background:#EF4444;color:#fff;border:none;font-size:12px;font-weight:800;letter-spacing:0.1em;text-transform:uppercase;cursor:pointer;transition:all 0.2s;font-family:'Barlow Condensed',sans-serif;}
+.btn-primary:hover{background:#DC2626;}
+.btn-secondary{width:100%;padding:10px;background:#18181B;border:1px solid #27272A;color:#9A9A95;font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;cursor:pointer;transition:all 0.2s;font-family:'Barlow Condensed',sans-serif;margin-top:6px;}
+.btn-secondary:hover{border-color:#EF4444;color:#EF4444;}
+
+/* Lista NCR */
+.ncr-item{padding:12px 14px;border-left:3px solid;margin-bottom:6px;cursor:pointer;transition:all 0.15s;background:#111113;border-top:1px solid #1F1F23;border-right:1px solid #1F1F23;border-bottom:1px solid #1F1F23;}
+.ncr-item:hover{background:#18181B;}
+.ncr-item.selected{background:#1F0A0A;}
+.ncr-abierta{border-left-color:#EF4444;}
+.ncr-en-correccion{border-left-color:#FB923C;}
+.ncr-cerrada{border-left-color:#22C55E;}
+.ncr-rechazada{border-left-color:#52525B;}
+.ncr-head{display:flex;align-items:center;gap:8px;margin-bottom:4px;}
+.ncr-id{font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:700;color:#EF4444;}
+.ncr-estado-badge{font-size:8px;font-weight:700;padding:2px 8px;letter-spacing:0.06em;text-transform:uppercase;margin-left:auto;}
+.est-abierta{background:#2D0A0A;color:#EF4444;border:1px solid #EF4444;}
+.est-en-correccion{background:#1C1208;color:#FB923C;border:1px solid #FB923C;}
+.est-cerrada{background:#052E16;color:#22C55E;border:1px solid #22C55E;}
+.est-rechazada{background:#18181B;color:#52525B;border:1px solid #27272A;}
+.ncr-desc{font-size:11px;color:#9A9A95;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.ncr-meta{font-size:10px;color:#3F3F46;font-family:'JetBrains Mono',monospace;margin-top:4px;}
+
+/* Filtros estado */
+.filtros-estado{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:12px;}
+.filtro-est{padding:4px 10px;font-size:9px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;cursor:pointer;border:1px solid #27272A;color:#52525B;font-family:'Barlow Condensed',sans-serif;transition:all 0.15s;}
+.filtro-est:hover,.filtro-est.active{border-color:#EF4444;color:#EF4444;background:#2D0A0A;}
+
+/* ── PANEL DERECHO — DETALLE ── */
+#detalle{background:#0A0A0B;overflow-y:auto;padding:24px;}
+#detalle-vacio{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:12px;color:#3F3F46;}
+#detalle-vacio .ico{font-size:48px;}
+#detalle-vacio .txt{font-size:12px;letter-spacing:0.1em;text-transform:uppercase;font-family:'JetBrains Mono',monospace;}
+
+/* Detalle NCR */
+#ncr-detalle{display:none;}
+.det-header{display:flex;align-items:center;gap:12px;margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid #1F1F23;}
+.det-id{font-family:'Barlow Condensed',sans-serif;font-size:28px;font-weight:900;color:#EF4444;}
+.det-info{flex:1;}
+.det-titulo{font-size:16px;font-weight:700;color:#F4F4F0;margin-bottom:2px;}
+.det-meta{font-size:10px;color:#52525B;font-family:'JetBrains Mono',monospace;}
+.det-actions{display:flex;gap:8px;}
+.det-btn{padding:8px 16px;font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;cursor:pointer;border:1px solid;transition:all 0.15s;}
+.det-btn-pdf{background:#18181B;border-color:#27272A;color:#9A9A95;}
+.det-btn-pdf:hover{border-color:#FACC15;color:#FACC15;}
+
+.det-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;}
+.det-card{background:#111113;border:1px solid #1F1F23;padding:14px;}
+.det-card-label{font-size:9px;color:#52525B;letter-spacing:0.12em;text-transform:uppercase;font-family:'JetBrains Mono',monospace;margin-bottom:6px;}
+.det-card-val{font-size:13px;color:#F4F4F0;font-weight:500;}
+
+.det-section{margin-bottom:20px;}
+.det-section-title{font-size:11px;font-weight:700;color:#EF4444;letter-spacing:0.12em;text-transform:uppercase;font-family:'JetBrains Mono',monospace;margin-bottom:10px;display:flex;align-items:center;gap:8px;}
+.det-section-title::before{content:'';width:14px;height:1px;background:#EF4444;}
+.det-desc-box{background:#111113;border:1px solid #1F1F23;border-left:3px solid #EF4444;padding:14px;font-size:13px;color:#F4F4F0;line-height:1.7;}
+
+/* Timeline de estados */
+.timeline{display:flex;flex-direction:column;gap:0;}
+.tl-item{display:flex;gap:12px;padding:10px 0;border-bottom:1px solid #1F1F23;}
+.tl-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;margin-top:3px;}
+.tl-content{flex:1;}
+.tl-estado{font-size:11px;font-weight:700;color:#F4F4F0;}
+.tl-fecha{font-size:10px;color:#52525B;font-family:'JetBrains Mono',monospace;}
+.tl-obs{font-size:11px;color:#9A9A95;margin-top:2px;}
+
+/* Cambiar estado */
+.cambio-estado{background:#111113;border:1px solid #1F1F23;padding:14px;margin-bottom:20px;}
+.cambio-row{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:end;}
+
+/* Fotos */
+.fotos-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
+.foto-item{background:#111113;border:1px solid #1F1F23;padding:8px;text-align:center;}
+.foto-ico{font-size:24px;margin-bottom:4px;}
+.foto-nombre{font-size:9px;color:#52525B;font-family:'JetBrains Mono',monospace;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.foto-add{border:1px dashed #27272A;background:#18181B;padding:12px;text-align:center;cursor:pointer;transition:all 0.2s;}
+.foto-add:hover{border-color:#EF4444;}
+.foto-add input{display:none;}
+
+/* Toast */
+#toast{position:fixed;bottom:20px;right:16px;background:#18181B;border:1px solid #27272A;border-left:3px solid #EF4444;padding:10px 16px;font-size:11px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;opacity:0;transform:translateY(8px);transition:all 0.3s;z-index:300;font-family:'Barlow Condensed',sans-serif;}
+#toast.on{opacity:1;transform:translateY(0);}
+
+::-webkit-scrollbar{width:4px;}
+::-webkit-scrollbar-track{background:#111113;}
+::-webkit-scrollbar-thumb{background:#27272A;}
+
+@media(max-width:900px){#content{grid-template-columns:1fr;}#detalle{display:none;}}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- TOPBAR -->
+  <div id="topbar">
+    <div class="tb-mark">NCR</div>
+    <div>
+      <div class="tb-title">No Conformidades</div>
+      <div class="tb-sub">LF BIM Studio · NSR-10 · Trazabilidad de calidad</div>
+    </div>
+    <div class="tb-sep"></div>
+    <div class="tb-stats">
+      <div class="tb-stat">
+        <div class="tb-stat-val" id="st-total" style="color:#FACC15">0</div>
+        <div class="tb-stat-lbl">Total NCR</div>
+      </div>
+      <div class="tb-stat">
+        <div class="tb-stat-val" id="st-abiertas" style="color:#EF4444">0</div>
+        <div class="tb-stat-lbl">Abiertas</div>
+      </div>
+      <div class="tb-stat">
+        <div class="tb-stat-val" id="st-correccion" style="color:#FB923C">0</div>
+        <div class="tb-stat-lbl">En corrección</div>
+      </div>
+      <div class="tb-stat">
+        <div class="tb-stat-val" id="st-cerradas" style="color:#22C55E">0</div>
+        <div class="tb-stat-lbl">Cerradas</div>
+      </div>
+    </div>
+    <button style="padding:7px 14px;background:#18181B;border:1px solid #27272A;color:#9A9A95;font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;cursor:pointer;" onclick="exportarRegistroJSON()">↓ Exportar JSON</button>
+  </div>
+
+  <div id="content">
+
+    <!-- PANEL IZQUIERDO -->
+    <div id="panel">
+
+      <!-- Tabs -->
+      <div class="panel-section" style="padding-bottom:0;">
+        <div class="tabs">
+          <div class="tab active" id="tab-nueva" onclick="switchTab('nueva')">+ Nueva NCR</div>
+          <div class="tab" id="tab-lista" onclick="switchTab('lista')">Registro</div>
+        </div>
+      </div>
+
+      <!-- TAB: NUEVA NCR -->
+      <div id="pane-nueva" class="panel-section" style="flex:1;">
+        <div class="panel-label" style="margin-top:4px;">Registrar no conformidad</div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">ID NCR</label>
+            <input class="form-input" id="f-id" placeholder="NCR-001" type="text"/>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Fecha detección</label>
+            <input class="form-input" id="f-fecha" type="date"/>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Título / Descripción breve</label>
+          <input class="form-input" id="f-titulo" placeholder="Ej: Recubrimiento insuficiente columna C3" type="text"/>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Descripción detallada</label>
+          <textarea class="form-textarea" id="f-desc" placeholder="Describe el problema, ubicación exacta, magnitud y condiciones observadas..."></textarea>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Categoría</label>
+            <select class="form-select" id="f-categoria">
+              <option value="Concreto">Concreto</option>
+              <option value="Acero">Acero de refuerzo</option>
+              <option value="Geometría">Geometría / Dimensiones</option>
+              <option value="Recubrimiento">Recubrimiento</option>
+              <option value="Junta">Juntas de construcción</option>
+              <option value="Acabado">Acabado superficial</option>
+              <option value="Documentación">Documentación</option>
+              <option value="Proceso">Proceso constructivo</option>
+              <option value="Otro">Otro</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Severidad</label>
+            <select class="form-select" id="f-severidad">
+              <option value="Crítica">🔴 Crítica</option>
+              <option value="Mayor" selected>🟠 Mayor</option>
+              <option value="Menor">🟡 Menor</option>
+              <option value="Observación">🔵 Observación</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Elemento afectado (ID o descripción)</label>
+          <input class="form-input" id="f-elemento" placeholder="Ej: Columna C3 Nivel S02 / ID: 420437"/>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Responsable corrección</label>
+            <input class="form-input" id="f-responsable" placeholder="Ing. Nombre Apellido"/>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Fecha límite</label>
+            <input class="form-input" id="f-limite" type="date"/>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Levantada por</label>
+          <input class="form-input" id="f-levantada" placeholder="Residente / Interventoría / Inspector"/>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Acción correctiva requerida</label>
+          <textarea class="form-textarea" id="f-accion" placeholder="Describe la corrección que debe ejecutarse..." style="min-height:50px;"></textarea>
+        </div>
+
+        <button class="btn-primary" onclick="registrarNCR()">⚡ Registrar NCR</button>
+        <button class="btn-secondary" onclick="exportarRegistroJSON()">↓ Exportar registro JSON</button>
+      </div>
+
+      <!-- TAB: LISTA -->
+      <div id="pane-lista" class="panel-section" style="flex:1;display:none;">
+        <div class="panel-label" style="margin-top:4px;">Registro de NCR</div>
+        <div class="filtros-estado">
+          <div class="filtro-est active" onclick="filtrar('todas',this)">Todas</div>
+          <div class="filtro-est" onclick="filtrar('Abierta',this)">Abiertas</div>
+          <div class="filtro-est" onclick="filtrar('En corrección',this)">En corrección</div>
+          <div class="filtro-est" onclick="filtrar('Cerrada',this)">Cerradas</div>
+          <div class="filtro-est" onclick="filtrar('Rechazada',this)">Rechazadas</div>
+        </div>
+        <div id="lista-ncr">
+          <div style="color:#3F3F46;font-size:11px;text-align:center;padding:20px;">No hay NCR registradas</div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- PANEL DERECHO — DETALLE -->
+    <div id="detalle">
+      <div id="detalle-vacio">
+        <div class="ico">📋</div>
+        <div class="txt">Selecciona una NCR para ver el detalle</div>
+        <div style="font-size:10px;color:#3F3F46;font-family:'JetBrains Mono',monospace;">o registra una nueva en el panel izquierdo</div>
+      </div>
+
+      <div id="ncr-detalle">
+
+        <!-- Header -->
+        <div class="det-header">
+          <div class="det-id" id="det-id">NCR-001</div>
+          <div class="det-info">
+            <div class="det-titulo" id="det-titulo">—</div>
+            <div class="det-meta" id="det-meta">—</div>
+          </div>
+          <div class="det-actions">
+            <button class="det-btn det-btn-pdf" onclick="exportarPDF()">↓ PDF</button>
+          </div>
+        </div>
+
+        <!-- Info grid -->
+        <div class="det-grid">
+          <div class="det-card">
+            <div class="det-card-label">Estado actual</div>
+            <div class="det-card-val" id="det-estado-badge">—</div>
+          </div>
+          <div class="det-card">
+            <div class="det-card-label">Severidad</div>
+            <div class="det-card-val" id="det-severidad">—</div>
+          </div>
+          <div class="det-card">
+            <div class="det-card-label">Categoría</div>
+            <div class="det-card-val" id="det-categoria">—</div>
+          </div>
+          <div class="det-card">
+            <div class="det-card-label">Elemento afectado</div>
+            <div class="det-card-val" id="det-elemento">—</div>
+          </div>
+          <div class="det-card">
+            <div class="det-card-label">Responsable corrección</div>
+            <div class="det-card-val" id="det-responsable">—</div>
+          </div>
+          <div class="det-card">
+            <div class="det-card-label">Fecha límite</div>
+            <div class="det-card-val" id="det-limite">—</div>
+          </div>
+        </div>
+
+        <!-- Descripción -->
+        <div class="det-section">
+          <div class="det-section-title">Descripción del problema</div>
+          <div class="det-desc-box" id="det-desc">—</div>
+        </div>
+
+        <!-- Acción correctiva -->
+        <div class="det-section">
+          <div class="det-section-title">Acción correctiva requerida</div>
+          <div class="det-desc-box" id="det-accion" style="border-left-color:#FB923C;">—</div>
+        </div>
+
+        <!-- Cambiar estado -->
+        <div class="det-section">
+          <div class="det-section-title">Actualizar estado</div>
+          <div class="cambio-estado">
+            <div class="form-row" style="margin-bottom:8px;">
+              <div class="form-group" style="margin-bottom:0;">
+                <label class="form-label">Nuevo estado</label>
+                <select class="form-select" id="nuevo-estado">
+                  <option value="Abierta">🔴 Abierta</option>
+                  <option value="En corrección">🟠 En corrección</option>
+                  <option value="Cerrada">🟢 Cerrada</option>
+                  <option value="Rechazada">⚫ Rechazada</option>
+                </select>
+              </div>
+              <div class="form-group" style="margin-bottom:0;">
+                <label class="form-label">Fecha</label>
+                <input class="form-input" id="nuevo-fecha" type="date"/>
+              </div>
+            </div>
+            <div class="form-group" style="margin-bottom:8px;">
+              <label class="form-label">Observación</label>
+              <textarea class="form-textarea" id="nuevo-obs" placeholder="Descripción del cambio de estado..." style="min-height:50px;"></textarea>
+            </div>
+            <button class="btn-primary" style="background:#FB923C;" onclick="actualizarEstado()">Actualizar estado</button>
+          </div>
+        </div>
+
+        <!-- Timeline -->
+        <div class="det-section">
+          <div class="det-section-title">Historial de estados</div>
+          <div class="timeline" id="det-timeline"></div>
+        </div>
+
+        <!-- Fotos -->
+        <div class="det-section">
+          <div class="det-section-title">Evidencia fotográfica</div>
+          <div class="fotos-grid" id="det-fotos">
+            <div class="foto-add" onclick="document.getElementById('foto-input').click()">
+              <input type="file" id="foto-input" accept="image/*" multiple onchange="agregarFotos(this.files)"/>
+              <div style="font-size:20px;">📷</div>
+              <div style="font-size:10px;color:#52525B;font-family:'JetBrains Mono',monospace;margin-top:4px;">Agregar foto</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ══════════════════════════════════════════════════════
+// ESTADO
+// ══════════════════════════════════════════════════════
+let NCRS = [];
+let NCR_ACTIVA = null;
+let FILTRO = 'todas';
+
+// Cargar desde localStorage si existe
+try {
+  const saved = localStorage.getItem('LF_NCR_DATA');
+  if (saved) NCRS = JSON.parse(saved);
+} catch(e) {}
+
+// ── Helpers ───────────────────────────────────────────
+function guardarLocal() {
+  try { localStorage.setItem('LF_NCR_DATA', JSON.stringify(NCRS)); } catch(e) {}
+}
+
+function colorEstado(est) {
+  return {
+    'Abierta':       '#EF4444',
+    'En corrección': '#FB923C',
+    'Cerrada':       '#22C55E',
+    'Rechazada':     '#52525B',
+  }[est] || '#52525B';
+}
+
+function clsEstado(est) {
+  return {
+    'Abierta':       'est-abierta',
+    'En corrección': 'est-en-correccion',
+    'Cerrada':       'est-cerrada',
+    'Rechazada':     'est-rechazada',
+  }[est] || 'est-rechazada';
+}
+
+function clsNCR(est) {
+  return {
+    'Abierta':       'ncr-abierta',
+    'En corrección': 'ncr-en-correccion',
+    'Cerrada':       'ncr-cerrada',
+    'Rechazada':     'ncr-rechazada',
+  }[est] || 'ncr-rechazada';
+}
+
+// ── Registrar NCR ─────────────────────────────────────
+window.registrarNCR = function() {
+  const id          = document.getElementById('f-id').value.trim();
+  const fecha       = document.getElementById('f-fecha').value;
+  const titulo      = document.getElementById('f-titulo').value.trim();
+  const desc        = document.getElementById('f-desc').value.trim();
+  const categoria   = document.getElementById('f-categoria').value;
+  const severidad   = document.getElementById('f-severidad').value;
+  const elemento    = document.getElementById('f-elemento').value.trim();
+  const responsable = document.getElementById('f-responsable').value.trim();
+  const limite      = document.getElementById('f-limite').value;
+  const levantada   = document.getElementById('f-levantada').value.trim();
+  const accion      = document.getElementById('f-accion').value.trim();
+
+  if (!id)     { toast('⚠ Ingresa el ID de la NCR'); return; }
+  if (!titulo) { toast('⚠ Ingresa el título'); return; }
+  if (!fecha)  { toast('⚠ Ingresa la fecha de detección'); return; }
+  if (NCRS.find(n => n.id === id)) { toast('⚠ Ya existe una NCR con ese ID'); return; }
+
+  const ncr = {
+    id, fecha, titulo, desc, categoria, severidad,
+    elemento, responsable, limite, levantada, accion,
+    estado: 'Abierta',
+    fotos: [],
+    timeline: [{
+      estado: 'Abierta',
+      fecha: fecha,
+      obs: 'NCR registrada',
+      por: levantada || 'Sistema',
+    }],
+    fechaRegistro: new Date().toISOString(),
+  };
+
+  NCRS.unshift(ncr);
+  guardarLocal();
+  actualizarStats();
+  renderLista();
+
+  // Limpiar formulario
+  ['f-id','f-titulo','f-desc','f-elemento','f-responsable','f-limite','f-levantada','f-accion']
+    .forEach(id => document.getElementById(id).value = '');
+  document.getElementById('f-fecha').value = new Date().toISOString().split('T')[0];
+
+  toast('✓ NCR ' + id + ' registrada');
+  switchTab('lista');
+  verNCR(ncr.id);
+};
+
+// ── Actualizar estado ─────────────────────────────────
+window.actualizarEstado = function() {
+  if (!NCR_ACTIVA) return;
+  const nuevoEst = document.getElementById('nuevo-estado').value;
+  const nuevaFecha = document.getElementById('nuevo-fecha').value || new Date().toISOString().split('T')[0];
+  const obs = document.getElementById('nuevo-obs').value.trim();
+
+  const ncr = NCRS.find(n => n.id === NCR_ACTIVA);
+  if (!ncr) return;
+
+  ncr.estado = nuevoEst;
+  ncr.timeline.push({
+    estado: nuevoEst,
+    fecha: nuevaFecha,
+    obs: obs || '—',
+    por: 'Usuario',
+  });
+
+  guardarLocal();
+  actualizarStats();
+  renderLista();
+  verNCR(NCR_ACTIVA);
+  document.getElementById('nuevo-obs').value = '';
+  toast('✓ Estado actualizado: ' + nuevoEst);
+};
+
+// ── Ver NCR ───────────────────────────────────────────
+window.verNCR = function(id) {
+  NCR_ACTIVA = id;
+  const ncr = NCRS.find(n => n.id === id);
+  if (!ncr) return;
+
+  document.getElementById('detalle-vacio').style.display = 'none';
+  document.getElementById('ncr-detalle').style.display = 'block';
+
+  document.getElementById('det-id').textContent = ncr.id;
+  document.getElementById('det-titulo').textContent = ncr.titulo;
+  document.getElementById('det-meta').textContent =
+    ncr.fecha + ' · ' + (ncr.levantada || 'Sin especificar') + ' · ' + ncr.categoria;
+  document.getElementById('det-desc').textContent = ncr.desc || 'Sin descripción detallada.';
+  document.getElementById('det-accion').textContent = ncr.accion || 'Sin acción correctiva especificada.';
+  document.getElementById('det-categoria').textContent = ncr.categoria;
+  document.getElementById('det-elemento').textContent = ncr.elemento || '—';
+  document.getElementById('det-responsable').textContent = ncr.responsable || 'Sin asignar';
+  document.getElementById('det-limite').textContent = ncr.limite || '—';
+
+  const sev = {
+    'Crítica': '🔴 Crítica',
+    'Mayor':   '🟠 Mayor',
+    'Menor':   '🟡 Menor',
+    'Observación': '🔵 Observación',
+  };
+  document.getElementById('det-severidad').textContent = sev[ncr.severidad] || ncr.severidad;
+
+  const color = colorEstado(ncr.estado);
+  document.getElementById('det-estado-badge').innerHTML =
+    `<span class="${clsEstado(ncr.estado)}" style="font-size:12px;font-weight:700;padding:4px 12px;border:1px solid;">${ncr.estado.toUpperCase()}</span>`;
+
+  // Timeline
+  const tl = document.getElementById('det-timeline');
+  tl.innerHTML = ncr.timeline.slice().reverse().map(t => `
+    <div class="tl-item">
+      <div class="tl-dot" style="background:${colorEstado(t.estado)};"></div>
+      <div class="tl-content">
+        <div class="tl-estado">${t.estado}</div>
+        <div class="tl-fecha">${t.fecha} · ${t.por}</div>
+        <div class="tl-obs">${t.obs}</div>
+      </div>
+    </div>
+  `).join('');
+
+  // Fotos
+  renderFotos(ncr);
+
+  // Marcar seleccionada en lista
+  document.querySelectorAll('.ncr-item').forEach(el => el.classList.remove('selected'));
+  const itemEl = document.querySelector(`[data-ncr-id="${id}"]`);
+  if (itemEl) itemEl.classList.add('selected');
+};
+
+// ── Fotos ─────────────────────────────────────────────
+window.agregarFotos = function(files) {
+  if (!NCR_ACTIVA || !files.length) return;
+  const ncr = NCRS.find(n => n.id === NCR_ACTIVA);
+  if (!ncr) return;
+  Array.from(files).forEach(file => {
+    const reader = new FileReader();
+    reader.onload = ev => {
+      ncr.fotos.push({ nombre: file.name, data: ev.target.result });
+      guardarLocal();
+      renderFotos(ncr);
+    };
+    reader.readAsDataURL(file);
+  });
+  toast('✓ Fotos agregadas');
+};
+
+function renderFotos(ncr) {
+  const grid = document.getElementById('det-fotos');
+  const fotosHTML = ncr.fotos.map((f, i) => `
+    <div class="foto-item">
+      <img src="${f.data}" style="width:100%;height:80px;object-fit:cover;cursor:pointer;" onclick="verFotoGrande('${f.data}')" title="${f.nombre}"/>
+      <div class="foto-nombre">${f.nombre}</div>
+    </div>
+  `).join('');
+  grid.innerHTML = fotosHTML + `
+    <div class="foto-add" onclick="document.getElementById('foto-input').click()">
+      <input type="file" id="foto-input" accept="image/*" multiple onchange="agregarFotos(this.files)"/>
+      <div style="font-size:20px;">📷</div>
+      <div style="font-size:10px;color:#52525B;font-family:'JetBrains Mono',monospace;margin-top:4px;">Agregar foto</div>
+    </div>`;
+}
+
+window.verFotoGrande = function(src) {
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.9);display:flex;align-items:center;justify-content:center;z-index:999;cursor:pointer;';
+  overlay.innerHTML = `<img src="${src}" style="max-width:90vw;max-height:90vh;object-fit:contain;"/>`;
+  overlay.onclick = () => document.body.removeChild(overlay);
+  document.body.appendChild(overlay);
+};
+
+// ── Lista y filtros ───────────────────────────────────
+window.filtrar = function(estado, btn) {
+  FILTRO = estado;
+  document.querySelectorAll('.filtro-est').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderLista();
+};
+
+function renderLista() {
+  const lista = document.getElementById('lista-ncr');
+  const filtradas = FILTRO === 'todas' ? NCRS : NCRS.filter(n => n.estado === FILTRO);
+  if (!filtradas.length) {
+    lista.innerHTML = '<div style="color:#3F3F46;font-size:11px;text-align:center;padding:20px;">Sin NCR en este filtro</div>';
+    return;
+  }
+  lista.innerHTML = filtradas.map(ncr => {
+    const hoy = new Date();
+    const limite = ncr.limite ? new Date(ncr.limite) : null;
+    const vencida = limite && limite < hoy && ncr.estado !== 'Cerrada';
+    return `<div class="ncr-item ${clsNCR(ncr.estado)} ${NCR_ACTIVA===ncr.id?'selected':''}" 
+                 data-ncr-id="${ncr.id}" onclick="verNCR('${ncr.id}')">
+      <div class="ncr-head">
+        <div class="ncr-id">${ncr.id}</div>
+        ${vencida ? '<span style="font-size:9px;color:#EF4444;font-family:JetBrains Mono,monospace;">⚠ VENCIDA</span>' : ''}
+        <div class="ncr-estado-badge ${clsEstado(ncr.estado)}">${ncr.estado}</div>
+      </div>
+      <div class="ncr-desc">${ncr.titulo}</div>
+      <div class="ncr-meta">${ncr.fecha} · ${ncr.categoria} · ${ncr.severidad}</div>
+    </div>`;
+  }).join('');
+}
+
+// ── Stats ─────────────────────────────────────────────
+function actualizarStats() {
+  document.getElementById('st-total').textContent     = NCRS.length;
+  document.getElementById('st-abiertas').textContent  = NCRS.filter(n=>n.estado==='Abierta').length;
+  document.getElementById('st-correccion').textContent= NCRS.filter(n=>n.estado==='En corrección').length;
+  document.getElementById('st-cerradas').textContent  = NCRS.filter(n=>n.estado==='Cerrada').length;
+}
+
+// ── Tabs ──────────────────────────────────────────────
+window.switchTab = function(tab) {
+  ['nueva','lista'].forEach(t => {
+    document.getElementById('tab-'+t).classList.toggle('active', t===tab);
+    document.getElementById('pane-'+t).style.display = t===tab ? 'block' : 'none';
+  });
+};
+
+// ── Exportar JSON ─────────────────────────────────────
+window.exportarRegistroJSON = function() {
+  const data = {
+    version: 'LF BIM Studio — Registro NCR v1.0',
+    fecha_export: new Date().toISOString().split('T')[0],
+    total: NCRS.length,
+    ncrs: NCRS.map(n => ({...n, fotos: n.fotos.map(f => ({nombre: f.nombre}))})),
+  };
+  const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = `RegistroNCR_${data.fecha_export}.json`;
+  link.click();
+  toast('✓ Registro exportado');
+};
+
+// ── Exportar PDF de NCR individual ───────────────────
+window.exportarPDF = function() {
+  if (!NCR_ACTIVA) return;
+  const ncr = NCRS.find(n => n.id === NCR_ACTIVA);
+  if (!ncr) return;
+
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ unit:'mm', format:'a4' });
+  const W = 210, H = 297;
+
+  // Fondo blanco
+  doc.setFillColor(255,255,255);
+  doc.rect(0,0,W,H,'F');
+
+  // Header oscuro elegante
+  doc.setFillColor(26,26,26);
+  doc.rect(0,0,W,18,'F');
+  // Acento color según severidad
+  const sevColor = {
+    'Crítica': [220,38,38],
+    'Mayor':   [180,60,30],
+    'Menor':   [120,100,20],
+    'Observación': [30,100,160],
+  }[ncr.severidad] || [180,60,30];
+  doc.setFillColor(...sevColor);
+  doc.rect(0,0,4,18,'F');
+  doc.setTextColor(255,255,255);
+  doc.setFont('helvetica','bold');
+  doc.setFontSize(11);
+  doc.text('NO CONFORMIDAD', 10, 8);
+  doc.setFont('helvetica','normal');
+  doc.setFontSize(8);
+  doc.setTextColor(180,180,180);
+  doc.text('LF BIM Studio  ·  NSR-10  ·  Trazabilidad de calidad', 10, 14);
+  doc.setTextColor(255,255,255);
+  doc.setFont('helvetica','bold');
+  doc.setFontSize(10);
+  doc.text(ncr.id, W-10, 11, {align:'right'});
+
+  // Línea separadora sutil
+  doc.setDrawColor(230,230,230);
+  doc.setLineWidth(0.3);
+
+  let y = 26;
+
+  // Título NCR
+  doc.setTextColor(26,26,26);
+  doc.setFont('helvetica','bold');
+  doc.setFontSize(14);
+  doc.text(ncr.titulo, 10, y);
+  y += 8;
+
+  // Estado badge
+  const estColors = {
+    'Abierta':       [220,38,38],
+    'En corrección': [194,100,20],
+    'Cerrada':       [22,163,74],
+    'Rechazada':     [100,100,100],
+  };
+  const ec = estColors[ncr.estado] || [100,100,100];
+  doc.setFillColor(...ec);
+  doc.roundedRect(10, y, 36, 6, 1, 1, 'F');
+  doc.setTextColor(255,255,255);
+  doc.setFont('helvetica','bold');
+  doc.setFontSize(7);
+  doc.text(ncr.estado.toUpperCase(), 28, y+4, {align:'center'});
+
+  doc.setFillColor(245,245,245);
+  doc.roundedRect(50, y, 36, 6, 1, 1, 'F');
+  doc.setTextColor(80,80,80);
+  doc.text(ncr.severidad.toUpperCase(), 68, y+4, {align:'center'});
+
+  doc.setFillColor(245,245,245);
+  doc.roundedRect(90, y, 46, 6, 1, 1, 'F');
+  doc.setTextColor(80,80,80);
+  doc.text(ncr.categoria.toUpperCase().substring(0,20), 113, y+4, {align:'center'});
+
+  y += 14;
+
+  // Línea
+  doc.setDrawColor(220,220,220);
+  doc.line(10, y, W-10, y);
+  y += 6;
+
+  // Info en grid 2x4
+  const campos = [
+    ['Fecha detección', ncr.fecha],
+    ['Levantada por', ncr.levantada||'—'],
+    ['Elemento afectado', ncr.elemento||'—'],
+    ['Responsable corrección', ncr.responsable||'—'],
+    ['Fecha límite', ncr.limite||'—'],
+    ['Estado', ncr.estado],
+  ];
+
+  campos.forEach(([lbl, val], i) => {
+    const col = i % 2;
+    const x = col === 0 ? 10 : 110;
+    if (col === 0 && i > 0) y += 14;
+    doc.setTextColor(120,120,120);
+    doc.setFont('helvetica','normal');
+    doc.setFontSize(7);
+    doc.text(lbl.toUpperCase(), x, y);
+    doc.setTextColor(30,30,30);
+    doc.setFont('helvetica','bold');
+    doc.setFontSize(9);
+    doc.text(val.toString().substring(0,40), x, y+5);
+  });
+  y += 18;
+
+  // Línea
+  doc.setDrawColor(220,220,220);
+  doc.line(10, y, W-10, y);
+  y += 6;
+
+  // Descripción
+  doc.setTextColor(...sevColor);
+  doc.setFont('helvetica','bold');
+  doc.setFontSize(8);
+  doc.text('DESCRIPCIÓN DEL PROBLEMA', 10, y);
+  y += 5;
+  doc.setFillColor(250,250,250);
+  doc.setDrawColor(220,220,220);
+  const descLines = doc.splitTextToSize(ncr.desc||'Sin descripción detallada.', 182);
+  const descH = Math.min(descLines.length, 5) * 5 + 8;
+  doc.roundedRect(10, y, 190, descH, 1, 1, 'FD');
+  doc.setFillColor(...sevColor);
+  doc.rect(10, y, 2, descH, 'F');
+  doc.setTextColor(50,50,50);
+  doc.setFont('helvetica','normal');
+  doc.setFontSize(9);
+  doc.text(descLines.slice(0,5), 16, y+6);
+  y += descH + 8;
+
+  // Acción correctiva
+  doc.setTextColor(120,80,20);
+  doc.setFont('helvetica','bold');
+  doc.setFontSize(8);
+  doc.text('ACCIÓN CORRECTIVA REQUERIDA', 10, y);
+  y += 5;
+  doc.setFillColor(255,252,245);
+  doc.setDrawColor(220,200,180);
+  const accionLines = doc.splitTextToSize(ncr.accion||'Sin acción especificada.', 182);
+  const accionH = Math.min(accionLines.length, 4) * 5 + 8;
+  doc.roundedRect(10, y, 190, accionH, 1, 1, 'FD');
+  doc.setFillColor(194,100,20);
+  doc.rect(10, y, 2, accionH, 'F');
+  doc.setTextColor(50,50,50);
+  doc.setFont('helvetica','normal');
+  doc.setFontSize(9);
+  doc.text(accionLines.slice(0,4), 16, y+6);
+  y += accionH + 8;
+
+  // Línea
+  doc.setDrawColor(220,220,220);
+  doc.line(10, y, W-10, y);
+  y += 6;
+
+  // Timeline
+  doc.setTextColor(40,120,60);
+  doc.setFont('helvetica','bold');
+  doc.setFontSize(8);
+  doc.text('HISTORIAL DE ESTADOS', 10, y);
+  y += 5;
+
+  ncr.timeline.forEach((t, i) => {
+    if (y > 240) return;
+    const tc = estColors[t.estado] || [100,100,100];
+    doc.setFillColor(i%2===0?250:255, i%2===0?250:255, i%2===0?250:255);
+    doc.rect(10, y, 190, 10, 'F');
+    doc.setFillColor(...tc);
+    doc.rect(10, y, 2, 10, 'F');
+    doc.setTextColor(...tc);
+    doc.setFont('helvetica','bold');
+    doc.setFontSize(8);
+    doc.text(t.estado, 16, y+4);
+    doc.setTextColor(100,100,100);
+    doc.setFont('helvetica','normal');
+    doc.setFontSize(7);
+    doc.text(t.fecha + '  ·  ' + t.por, 16, y+8);
+    doc.setTextColor(80,80,80);
+    doc.setFontSize(8);
+    const obsShort = t.obs.substring(0,65);
+    doc.text(obsShort, 80, y+6);
+    doc.setDrawColor(230,230,230);
+    doc.line(10, y+10, W-10, y+10);
+    y += 11;
+  });
+
+  // Firmas
+  y = Math.max(y + 10, 245);
+  doc.setDrawColor(200,200,200);
+  doc.setFillColor(250,250,250);
+  doc.roundedRect(10, y, 88, 28, 1, 1, 'FD');
+  doc.roundedRect(112, y, 88, 28, 1, 1, 'FD');
+  doc.setTextColor(120,120,120);
+  doc.setFont('helvetica','normal');
+  doc.setFontSize(7);
+  doc.text('Firma responsable de corrección', 54, y+4, {align:'center'});
+  doc.text('Firma interventoría / cierre', 156, y+4, {align:'center'});
+  doc.setDrawColor(180,180,180);
+  doc.line(20, y+20, 88, y+20);
+  doc.line(122, y+20, 190, y+20);
+  doc.setTextColor(150,150,150);
+  doc.setFontSize(6.5);
+  doc.text((ncr.responsable||'Responsable').substring(0,30), 54, y+24, {align:'center'});
+  doc.text('Interventoría', 156, y+24, {align:'center'});
+
+  // Footer
+  doc.setFillColor(245,245,245);
+  doc.rect(0,H-10,W,10,'F');
+  doc.setDrawColor(220,220,220);
+  doc.line(0,H-10,W,H-10);
+  doc.setTextColor(150,150,150);
+  doc.setFont('helvetica','normal');
+  doc.setFontSize(6.5);
+  doc.text('Ing. Luis Manuel Fuentes Perez  ·  LF BIM Studio  ·  NSR-10  ·  Generado: ' + new Date().toLocaleDateString('es-CO'), W/2, H-4, {align:'center'});
+
+  doc.save('NCR_' + ncr.id + '_' + ncr.fecha + '.pdf');
+  toast('✓ PDF exportado: NCR_' + ncr.id);
+};
+
+// ── Toast ─────────────────────────────────────────────
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('on');
+  clearTimeout(t._t); t._t = setTimeout(()=>t.classList.remove('on'), 3500);
+}
+
+// ── Init ──────────────────────────────────────────────
+document.getElementById('f-fecha').value = new Date().toISOString().split('T')[0];
+document.getElementById('nuevo-fecha').value = new Date().toISOString().split('T')[0];
+actualizarStats();
+renderLista();
+if (NCRS.length > 0) verNCR(NCRS[0].id);
+</script>
+</body>
+</html>

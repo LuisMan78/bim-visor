@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>RFI — Solicitudes de Información · LF BIM Studio</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=Barlow:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;background:#0A0A0B;color:#F4F4F0;font-family:'Barlow',sans-serif;-webkit-font-smoothing:antialiased;}
+#app{display:grid;grid-template-rows:52px 1fr;height:100vh;}
+#content{display:grid;grid-template-columns:420px 1fr;overflow:hidden;}
+
+#topbar{background:rgba(10,10,11,0.97);border-bottom:2px solid #38BDF8;display:flex;align-items:center;gap:14px;padding:0 20px;backdrop-filter:blur(12px);z-index:100;}
+.tb-mark{width:34px;height:34px;background:#38BDF8;color:#0A0A0B;display:flex;align-items:center;justify-content:center;font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:11px;flex-shrink:0;}
+.tb-title{font-size:14px;font-weight:700;letter-spacing:0.04em;text-transform:uppercase;}
+.tb-sub{font-size:9px;color:#38BDF8;letter-spacing:0.14em;text-transform:uppercase;margin-top:1px;font-family:'JetBrains Mono',monospace;}
+.tb-sep{flex:1;}
+.tb-stat{text-align:center;margin-left:16px;}
+.tb-stat-val{font-size:18px;font-weight:800;font-family:'Barlow Condensed',sans-serif;line-height:1;}
+.tb-stat-lbl{font-size:8px;color:#52525B;letter-spacing:0.1em;text-transform:uppercase;font-family:'JetBrains Mono',monospace;}
+
+#panel{background:#111113;border-right:1px solid #1F1F23;overflow-y:auto;display:flex;flex-direction:column;}
+.panel-section{padding:14px 16px;border-bottom:1px solid #1F1F23;}
+.panel-label{font-size:9px;font-weight:700;color:#38BDF8;letter-spacing:0.2em;text-transform:uppercase;margin-bottom:10px;display:flex;align-items:center;gap:8px;font-family:'JetBrains Mono',monospace;}
+.panel-label::before{content:'';width:14px;height:1px;background:#38BDF8;}
+
+.tabs{display:flex;gap:2px;}
+.tab{flex:1;padding:8px;background:#18181B;border:1px solid #27272A;color:#52525B;font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;cursor:pointer;text-align:center;transition:all 0.15s;font-family:'Barlow Condensed',sans-serif;}
+.tab:hover{border-color:#38BDF8;color:#38BDF8;}
+.tab.active{background:#082F49;border-color:#38BDF8;color:#38BDF8;}
+
+.form-group{margin-bottom:10px;}
+.form-label{font-size:9px;color:#52525B;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:4px;display:block;font-family:'JetBrains Mono',monospace;}
+.form-input{width:100%;padding:8px 10px;background:#18181B;border:1px solid #27272A;color:#F4F4F0;font-size:12px;font-family:'Barlow',sans-serif;transition:border-color 0.15s;outline:none;}
+.form-input:focus{border-color:#38BDF8;}
+.form-input::placeholder{color:#3F3F46;}
+.form-textarea{width:100%;padding:8px 10px;background:#18181B;border:1px solid #27272A;color:#F4F4F0;font-size:12px;font-family:'Barlow',sans-serif;outline:none;resize:vertical;min-height:70px;}
+.form-textarea:focus{border-color:#38BDF8;}
+.form-select{width:100%;padding:8px 10px;background:#18181B;border:1px solid #27272A;color:#F4F4F0;font-size:12px;font-family:'Barlow',sans-serif;outline:none;cursor:pointer;}
+.form-select:focus{border-color:#38BDF8;}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+
+.btn-primary{width:100%;padding:12px;background:#38BDF8;color:#0A0A0B;border:none;font-size:12px;font-weight:800;letter-spacing:0.1em;text-transform:uppercase;cursor:pointer;transition:all 0.2s;font-family:'Barlow Condensed',sans-serif;}
+.btn-primary:hover{background:#0EA5E9;}
+.btn-secondary{width:100%;padding:10px;background:#18181B;border:1px solid #27272A;color:#9A9A95;font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;cursor:pointer;transition:all 0.2s;font-family:'Barlow Condensed',sans-serif;margin-top:6px;}
+.btn-secondary:hover{border-color:#38BDF8;color:#38BDF8;}
+
+/* Lista RFI */
+.rfi-item{padding:12px 14px;border-left:3px solid;margin-bottom:6px;cursor:pointer;transition:all 0.15s;background:#111113;border-top:1px solid #1F1F23;border-right:1px solid #1F1F23;border-bottom:1px solid #1F1F23;}
+.rfi-item:hover{background:#18181B;}
+.rfi-item.selected{background:#082F49;}
+.rfi-abierto{border-left-color:#38BDF8;}
+.rfi-respondido{border-left-color:#22C55E;}
+.rfi-cerrado{border-left-color:#52525B;}
+.rfi-vencido{border-left-color:#EF4444;}
+.rfi-head{display:flex;align-items:center;gap:8px;margin-bottom:4px;}
+.rfi-id{font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:700;color:#38BDF8;}
+.rfi-badge{font-size:8px;font-weight:700;padding:2px 8px;letter-spacing:0.06em;text-transform:uppercase;margin-left:auto;}
+.est-abierto{background:#082F49;color:#38BDF8;border:1px solid #38BDF8;}
+.est-respondido{background:#052E16;color:#22C55E;border:1px solid #22C55E;}
+.est-cerrado{background:#18181B;color:#52525B;border:1px solid #27272A;}
+.est-vencido{background:#2D0A0A;color:#EF4444;border:1px solid #EF4444;}
+.rfi-titulo{font-size:11px;color:#9A9A95;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.rfi-meta{font-size:10px;color:#3F3F46;font-family:'JetBrains Mono',monospace;margin-top:4px;}
+
+.filtros{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:12px;}
+.filtro{padding:4px 10px;font-size:9px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;cursor:pointer;border:1px solid #27272A;color:#52525B;font-family:'Barlow Condensed',sans-serif;transition:all 0.15s;}
+.filtro:hover,.filtro.active{border-color:#38BDF8;color:#38BDF8;background:#082F49;}
+
+/* Panel derecho */
+#detalle{background:#0A0A0B;overflow-y:auto;padding:24px;}
+#detalle-vacio{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:12px;color:#3F3F46;}
+#detalle-vacio .ico{font-size:48px;}
+#rfi-detalle{display:none;}
+
+.det-header{display:flex;align-items:center;gap:12px;margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid #1F1F23;}
+.det-id{font-family:'Barlow Condensed',sans-serif;font-size:28px;font-weight:900;color:#38BDF8;}
+.det-info{flex:1;}
+.det-titulo{font-size:16px;font-weight:700;color:#F4F4F0;margin-bottom:2px;}
+.det-meta{font-size:10px;color:#52525B;font-family:'JetBrains Mono',monospace;}
+.det-btn{padding:8px 16px;font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;cursor:pointer;border:1px solid #27272A;background:#18181B;color:#9A9A95;transition:all 0.15s;}
+.det-btn:hover{border-color:#38BDF8;color:#38BDF8;}
+
+.det-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px;}
+.det-card{background:#111113;border:1px solid #1F1F23;padding:12px;}
+.det-card-label{font-size:9px;color:#52525B;letter-spacing:0.12em;text-transform:uppercase;font-family:'JetBrains Mono',monospace;margin-bottom:4px;}
+.det-card-val{font-size:13px;color:#F4F4F0;font-weight:500;}
+
+.det-section{margin-bottom:20px;}
+.det-section-title{font-size:11px;font-weight:700;color:#38BDF8;letter-spacing:0.12em;text-transform:uppercase;font-family:'JetBrains Mono',monospace;margin-bottom:10px;display:flex;align-items:center;gap:8px;}
+.det-section-title::before{content:'';width:14px;height:1px;background:#38BDF8;}
+.det-box{background:#111113;border:1px solid #1F1F23;border-left:3px solid #38BDF8;padding:14px;font-size:13px;color:#F4F4F0;line-height:1.7;}
+
+/* Respuesta */
+.resp-box{background:#052E16;border:1px solid #166534;border-left:3px solid #22C55E;padding:14px;font-size:13px;color:#F4F4F0;line-height:1.7;}
+.resp-vacía{background:#111113;border:1px solid #1F1F23;border-left:3px solid #27272A;padding:14px;font-size:12px;color:#3F3F46;font-style:italic;}
+
+/* Formulario respuesta */
+.resp-form{background:#111113;border:1px solid #1F1F23;padding:14px;margin-bottom:20px;}
+
+/* Dias restantes */
+.dias-badge{display:inline-block;padding:4px 12px;font-size:11px;font-weight:700;font-family:'JetBrains Mono',monospace;}
+
+::-webkit-scrollbar{width:4px;}
+::-webkit-scrollbar-track{background:#111113;}
+::-webkit-scrollbar-thumb{background:#27272A;}
+
+#toast{position:fixed;bottom:20px;right:16px;background:#18181B;border:1px solid #27272A;border-left:3px solid #38BDF8;padding:10px 16px;font-size:11px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;opacity:0;transform:translateY(8px);transition:all 0.3s;z-index:300;font-family:'Barlow Condensed',sans-serif;}
+#toast.on{opacity:1;transform:translateY(0);}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <div id="topbar">
+    <div class="tb-mark">RFI</div>
+    <div>
+      <div class="tb-title">Solicitudes de Información</div>
+      <div class="tb-sub">LF BIM Studio · Request for Information</div>
+    </div>
+    <div class="tb-sep"></div>
+    <div class="tb-stat"><div class="tb-stat-val" id="st-total" style="color:#FACC15">0</div><div class="tb-stat-lbl">Total</div></div>
+    <div class="tb-stat"><div class="tb-stat-val" id="st-abiertos" style="color:#38BDF8">0</div><div class="tb-stat-lbl">Abiertos</div></div>
+    <div class="tb-stat"><div class="tb-stat-val" id="st-respondidos" style="color:#22C55E">0</div><div class="tb-stat-lbl">Respondidos</div></div>
+    <div class="tb-stat"><div class="tb-stat-val" id="st-vencidos" style="color:#EF4444">0</div><div class="tb-stat-lbl">Vencidos</div></div>
+    <button style="margin-left:16px;padding:7px 14px;background:#18181B;border:1px solid #27272A;color:#9A9A95;font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;cursor:pointer;" onclick="exportarJSON()">↓ Exportar</button>
+  </div>
+
+  <div id="content">
+
+    <div id="panel">
+      <div class="panel-section" style="padding-bottom:0;">
+        <div class="tabs">
+          <div class="tab active" id="tab-nuevo" onclick="switchTab('nuevo')">+ Nuevo RFI</div>
+          <div class="tab" id="tab-lista" onclick="switchTab('lista')">Registro</div>
+        </div>
+      </div>
+
+      <!-- NUEVO RFI -->
+      <div id="pane-nuevo" class="panel-section" style="flex:1;">
+        <div class="panel-label" style="margin-top:4px;">Nueva solicitud de información</div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">ID RFI</label>
+            <input class="form-input" id="f-id" placeholder="RFI-001"/>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Fecha solicitud</label>
+            <input class="form-input" id="f-fecha" type="date"/>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Asunto / Título</label>
+          <input class="form-input" id="f-titulo" placeholder="Ej: Aclaración detalle de anclaje viga V-12"/>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Pregunta / Descripción detallada</label>
+          <textarea class="form-textarea" id="f-pregunta" placeholder="Describe claramente la duda o información requerida. Incluye el plano o especificación de referencia..."></textarea>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Dirigido a</label>
+            <select class="form-select" id="f-dirigido">
+              <option value="Diseñador estructural">Diseñador estructural</option>
+              <option value="Diseñador arquitectónico">Diseñador arquitectónico</option>
+              <option value="Interventoría">Interventoría</option>
+              <option value="Coordinador BIM">Coordinador BIM</option>
+              <option value="Gerencia de proyecto">Gerencia de proyecto</option>
+              <option value="Otro">Otro</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Disciplina</label>
+            <select class="form-select" id="f-disciplina">
+              <option value="Estructural">Estructural</option>
+              <option value="Arquitectónica">Arquitectónica</option>
+              <option value="Hidrosanitaria">Hidrosanitaria</option>
+              <option value="Eléctrica">Eléctrica</option>
+              <option value="Proceso">Proceso constructivo</option>
+              <option value="Especificaciones">Especificaciones</option>
+              <option value="Otro">Otro</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Plano / Documento de referencia</label>
+          <input class="form-input" id="f-plano" placeholder="Ej: GR2-EST-110 Rev.3 Detalle 4"/>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Solicitado por</label>
+            <input class="form-input" id="f-solicitante" placeholder="Ing. Nombre Apellido"/>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Fecha límite respuesta</label>
+            <input class="form-input" id="f-limite" type="date"/>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Impacto si no se responde</label>
+          <select class="form-select" id="f-impacto">
+            <option value="Alto">🔴 Alto — Detiene actividades</option>
+            <option value="Medio" selected>🟠 Medio — Retrasa actividades</option>
+            <option value="Bajo">🟡 Bajo — Sin impacto inmediato</option>
+          </select>
+        </div>
+
+        <button class="btn-primary" onclick="registrarRFI()">⚡ Registrar RFI</button>
+        <button class="btn-secondary" onclick="exportarJSON()">↓ Exportar JSON</button>
+      </div>
+
+      <!-- LISTA -->
+      <div id="pane-lista" class="panel-section" style="flex:1;display:none;">
+        <div class="panel-label" style="margin-top:4px;">Registro de RFI</div>
+        <div class="filtros">
+          <div class="filtro active" onclick="filtrar('todos',this)">Todos</div>
+          <div class="filtro" onclick="filtrar('Abierto',this)">Abiertos</div>
+          <div class="filtro" onclick="filtrar('Respondido',this)">Respondidos</div>
+          <div class="filtro" onclick="filtrar('Cerrado',this)">Cerrados</div>
+          <div class="filtro" onclick="filtrar('vencido',this)">Vencidos</div>
+        </div>
+        <div id="lista-rfi">
+          <div style="color:#3F3F46;font-size:11px;text-align:center;padding:20px;">No hay RFI registrados</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- DETALLE -->
+    <div id="detalle">
+      <div id="detalle-vacio">
+        <div class="ico">💬</div>
+        <div style="font-size:12px;color:#3F3F46;letter-spacing:0.1em;text-transform:uppercase;font-family:'JetBrains Mono',monospace;">Selecciona un RFI para ver el detalle</div>
+        <div style="font-size:10px;color:#27272A;font-family:'JetBrains Mono',monospace;">o registra uno nuevo en el panel izquierdo</div>
+      </div>
+
+      <div id="rfi-detalle">
+        <div class="det-header">
+          <div class="det-id" id="det-id">RFI-001</div>
+          <div class="det-info">
+            <div class="det-titulo" id="det-titulo">—</div>
+            <div class="det-meta" id="det-meta">—</div>
+          </div>
+          <button class="det-btn" onclick="exportarPDF()">↓ PDF</button>
+        </div>
+
+        <div class="det-grid">
+          <div class="det-card"><div class="det-card-label">Estado</div><div class="det-card-val" id="det-estado">—</div></div>
+          <div class="det-card"><div class="det-card-label">Impacto</div><div class="det-card-val" id="det-impacto">—</div></div>
+          <div class="det-card"><div class="det-card-label">Dirigido a</div><div class="det-card-val" id="det-dirigido">—</div></div>
+          <div class="det-card"><div class="det-card-label">Disciplina</div><div class="det-card-val" id="det-disciplina">—</div></div>
+          <div class="det-card"><div class="det-card-label">Plano referencia</div><div class="det-card-val" id="det-plano">—</div></div>
+          <div class="det-card"><div class="det-card-label">Fecha límite</div><div class="det-card-val" id="det-limite">—</div></div>
+        </div>
+
+        <!-- Pregunta -->
+        <div class="det-section">
+          <div class="det-section-title">Pregunta / Solicitud</div>
+          <div class="det-box" id="det-pregunta">—</div>
+        </div>
+
+        <!-- Respuesta -->
+        <div class="det-section">
+          <div class="det-section-title" style="color:#22C55E;">Respuesta</div>
+          <div id="det-respuesta-wrap"></div>
+
+          <div class="resp-form" id="resp-form" style="margin-top:12px;">
+            <div class="form-label" style="margin-bottom:6px;">Registrar respuesta</div>
+            <div class="form-row" style="margin-bottom:8px;">
+              <div class="form-group" style="margin-bottom:0;">
+                <label class="form-label">Respondido por</label>
+                <input class="form-input" id="resp-por" placeholder="Ing. Diseñador"/>
+              </div>
+              <div class="form-group" style="margin-bottom:0;">
+                <label class="form-label">Fecha respuesta</label>
+                <input class="form-input" id="resp-fecha" type="date"/>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Respuesta / Aclaración</label>
+              <textarea class="form-textarea" id="resp-texto" placeholder="Escribe aquí la respuesta del diseñador o interventoría..."></textarea>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Documento adjunto (referencia)</label>
+              <input class="form-input" id="resp-doc" placeholder="Ej: Memorando técnico MT-045 / Plano revisado Rev.4"/>
+            </div>
+            <button class="btn-primary" style="background:#22C55E;color:#0A0A0B;" onclick="registrarRespuesta()">✓ Registrar respuesta</button>
+            <button class="btn-secondary" onclick="cerrarRFI()" style="margin-top:6px;">⬛ Cerrar RFI</button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+let RFIS = [];
+let RFI_ACTIVO = null;
+let FILTRO = 'todos';
+
+try {
+  const saved = localStorage.getItem('LF_RFI_DATA');
+  if (saved) RFIS = JSON.parse(saved);
+} catch(e) {}
+
+function guardarLocal() {
+  try { localStorage.setItem('LF_RFI_DATA', JSON.stringify(RFIS)); } catch(e) {}
+}
+
+function diasRestantes(limite) {
+  if (!limite) return null;
+  const hoy = new Date(); hoy.setHours(0,0,0,0);
+  const lim = new Date(limite);
+  return Math.floor((lim - hoy) / (1000*60*60*24));
+}
+
+function estadoRFI(rfi) {
+  if (rfi.estado === 'Cerrado') return 'Cerrado';
+  if (rfi.estado === 'Respondido') return 'Respondido';
+  const dias = diasRestantes(rfi.limite);
+  if (dias !== null && dias < 0) return 'Vencido';
+  return 'Abierto';
+}
+
+window.registrarRFI = function() {
+  const id = document.getElementById('f-id').value.trim();
+  const fecha = document.getElementById('f-fecha').value;
+  const titulo = document.getElementById('f-titulo').value.trim();
+  const pregunta = document.getElementById('f-pregunta').value.trim();
+  const dirigido = document.getElementById('f-dirigido').value;
+  const disciplina = document.getElementById('f-disciplina').value;
+  const plano = document.getElementById('f-plano').value.trim();
+  const solicitante = document.getElementById('f-solicitante').value.trim();
+  const limite = document.getElementById('f-limite').value;
+  const impacto = document.getElementById('f-impacto').value;
+
+  if (!id) { toast('⚠ Ingresa el ID del RFI'); return; }
+  if (!titulo) { toast('⚠ Ingresa el asunto'); return; }
+  if (!pregunta) { toast('⚠ Ingresa la pregunta'); return; }
+  if (RFIS.find(r => r.id === id)) { toast('⚠ Ya existe un RFI con ese ID'); return; }
+
+  const rfi = {
+    id, fecha, titulo, pregunta, dirigido, disciplina,
+    plano, solicitante, limite, impacto,
+    estado: 'Abierto',
+    respuesta: null,
+    fechaRegistro: new Date().toISOString(),
+  };
+
+  RFIS.unshift(rfi);
+  guardarLocal();
+  actualizarStats();
+  renderLista();
+
+  ['f-id','f-titulo','f-pregunta','f-plano','f-solicitante','f-limite'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('f-fecha').value = new Date().toISOString().split('T')[0];
+
+  toast('✓ RFI ' + id + ' registrado');
+  switchTab('lista');
+  verRFI(rfi.id);
+};
+
+window.registrarRespuesta = function() {
+  if (!RFI_ACTIVO) return;
+  const rfi = RFIS.find(r => r.id === RFI_ACTIVO);
+  if (!rfi) return;
+  const texto = document.getElementById('resp-texto').value.trim();
+  const por = document.getElementById('resp-por').value.trim();
+  const fecha = document.getElementById('resp-fecha').value;
+  const doc = document.getElementById('resp-doc').value.trim();
+
+  if (!texto) { toast('⚠ Escribe la respuesta'); return; }
+
+  rfi.respuesta = { texto, por, fecha, doc };
+  rfi.estado = 'Respondido';
+  guardarLocal();
+  actualizarStats();
+  renderLista();
+  verRFI(RFI_ACTIVO);
+  toast('✓ Respuesta registrada');
+};
+
+window.cerrarRFI = function() {
+  if (!RFI_ACTIVO) return;
+  const rfi = RFIS.find(r => r.id === RFI_ACTIVO);
+  if (!rfi) return;
+  rfi.estado = 'Cerrado';
+  guardarLocal();
+  actualizarStats();
+  renderLista();
+  verRFI(RFI_ACTIVO);
+  toast('✓ RFI cerrado');
+};
+
+window.verRFI = function(id) {
+  RFI_ACTIVO = id;
+  const rfi = RFIS.find(r => r.id === id);
+  if (!rfi) return;
+
+  document.getElementById('detalle-vacio').style.display = 'none';
+  document.getElementById('rfi-detalle').style.display = 'block';
+
+  const est = estadoRFI(rfi);
+  const estCol = {Abierto:'#38BDF8',Respondido:'#22C55E',Cerrado:'#52525B',Vencido:'#EF4444'}[est]||'#52525B';
+  const estCls = {Abierto:'est-abierto',Respondido:'est-respondido',Cerrado:'est-cerrado',Vencido:'est-vencido'}[est]||'est-cerrado';
+
+  document.getElementById('det-id').textContent = rfi.id;
+  document.getElementById('det-titulo').textContent = rfi.titulo;
+  document.getElementById('det-meta').textContent = rfi.fecha + ' · ' + (rfi.solicitante||'—') + ' → ' + rfi.dirigido;
+  document.getElementById('det-estado').innerHTML = `<span class="${estCls}" style="font-size:11px;font-weight:700;padding:3px 10px;border:1px solid;">${est.toUpperCase()}</span>`;
+  document.getElementById('det-impacto').textContent = rfi.impacto === 'Alto' ? '🔴 Alto' : rfi.impacto === 'Medio' ? '🟠 Medio' : '🟡 Bajo';
+  document.getElementById('det-dirigido').textContent = rfi.dirigido;
+  document.getElementById('det-disciplina').textContent = rfi.disciplina;
+  document.getElementById('det-plano').textContent = rfi.plano || '—';
+
+  const dias = diasRestantes(rfi.limite);
+  let limiteHTML = rfi.limite || '—';
+  if (dias !== null && rfi.estado !== 'Cerrado' && rfi.estado !== 'Respondido') {
+    const dcolor = dias < 0 ? '#EF4444' : dias <= 3 ? '#FB923C' : '#22C55E';
+    limiteHTML = `${rfi.limite} <span style="font-size:10px;color:${dcolor};font-family:'JetBrains Mono',monospace;">(${dias < 0 ? 'Vencido ' + Math.abs(dias) + 'd' : dias + 'd restantes'})</span>`;
+  }
+  document.getElementById('det-limite').innerHTML = limiteHTML;
+  document.getElementById('det-pregunta').textContent = rfi.pregunta;
+
+  // Respuesta
+  const wrap = document.getElementById('det-respuesta-wrap');
+  if (rfi.respuesta) {
+    wrap.innerHTML = `
+      <div class="resp-box">
+        <div style="font-size:10px;color:#22C55E;font-family:'JetBrains Mono',monospace;margin-bottom:8px;">
+          ${rfi.respuesta.por||'—'} · ${rfi.respuesta.fecha||'—'} ${rfi.respuesta.doc ? '· Doc: ' + rfi.respuesta.doc : ''}
+        </div>
+        <div style="font-size:13px;color:#F4F4F0;line-height:1.7;">${rfi.respuesta.texto}</div>
+      </div>`;
+    document.getElementById('resp-form').style.display = rfi.estado === 'Cerrado' ? 'none' : 'block';
+  } else {
+    wrap.innerHTML = '<div class="resp-vacía">Pendiente de respuesta...</div>';
+    document.getElementById('resp-form').style.display = 'block';
+  }
+
+  document.getElementById('resp-fecha').value = new Date().toISOString().split('T')[0];
+
+  document.querySelectorAll('.rfi-item').forEach(el => el.classList.remove('selected'));
+  const item = document.querySelector(`[data-rfi-id="${id}"]`);
+  if (item) item.classList.add('selected');
+};
+
+window.filtrar = function(estado, btn) {
+  FILTRO = estado;
+  document.querySelectorAll('.filtro').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderLista();
+};
+
+function renderLista() {
+  const lista = document.getElementById('lista-rfi');
+  const hoy = new Date(); hoy.setHours(0,0,0,0);
+  let filtrados = RFIS;
+  if (FILTRO === 'vencido') {
+    filtrados = RFIS.filter(r => {
+      if (r.estado === 'Cerrado' || r.estado === 'Respondido') return false;
+      return r.limite && new Date(r.limite) < hoy;
+    });
+  } else if (FILTRO !== 'todos') {
+    filtrados = RFIS.filter(r => r.estado === FILTRO);
+  }
+
+  if (!filtrados.length) {
+    lista.innerHTML = '<div style="color:#3F3F46;font-size:11px;text-align:center;padding:20px;">Sin RFI en este filtro</div>';
+    return;
+  }
+
+  lista.innerHTML = filtrados.map(rfi => {
+    const est = estadoRFI(rfi);
+    const clsMap = {Abierto:'rfi-abierto',Respondido:'rfi-respondido',Cerrado:'rfi-cerrado',Vencido:'rfi-vencido'};
+    const badgeMap = {Abierto:'est-abierto',Respondido:'est-respondido',Cerrado:'est-cerrado',Vencido:'est-vencido'};
+    return `<div class="rfi-item ${clsMap[est]||'rfi-cerrado'} ${RFI_ACTIVO===rfi.id?'selected':''}"
+                 data-rfi-id="${rfi.id}" onclick="verRFI('${rfi.id}')">
+      <div class="rfi-head">
+        <div class="rfi-id">${rfi.id}</div>
+        <div class="rfi-badge ${badgeMap[est]||'est-cerrado'}">${est}</div>
+      </div>
+      <div class="rfi-titulo">${rfi.titulo}</div>
+      <div class="rfi-meta">${rfi.fecha} · ${rfi.dirigido} · ${rfi.disciplina}</div>
+    </div>`;
+  }).join('');
+}
+
+function actualizarStats() {
+  const hoy = new Date(); hoy.setHours(0,0,0,0);
+  document.getElementById('st-total').textContent = RFIS.length;
+  document.getElementById('st-abiertos').textContent = RFIS.filter(r => r.estado === 'Abierto').length;
+  document.getElementById('st-respondidos').textContent = RFIS.filter(r => r.estado === 'Respondido').length;
+  document.getElementById('st-vencidos').textContent = RFIS.filter(r => {
+    if (r.estado === 'Cerrado' || r.estado === 'Respondido') return false;
+    return r.limite && new Date(r.limite) < hoy;
+  }).length;
+}
+
+window.switchTab = function(tab) {
+  ['nuevo','lista'].forEach(t => {
+    document.getElementById('tab-'+t).classList.toggle('active', t===tab);
+    document.getElementById('pane-'+t).style.display = t===tab ? 'block' : 'none';
+  });
+};
+
+window.exportarJSON = function() {
+  const data = { version:'LF BIM Studio — Registro RFI v1.0', fecha_export: new Date().toISOString().split('T')[0], rfis: RFIS };
+  const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = `RegistroRFI_${data.fecha_export}.json`;
+  link.click();
+  toast('✓ Registro exportado');
+};
+
+window.exportarPDF = function() {
+  if (!RFI_ACTIVO) return;
+  const rfi = RFIS.find(r => r.id === RFI_ACTIVO);
+  if (!rfi) return;
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ unit:'mm', format:'a4' });
+  const W = 210, H = 297;
+
+  doc.setFillColor(255,255,255);
+  doc.rect(0,0,W,H,'F');
+
+  // Header
+  doc.setFillColor(26,26,26);
+  doc.rect(0,0,W,18,'F');
+  doc.setFillColor(56,189,248);
+  doc.rect(0,0,4,18,'F');
+  doc.setTextColor(255,255,255);
+  doc.setFont('helvetica','bold');
+  doc.setFontSize(11);
+  doc.text('SOLICITUD DE INFORMACIÓN — RFI', 10, 8);
+  doc.setFont('helvetica','normal');
+  doc.setFontSize(8);
+  doc.setTextColor(180,180,180);
+  doc.text('LF BIM Studio  ·  Request for Information', 10, 14);
+  doc.setTextColor(255,255,255);
+  doc.setFont('helvetica','bold');
+  doc.setFontSize(10);
+  doc.text(rfi.id, W-10, 11, {align:'right'});
+
+  let y = 26;
+  doc.setTextColor(26,26,26);
+  doc.setFont('helvetica','bold');
+  doc.setFontSize(13);
+  doc.text(rfi.titulo, 10, y);
+  y += 10;
+
+  const est = estadoRFI(rfi);
+  const estRGB = {Abierto:[56,189,248],Respondido:[34,197,94],Cerrado:[100,100,100],Vencido:[239,68,68]}[est]||[100,100,100];
+  doc.setFillColor(...estRGB);
+  doc.roundedRect(10, y, 30, 6, 1, 1, 'F');
+  doc.setTextColor(255,255,255);
+  doc.setFont('helvetica','bold');
+  doc.setFontSize(7);
+  doc.text(est.toUpperCase(), 25, y+4, {align:'center'});
+
+  const impRGB = {Alto:[220,38,38],Medio:[194,100,20],Bajo:[120,120,20]}[rfi.impacto]||[100,100,100];
+  doc.setFillColor(...impRGB);
+  doc.roundedRect(44, y, 30, 6, 1, 1, 'F');
+  doc.setTextColor(255,255,255);
+  doc.text(('Impacto ' + rfi.impacto).toUpperCase(), 59, y+4, {align:'center'});
+  y += 14;
+
+  doc.setDrawColor(220,220,220);
+  doc.line(10, y, W-10, y);
+  y += 6;
+
+  const campos = [
+    ['Fecha solicitud', rfi.fecha],
+    ['Solicitado por', rfi.solicitante||'—'],
+    ['Dirigido a', rfi.dirigido],
+    ['Disciplina', rfi.disciplina],
+    ['Plano / Documento ref.', rfi.plano||'—'],
+    ['Fecha límite respuesta', rfi.limite||'—'],
+  ];
+  campos.forEach(([lbl, val], i) => {
+    const col = i%2;
+    const x = col===0 ? 10 : 110;
+    if (col===0 && i>0) y += 13;
+    doc.setFillColor(248,248,248);
+    doc.rect(x, y-3, 90, 11, 'F');
+    doc.setTextColor(120,120,120);
+    doc.setFont('helvetica','normal');
+    doc.setFontSize(7);
+    doc.text(lbl.toUpperCase(), x+3, y+1);
+    doc.setTextColor(30,30,30);
+    doc.setFont('helvetica','bold');
+    doc.setFontSize(9);
+    doc.text(val.substring(0,38), x+3, y+7);
+  });
+  y += 16;
+
+  doc.setDrawColor(220,220,220);
+  doc.line(10, y, W-10, y);
+  y += 6;
+
+  // Pregunta
+  doc.setTextColor(56,189,248);
+  doc.setFont('helvetica','bold');
+  doc.setFontSize(8);
+  doc.text('PREGUNTA / SOLICITUD DE INFORMACIÓN', 10, y);
+  y += 5;
+  doc.setFillColor(240,248,255);
+  doc.setDrawColor(200,230,250);
+  const pregLines = doc.splitTextToSize(rfi.pregunta||'—', 182);
+  const pregH = Math.min(pregLines.length, 6) * 5 + 8;
+  doc.roundedRect(10, y, 190, pregH, 1, 1, 'FD');
+  doc.setFillColor(56,189,248);
+  doc.rect(10, y, 2, pregH, 'F');
+  doc.setTextColor(30,30,30);
+  doc.setFont('helvetica','normal');
+  doc.setFontSize(9);
+  doc.text(pregLines.slice(0,6), 16, y+6);
+  y += pregH + 10;
+
+  // Respuesta
+  doc.setTextColor(34,163,74);
+  doc.setFont('helvetica','bold');
+  doc.setFontSize(8);
+  doc.text('RESPUESTA', 10, y);
+  y += 5;
+
+  if (rfi.respuesta) {
+    doc.setFillColor(240,255,245);
+    doc.setDrawColor(180,230,200);
+    const respLines = doc.splitTextToSize(rfi.respuesta.texto, 182);
+    const respH = Math.min(respLines.length, 6) * 5 + 14;
+    doc.roundedRect(10, y, 190, respH, 1, 1, 'FD');
+    doc.setFillColor(34,197,94);
+    doc.rect(10, y, 2, respH, 'F');
+    doc.setTextColor(80,120,80);
+    doc.setFont('helvetica','normal');
+    doc.setFontSize(7);
+    doc.text((rfi.respuesta.por||'—') + '  ·  ' + (rfi.respuesta.fecha||'—') + (rfi.respuesta.doc ? '  ·  ' + rfi.respuesta.doc : ''), 16, y+5);
+    doc.setTextColor(30,30,30);
+    doc.setFontSize(9);
+    doc.text(respLines.slice(0,6), 16, y+10);
+    y += respH + 10;
+  } else {
+    doc.setFillColor(250,250,250);
+    doc.setDrawColor(220,220,220);
+    doc.roundedRect(10, y, 190, 20, 1, 1, 'FD');
+    doc.setTextColor(160,160,160);
+    doc.setFont('helvetica','italic');
+    doc.setFontSize(9);
+    doc.text('Pendiente de respuesta', 105, y+12, {align:'center'});
+    y += 28;
+  }
+
+  // Firmas
+  y = Math.max(y+10, 245);
+  doc.setFillColor(248,248,248);
+  doc.setDrawColor(220,220,220);
+  doc.roundedRect(10, y, 88, 28, 1, 1, 'FD');
+  doc.roundedRect(112, y, 88, 28, 1, 1, 'FD');
+  doc.setTextColor(120,120,120);
+  doc.setFont('helvetica','normal');
+  doc.setFontSize(7);
+  doc.text('Firma quien solicita', 54, y+4, {align:'center'});
+  doc.text('Firma quien responde', 156, y+4, {align:'center'});
+  doc.setDrawColor(180,180,180);
+  doc.line(20, y+20, 88, y+20);
+  doc.line(122, y+20, 190, y+20);
+  doc.setTextColor(150,150,150);
+  doc.setFontSize(6.5);
+  doc.text((rfi.solicitante||'Solicitante').substring(0,30), 54, y+24, {align:'center'});
+  doc.text((rfi.respuesta?.por||rfi.dirigido||'—').substring(0,30), 156, y+24, {align:'center'});
+
+  // Footer
+  doc.setFillColor(245,245,245);
+  doc.rect(0,H-10,W,10,'F');
+  doc.setDrawColor(220,220,220);
+  doc.line(0,H-10,W,H-10);
+  doc.setTextColor(150,150,150);
+  doc.setFont('helvetica','normal');
+  doc.setFontSize(6.5);
+  doc.text('Ing. Luis Manuel Fuentes Perez  ·  LF BIM Studio  ·  ' + new Date().toLocaleDateString('es-CO'), W/2, H-4, {align:'center'});
+
+  doc.save('RFI_' + rfi.id + '_' + rfi.fecha + '.pdf');
+  toast('✓ PDF exportado: RFI_' + rfi.id);
+};
+
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('on');
+  clearTimeout(t._t); t._t = setTimeout(()=>t.classList.remove('on'), 3500);
+}
+
+document.getElementById('f-fecha').value = new Date().toISOString().split('T')[0];
+document.getElementById('resp-fecha').value = new Date().toISOString().split('T')[0];
+actualizarStats();
+renderLista();
+if (RFIS.length > 0) verRFI(RFIS[0].id);
+</script>
+</body>
+</html>
