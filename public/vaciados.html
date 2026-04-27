@@ -382,6 +382,7 @@ html,body{height:100%;overflow:hidden;background:#0A0A0B;color:#F4F4F0;font-fami
 {
   "imports": {
     "three": "https://esm.sh/three@0.184.0",
+    "web-ifc": "https://esm.sh/web-ifc@0.0.77",
     "@thatopen/components": "https://esm.sh/@thatopen/components@3.4.2",
     "@thatopen/components-front": "https://esm.sh/@thatopen/components-front@3.4.2",
     "@thatopen/fragments": "https://esm.sh/@thatopen/fragments@3.4.3"
@@ -481,7 +482,7 @@ async function initVisor() {
   STATE.ifcLoader = STATE.components.get(OBC.IfcLoader);
   await STATE.ifcLoader.setup({
     autoSetWasm: false,
-    wasm: { path: "https://unpkg.com/web-ifc@0.0.77/", absolute: true },
+    wasm: { path: "https://esm.sh/web-ifc@0.0.77/", absolute: true },
   });
 
   // Click en elemento
