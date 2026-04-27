@@ -1,0 +1,960 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Control de Vaciados — LF BIM Studio</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=Barlow:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;overflow:hidden;background:#0A0A0B;color:#F4F4F0;font-family:'Barlow',sans-serif;-webkit-font-smoothing:antialiased;}
+
+/* ── LAYOUT ── */
+#app{display:grid;grid-template-rows:52px 1fr;height:100vh;}
+#content{display:grid;grid-template-columns:380px 1fr;overflow:hidden;}
+
+/* ── TOPBAR ── */
+#topbar{
+  background:rgba(10,10,11,0.95);border-bottom:2px solid #FACC15;
+  display:flex;align-items:center;gap:14px;padding:0 20px;
+  backdrop-filter:blur(12px);z-index:100;
+}
+.tb-mark{width:34px;height:34px;background:#FACC15;color:#0A0A0B;display:flex;align-items:center;justify-content:center;font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:13px;flex-shrink:0;}
+.tb-title{font-size:14px;font-weight:700;letter-spacing:0.04em;text-transform:uppercase;}
+.tb-sub{font-size:9px;color:#FACC15;letter-spacing:0.14em;text-transform:uppercase;margin-top:1px;font-family:'JetBrains Mono',monospace;}
+.tb-sep{flex:1;}
+.tb-stats{display:flex;gap:20px;}
+.tb-stat{text-align:center;}
+.tb-stat-val{font-size:18px;font-weight:800;font-family:'Barlow Condensed',sans-serif;line-height:1;}
+.tb-stat-lbl{font-size:8px;color:#52525B;letter-spacing:0.1em;text-transform:uppercase;font-family:'JetBrains Mono',monospace;}
+.tb-btn-volver{padding:7px 14px;background:#18181B;border:1px solid #27272A;color:#9A9A95;font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;cursor:pointer;transition:all 0.2s;}
+.tb-btn-volver:hover{border-color:#FACC15;color:#FACC15;}
+
+/* ── PANEL IZQUIERDO ── */
+#panel{
+  background:#111113;border-right:1px solid #1F1F23;
+  overflow-y:auto;display:flex;flex-direction:column;
+}
+.panel-section{padding:14px 16px;border-bottom:1px solid #1F1F23;}
+.panel-label{font-size:9px;font-weight:700;color:#FACC15;letter-spacing:0.2em;text-transform:uppercase;margin-bottom:10px;display:flex;align-items:center;gap:8px;font-family:'JetBrains Mono',monospace;}
+.panel-label::before{content:'';width:14px;height:1px;background:#FACC15;}
+
+/* Tabs */
+.tabs{display:flex;gap:2px;margin-bottom:12px;}
+.tab{flex:1;padding:8px;background:#18181B;border:1px solid #27272A;color:#52525B;font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;cursor:pointer;text-align:center;transition:all 0.15s;font-family:'Barlow Condensed',sans-serif;}
+.tab:hover{border-color:#FACC15;color:#FACC15;}
+.tab.active{background:#1A180A;border-color:#FACC15;color:#FACC15;}
+
+/* Formulario de vaciado */
+.form-group{margin-bottom:10px;}
+.form-label{font-size:9px;color:#52525B;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:4px;display:block;font-family:'JetBrains Mono',monospace;}
+.form-input{width:100%;padding:8px 10px;background:#18181B;border:1px solid #27272A;color:#F4F4F0;font-size:12px;font-family:'Barlow',sans-serif;transition:border-color 0.15s;outline:none;}
+.form-input:focus{border-color:#FACC15;}
+.form-input::placeholder{color:#3F3F46;}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.form-select{width:100%;padding:8px 10px;background:#18181B;border:1px solid #27272A;color:#F4F4F0;font-size:12px;font-family:'Barlow',sans-serif;outline:none;cursor:pointer;}
+.form-select:focus{border-color:#FACC15;}
+
+/* Botones */
+.btn-primary{width:100%;padding:12px;background:#FACC15;color:#0A0A0B;border:none;font-size:12px;font-weight:800;letter-spacing:0.1em;text-transform:uppercase;cursor:pointer;transition:all 0.2s;font-family:'Barlow Condensed',sans-serif;}
+.btn-primary:hover{background:#FDE047;}
+.btn-primary:disabled{opacity:0.3;cursor:not-allowed;}
+.btn-secondary{width:100%;padding:10px;background:#18181B;border:1px solid #27272A;color:#9A9A95;font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;cursor:pointer;transition:all 0.2s;font-family:'Barlow Condensed',sans-serif;margin-top:6px;}
+.btn-secondary:hover{border-color:#FACC15;color:#FACC15;}
+
+/* Elementos seleccionados */
+#elementos-sel-list{max-height:100px;overflow-y:auto;}
+.elem-sel-item{display:flex;align-items:center;justify-content:space-between;padding:5px 8px;background:#18181B;border:1px solid #27272A;margin-bottom:3px;font-size:11px;}
+.elem-sel-name{color:#F4F4F0;font-family:'JetBrains Mono',monospace;font-size:10px;}
+.elem-sel-rm{cursor:pointer;color:#52525B;padding:2px 6px;}
+.elem-sel-rm:hover{color:#EF4444;}
+.elem-sel-empty{color:#3F3F46;font-size:11px;text-align:center;padding:12px;font-style:italic;}
+
+/* Lista de vaciados */
+.vaciado-item{padding:10px 12px;border:1px solid #27272A;margin-bottom:6px;cursor:pointer;transition:all 0.15s;position:relative;}
+.vaciado-item:hover{border-color:#FACC15;}
+.vaciado-item.selected{border-color:#FACC15;background:#1A180A;}
+.vaciado-id{font-size:11px;font-weight:700;color:#FACC15;font-family:'JetBrains Mono',monospace;}
+.vaciado-info{font-size:11px;color:#9A9A95;margin-top:2px;}
+.vaciado-estado{position:absolute;top:10px;right:10px;font-size:9px;font-weight:700;padding:3px 8px;letter-spacing:0.06em;text-transform:uppercase;}
+.est-pendiente{background:#1C1208;color:#FB923C;border:1px solid #FB923C;}
+.est-aprobado{background:#052E16;color:#22C55E;border:1px solid #22C55E;}
+.est-reprobado{background:#2D0A0A;color:#EF4444;border:1px solid #EF4444;}
+
+/* Cilindros */
+.cilindro-row{display:grid;grid-template-columns:1fr 1fr 80px;gap:6px;align-items:end;margin-bottom:6px;}
+.cilindro-lbl{font-size:9px;color:#52525B;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:3px;font-family:'JetBrains Mono',monospace;}
+.resultado-badge{padding:6px 8px;font-size:10px;font-weight:700;text-align:center;letter-spacing:0.06em;}
+
+/* Drop IFC */
+.drop-zone{border:1px dashed #3F3F46;background:#18181B;padding:14px;text-align:center;cursor:pointer;transition:all 0.2s;margin-bottom:8px;}
+.drop-zone:hover,.drop-zone.drag{border-color:#FACC15;background:#1A180A;}
+.drop-zone.loaded{border-style:solid;border-color:#22C55E;background:#052E16;}
+.drop-zone input{display:none;}
+.dz-txt{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#F4F4F0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.dz-sub{font-size:9px;color:#52525B;margin-top:2px;font-family:'JetBrains Mono',monospace;}
+
+/* Leyenda colores */
+.leyenda{display:flex;flex-direction:column;gap:5px;}
+.ley-item{display:flex;align-items:center;gap:8px;font-size:11px;color:#9A9A95;}
+.ley-dot{width:12px;height:12px;flex-shrink:0;border-radius:2px;}
+
+/* Alerta cilindros */
+.alerta-box{padding:10px 12px;border-left:3px solid;margin-bottom:6px;}
+.alerta-warn{background:#1C1208;border-color:#FB923C;}
+.alerta-err{background:#2D0A0A;border-color:#EF4444;}
+.alerta-ok{background:#052E16;border-color:#22C55E;}
+.alerta-title{font-size:10px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;}
+.alerta-body{font-size:10px;color:#9A9A95;margin-top:3px;line-height:1.5;}
+
+/* ── PANEL DERECHO — VISOR ── */
+#visor-wrap{position:relative;overflow:hidden;}
+#visor-container{width:100%;height:100%;}
+
+/* Info elemento */
+#info-panel{
+  position:absolute;top:12px;right:12px;width:260px;
+  background:rgba(17,17,19,0.97);border:1px solid #27272A;border-left:3px solid #FACC15;
+  backdrop-filter:blur(12px);display:none;z-index:50;
+}
+.info-head{padding:10px 12px;border-bottom:1px solid #1F1F23;display:flex;justify-content:space-between;align-items:center;}
+.info-id{font-size:10px;color:#FACC15;font-weight:700;font-family:'JetBrains Mono',monospace;}
+.info-close{cursor:pointer;color:#52525B;padding:2px 6px;}
+.info-close:hover{color:#F4F4F0;}
+.info-body{padding:10px 12px;}
+.info-row{margin-bottom:8px;}
+.info-row-lbl{font-size:8px;color:#52525B;letter-spacing:0.12em;text-transform:uppercase;font-family:'JetBrains Mono',monospace;}
+.info-row-val{font-size:12px;color:#F4F4F0;margin-top:2px;}
+.info-btn-vaciar{width:100%;padding:10px;background:#FACC15;color:#0A0A0B;border:none;font-size:11px;font-weight:800;letter-spacing:0.1em;text-transform:uppercase;cursor:pointer;margin-top:8px;font-family:'Barlow Condensed',sans-serif;}
+.info-btn-vaciar:hover{background:#FDE047;}
+
+/* Loading */
+#loading{position:absolute;inset:0;background:rgba(10,10,11,0.92);display:none;align-items:center;justify-content:center;flex-direction:column;gap:14px;z-index:200;}
+#loading.on{display:flex;}
+.spinner{width:40px;height:40px;border:3px solid #27272A;border-top-color:#FACC15;border-radius:50%;animation:spin 0.8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.load-txt{font-size:11px;color:#9A9A95;letter-spacing:0.1em;text-transform:uppercase;font-family:'JetBrains Mono',monospace;}
+
+/* Toast */
+#toast{position:fixed;bottom:20px;right:16px;background:#18181B;border:1px solid #27272A;border-left:3px solid #FACC15;padding:10px 16px;font-size:11px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;opacity:0;transform:translateY(8px);transition:all 0.3s;z-index:300;font-family:'Barlow Condensed',sans-serif;}
+#toast.on{opacity:1;transform:translateY(0);}
+
+/* Instrucciones visor */
+#instrucciones{position:absolute;bottom:12px;left:12px;font-size:10px;color:#3F3F46;font-family:'JetBrains Mono',monospace;letter-spacing:0.05em;}
+
+/* Scrollbar */
+::-webkit-scrollbar{width:4px;}
+::-webkit-scrollbar-track{background:#111113;}
+::-webkit-scrollbar-thumb{background:#27272A;border-radius:2px;}
+::-webkit-scrollbar-thumb:hover{background:#3F3F46;}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- TOPBAR -->
+  <div id="topbar">
+    <div class="tb-mark">LF</div>
+    <div>
+      <div class="tb-title">Control de Vaciados</div>
+      <div class="tb-sub">LF BIM Studio · NSR-10 · Trazabilidad de concreto</div>
+    </div>
+    <div class="tb-sep"></div>
+    <div class="tb-stats">
+      <div class="tb-stat">
+        <div class="tb-stat-val" id="st-total" style="color:#FACC15">0</div>
+        <div class="tb-stat-lbl">Vaciados</div>
+      </div>
+      <div class="tb-stat">
+        <div class="tb-stat-val" id="st-aprobados" style="color:#22C55E">0</div>
+        <div class="tb-stat-lbl">Aprobados</div>
+      </div>
+      <div class="tb-stat">
+        <div class="tb-stat-val" id="st-pendientes" style="color:#FB923C">0</div>
+        <div class="tb-stat-lbl">Pendientes</div>
+      </div>
+      <div class="tb-stat">
+        <div class="tb-stat-val" id="st-reprobados" style="color:#EF4444">0</div>
+        <div class="tb-stat-lbl">Reprobados</div>
+      </div>
+    </div>
+    <button class="tb-btn-volver" onclick="window.history.back()">← Suite</button>
+  </div>
+
+  <div id="content">
+
+    <!-- PANEL IZQUIERDO -->
+    <div id="panel">
+
+      <!-- Carga archivos -->
+      <div class="panel-section">
+        <div class="panel-label">Modelo y datos</div>
+        <div class="drop-zone" id="dz-ifc"
+             ondragover="dzOver(event,'dz-ifc')" ondragleave="dzOut('dz-ifc')" ondrop="dzDrop(event,'ifc')"
+             onclick="document.getElementById('in-ifc').click()">
+          <input type="file" id="in-ifc" accept=".ifc" onchange="cargarIFC(this.files[0])"/>
+          <div class="dz-txt" id="dz-ifc-txt">🏗 Cargar IFC</div>
+          <div class="dz-sub">Modelo estructural</div>
+        </div>
+        <div class="drop-zone" id="dz-json"
+             ondragover="dzOver(event,'dz-json')" ondragleave="dzOut('dz-json')" ondrop="dzDrop(event,'json')"
+             onclick="document.getElementById('in-json').click()">
+          <input type="file" id="in-json" accept=".json" onchange="cargarJSON(this.files[0])"/>
+          <div class="dz-txt" id="dz-json-txt">📊 Cargar JSON de avance</div>
+          <div class="dz-sub">BIMMonitorPro_Avance_*.json</div>
+        </div>
+      </div>
+
+      <!-- Tabs principales -->
+      <div class="panel-section" style="padding-bottom:0;">
+        <div class="tabs">
+          <div class="tab active" id="tab-registrar" onclick="switchTab('registrar')">Registrar</div>
+          <div class="tab" id="tab-vaciados" onclick="switchTab('vaciados')">Vaciados</div>
+          <div class="tab" id="tab-alertas" onclick="switchTab('alertas')">Alertas</div>
+        </div>
+      </div>
+
+      <!-- TAB: REGISTRAR VACIADO -->
+      <div id="pane-registrar" class="panel-section" style="flex:1;">
+        <div class="panel-label">Nuevo vaciado</div>
+
+        <!-- Elementos seleccionados en el modelo -->
+        <div class="form-group">
+          <label class="form-label">Elementos a vaciar (selecciona en el modelo)</label>
+          <div id="elementos-sel-list">
+            <div class="elem-sel-empty" id="elem-empty-msg">Haz click en elementos del modelo 3D</div>
+          </div>
+          <button class="btn-secondary" onclick="limpiarSeleccion()" style="margin-top:4px;">✕ Limpiar selección</button>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">ID Colada</label>
+            <input class="form-input" id="f-id" placeholder="COL-001" type="text"/>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Fecha vaciado</label>
+            <input class="form-input" id="f-fecha" type="date"/>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Proveedor de concreto</label>
+          <input class="form-input" id="f-proveedor" placeholder="Ej: Concretar S.A." type="text"/>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">N° Remisión</label>
+            <input class="form-input" id="f-remision" placeholder="REM-0001" type="text"/>
+          </div>
+          <div class="form-group">
+            <label class="form-label">F'c especificado</label>
+            <select class="form-select" id="f-fc">
+              <option value="21">21 MPa (3000 psi)</option>
+              <option value="24">24 MPa (3500 psi)</option>
+              <option value="28" selected>28 MPa (4000 psi)</option>
+              <option value="32">32 MPa (4500 psi)</option>
+              <option value="35">35 MPa (5000 psi)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Slump (cm)</label>
+            <input class="form-input" id="f-slump" placeholder="10" type="number" min="0" max="25"/>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Volumen (m³)</label>
+            <input class="form-input" id="f-volumen" placeholder="5.2" type="number" step="0.1"/>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Responsable</label>
+          <input class="form-input" id="f-responsable" placeholder="Ing. Nombre Apellido" type="text"/>
+        </div>
+
+        <!-- Cilindros -->
+        <div class="panel-label" style="margin-top:12px;">Cilindros — NSR-10 C.5.6</div>
+        <div class="cilindro-row">
+          <div>
+            <div class="cilindro-lbl">Resultado 7 días (MPa)</div>
+            <input class="form-input" id="f-cil7" placeholder="—" type="number" step="0.1"/>
+          </div>
+          <div>
+            <div class="cilindro-lbl">Resultado 28 días (MPa)</div>
+            <input class="form-input" id="f-cil28" placeholder="—" type="number" step="0.1"/>
+          </div>
+          <div>
+            <div class="cilindro-lbl">Estado</div>
+            <div class="resultado-badge" id="badge-estado" style="background:#18181B;color:#52525B;border:1px solid #27272A;">—</div>
+          </div>
+        </div>
+        <div style="font-size:9px;color:#3F3F46;font-family:JetBrains Mono,monospace;margin-bottom:10px;">
+          Criterio NSR-10: promedio ≥ F'c · ningún resultado &lt; F'c − 3.5 MPa
+        </div>
+
+        <button class="btn-primary" onclick="registrarVaciado()">⚡ Registrar vaciado</button>
+        <button class="btn-secondary" onclick="colorearPorVaciados()">🎨 Colorear modelo</button>
+      </div>
+
+      <!-- TAB: LISTA DE VACIADOS -->
+      <div id="pane-vaciados" class="panel-section" style="flex:1;display:none;">
+        <div class="panel-label">Vaciados registrados</div>
+        <div id="lista-vaciados">
+          <div class="elem-sel-empty">No hay vaciados registrados aún</div>
+        </div>
+        <button class="btn-secondary" style="margin-top:8px;" onclick="exportarVaciadosJSON()">↓ Exportar registro JSON</button>
+      </div>
+
+      <!-- TAB: ALERTAS -->
+      <div id="pane-alertas" class="panel-section" style="flex:1;display:none;">
+        <div class="panel-label">Alertas NSR-10</div>
+        <div id="lista-alertas">
+          <div class="elem-sel-empty">Sin alertas activas</div>
+        </div>
+
+        <div class="panel-label" style="margin-top:16px;">Leyenda</div>
+        <div class="leyenda">
+          <div class="ley-item"><div class="ley-dot" style="background:#22C55E"></div>Vaciado aprobado — cilindros OK</div>
+          <div class="ley-item"><div class="ley-dot" style="background:#FB923C"></div>Pendiente — esperando resultados</div>
+          <div class="ley-item"><div class="ley-dot" style="background:#EF4444"></div>Reprobado — cilindros fallidos</div>
+          <div class="ley-item"><div class="ley-dot" style="background:#38BDF8"></div>Sin vaciar — programado</div>
+          <div class="ley-item"><div class="ley-dot" style="background:#3F3F46"></div>Sin vaciar — no programado</div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- VISOR 3D -->
+    <div id="visor-wrap">
+      <div id="visor-container"></div>
+
+      <!-- Panel info elemento -->
+      <div id="info-panel">
+        <div class="info-head">
+          <span class="info-id" id="info-id">—</span>
+          <span class="info-close" onclick="cerrarInfo()">✕</span>
+        </div>
+        <div class="info-body">
+          <div class="info-row">
+            <div class="info-row-lbl">Categoría</div>
+            <div class="info-row-val" id="info-cat">—</div>
+          </div>
+          <div class="info-row">
+            <div class="info-row-lbl">Nivel</div>
+            <div class="info-row-val" id="info-nivel">—</div>
+          </div>
+          <div class="info-row">
+            <div class="info-row-lbl">Estado de avance</div>
+            <div class="info-row-val" id="info-estado">—</div>
+          </div>
+          <div class="info-row" id="info-vaciado-row" style="display:none;">
+            <div class="info-row-lbl">Vaciado</div>
+            <div class="info-row-val" id="info-vaciado">—</div>
+          </div>
+          <div class="info-row" id="info-cil-row" style="display:none;">
+            <div class="info-row-lbl">Cilindros 28 días</div>
+            <div class="info-row-val" id="info-cil">—</div>
+          </div>
+          <button class="info-btn-vaciar" onclick="usarElementoEnFormulario()">+ Agregar a vaciado</button>
+        </div>
+      </div>
+
+      <!-- Loading -->
+      <div id="loading">
+        <div class="spinner"></div>
+        <div class="load-txt" id="load-txt">Cargando...</div>
+      </div>
+
+      <div id="instrucciones">Click en elemento: info · Click + drag: rotar · Rueda: zoom</div>
+    </div>
+
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+    "@thatopen/components": "https://cdn.jsdelivr.net/npm/@thatopen/components@3.4.2/dist/index.js",
+    "@thatopen/components-front": "https://cdn.jsdelivr.net/npm/@thatopen/components-front@3.4.2/dist/index.js",
+    "@thatopen/fragments": "https://cdn.jsdelivr.net/npm/@thatopen/fragments@3.4.3/dist/index.js"
+  }
+}
+</script>
+<script type="module">
+
+// ══════════════════════════════════════════════════════
+// ESTADO GLOBAL
+// ══════════════════════════════════════════════════════
+const STATE = {
+  components: null, world: null, fragments: null,
+  ifcLoader: null, highlighter: null, model: null,
+  jsonData: null,
+  elementMap: {},    // element_id → elemento JSON
+  ifcGuidMap: {},    // ifc_guid   → elemento JSON
+  guidToLocalId: {}, // ifc_guid   → localId
+  localIdToEl: {},   // localId    → elemento JSON
+  // Vaciados
+  vaciados: [],      // lista de vaciados registrados
+  seleccionados: [], // elementos seleccionados para nuevo vaciado [{localId, guid, cat, nivel}]
+  elementoActivo: null, // elemento clickeado en el visor
+};
+
+window.STATE = STATE;
+
+// Colores para vaciados
+const COL_VACIADO = {
+  aprobado:  new THREE.Color(0x22C55E),
+  pendiente: new THREE.Color(0xFB923C),
+  reprobado: new THREE.Color(0xEF4444),
+  sinVaciar: new THREE.Color(0x3F3F46),
+};
+
+// ══════════════════════════════════════════════════════
+// INICIALIZAR VISOR
+// ══════════════════════════════════════════════════════
+async function initVisor() {
+  const container = document.getElementById("visor-container");
+  STATE.components = new OBC.Components();
+  const worlds = STATE.components.get(OBC.Worlds);
+  STATE.world = worlds.create();
+  STATE.world.scene    = new OBC.SimpleScene(STATE.components);
+  STATE.world.renderer = new OBCF.PostproductionRenderer(STATE.components, container);
+  STATE.world.camera   = new OBC.OrthoPerspectiveCamera(STATE.components);
+  STATE.components.init();
+  STATE.world.scene.setup();
+  STATE.world.scene.three.background = new THREE.Color(0x0A0A0B);
+
+  const grids = STATE.components.get(OBC.Grids);
+  grids.create(STATE.world);
+
+  const workerUrl = await OBC.FragmentsManager.getWorker();
+  STATE.fragments = STATE.components.get(OBC.FragmentsManager);
+  STATE.fragments.init(workerUrl);
+
+  let updateTimeout = null;
+  STATE.world.camera.controls.addEventListener("update", () => {
+    STATE.fragments.core.update();
+    clearTimeout(updateTimeout);
+    updateTimeout = setTimeout(() => STATE.fragments.core.update(true), 100);
+  });
+
+  STATE.fragments.core.models.materials.list.onItemSet.add(({ value: material }) => {
+    if (!("isLodMaterial" in material && material.isLodMaterial)) {
+      material.polygonOffset = true;
+      material.polygonOffsetUnits = 1;
+      material.polygonOffsetFactor = Math.random();
+    }
+  });
+
+  // Highlighter
+  STATE.highlighter = STATE.components.get(OBCF.Highlighter);
+  STATE.highlighter.setup({ world: STATE.world });
+  STATE.highlighter.zoomToSelection = false;
+  STATE.highlighter.styles.set("aprobado",  { color: COL_VACIADO.aprobado,  opacity: 1 });
+  STATE.highlighter.styles.set("pendiente", { color: COL_VACIADO.pendiente, opacity: 1 });
+  STATE.highlighter.styles.set("reprobado", { color: COL_VACIADO.reprobado, opacity: 1 });
+  STATE.highlighter.styles.set("sinVaciar", { color: COL_VACIADO.sinVaciar, opacity: 1 });
+  STATE.highlighter.styles.set("seleccion", { color: new THREE.Color(0x38BDF8), opacity: 1 });
+
+  STATE.fragments.list.onItemSet.add(({ value: model }) => {
+    STATE.model = model;
+    model.useCamera(STATE.world.camera.three);
+    STATE.world.scene.three.add(model.object);
+    STATE.fragments.core.update(true);
+    ocultarLoading();
+    toast("✓ Modelo IFC cargado");
+    ajustarCamara();
+  });
+
+  STATE.ifcLoader = STATE.components.get(OBC.IfcLoader);
+  await STATE.ifcLoader.setup({
+    autoSetWasm: false,
+    wasm: { path: "https://unpkg.com/web-ifc@0.0.77/", absolute: true },
+  });
+
+  // Click en elemento
+  const raycasters = STATE.components.get(OBC.Raycasters);
+  const raycaster  = raycasters.get(STATE.world);
+  container.addEventListener("click", async (e) => {
+    if (e.target.closest("#info-panel")) return;
+    const result = await raycaster.castRay();
+    if (result && result.localId !== undefined) {
+      await manejarClickElemento(result.localId);
+    } else {
+      cerrarInfo();
+    }
+  });
+
+  toast("⚡ Visor listo");
+}
+
+// ══════════════════════════════════════════════════════
+// CLICK EN ELEMENTO
+// ══════════════════════════════════════════════════════
+async function manejarClickElemento(localId) {
+  STATE.elementoActivo = localId;
+  const el = STATE.localIdToEl[localId];
+
+  // Mostrar panel info
+  const panel = document.getElementById("info-panel");
+  panel.style.display = "block";
+  document.getElementById("info-id").textContent = "#" + localId;
+  document.getElementById("info-cat").textContent    = el?.categoria || "—";
+  document.getElementById("info-nivel").textContent  = el?.nivel || "—";
+  document.getElementById("info-estado").textContent = el?._est || "Sin estado";
+
+  // Buscar si tiene vaciado
+  const vaciado = STATE.vaciados.find(v => v.elementos.includes(localId));
+  if (vaciado) {
+    document.getElementById("info-vaciado-row").style.display = "block";
+    document.getElementById("info-vaciado").textContent = vaciado.id + " · " + vaciado.fecha;
+    document.getElementById("info-cil-row").style.display = "block";
+    document.getElementById("info-cil").textContent =
+      vaciado.cil28 ? vaciado.cil28 + " MPa — " + vaciado.estado : "Pendiente";
+  } else {
+    document.getElementById("info-vaciado-row").style.display = "none";
+    document.getElementById("info-cil-row").style.display = "none";
+  }
+}
+
+window.cerrarInfo = function() {
+  document.getElementById("info-panel").style.display = "none";
+  STATE.elementoActivo = null;
+};
+
+// Agregar elemento activo al formulario de vaciado
+window.usarElementoEnFormulario = function() {
+  if (!STATE.elementoActivo) return;
+  const localId = STATE.elementoActivo;
+  const el = STATE.localIdToEl[localId];
+
+  // Evitar duplicados
+  if (STATE.seleccionados.find(s => s.localId === localId)) {
+    toast("Este elemento ya está en la selección");
+    return;
+  }
+
+  STATE.seleccionados.push({
+    localId,
+    cat: el?.categoria || "Elemento",
+    nivel: el?.nivel || "—",
+  });
+
+  actualizarListaSeleccionados();
+  switchTab("registrar");
+  toast("✓ Elemento agregado al vaciado");
+};
+
+// ══════════════════════════════════════════════════════
+// SELECCIÓN DE ELEMENTOS
+// ══════════════════════════════════════════════════════
+function actualizarListaSeleccionados() {
+  const lista = document.getElementById("elementos-sel-list");
+  const emptyMsg = document.getElementById("elem-empty-msg");
+
+  if (STATE.seleccionados.length === 0) {
+    lista.innerHTML = '<div class="elem-sel-empty" id="elem-empty-msg">Haz click en elementos del modelo 3D</div>';
+    return;
+  }
+
+  lista.innerHTML = STATE.seleccionados.map((s, i) => `
+    <div class="elem-sel-item">
+      <span class="elem-sel-name">#${s.localId} · ${s.cat} · ${s.nivel}</span>
+      <span class="elem-sel-rm" onclick="quitarSeleccionado(${i})">✕</span>
+    </div>
+  `).join('');
+}
+
+window.quitarSeleccionado = function(i) {
+  STATE.seleccionados.splice(i, 1);
+  actualizarListaSeleccionados();
+};
+
+window.limpiarSeleccion = function() {
+  STATE.seleccionados = [];
+  actualizarListaSeleccionados();
+};
+
+// ══════════════════════════════════════════════════════
+// REGISTRAR VACIADO
+// ══════════════════════════════════════════════════════
+window.registrarVaciado = function() {
+  const id          = document.getElementById("f-id").value.trim();
+  const fecha       = document.getElementById("f-fecha").value;
+  const proveedor   = document.getElementById("f-proveedor").value.trim();
+  const remision    = document.getElementById("f-remision").value.trim();
+  const fc          = parseFloat(document.getElementById("f-fc").value);
+  const slump       = document.getElementById("f-slump").value;
+  const volumen     = document.getElementById("f-volumen").value;
+  const responsable = document.getElementById("f-responsable").value.trim();
+  const cil7        = document.getElementById("f-cil7").value ? parseFloat(document.getElementById("f-cil7").value) : null;
+  const cil28       = document.getElementById("f-cil28").value ? parseFloat(document.getElementById("f-cil28").value) : null;
+
+  if (!id)        { toast("⚠ Ingresa el ID de la colada"); return; }
+  if (!fecha)     { toast("⚠ Ingresa la fecha del vaciado"); return; }
+  if (!proveedor) { toast("⚠ Ingresa el proveedor"); return; }
+  if (STATE.seleccionados.length === 0) { toast("⚠ Selecciona al menos un elemento del modelo"); return; }
+
+  // Verificar ID único
+  if (STATE.vaciados.find(v => v.id === id)) {
+    toast("⚠ Ya existe un vaciado con el ID " + id);
+    return;
+  }
+
+  // Calcular estado según NSR-10
+  let estado = "pendiente";
+  if (cil28 !== null) {
+    // Criterio NSR-10 C.5.6: ningún resultado < F'c - 3.5 MPa
+    if (cil28 >= fc && cil28 >= (fc - 3.5)) {
+      estado = "aprobado";
+    } else {
+      estado = "reprobado";
+    }
+  }
+
+  const vaciado = {
+    id, fecha, proveedor, remision,
+    fc, slump, volumen, responsable,
+    cil7, cil28, estado,
+    elementos: STATE.seleccionados.map(s => s.localId),
+    elementosInfo: [...STATE.seleccionados],
+    fechaRegistro: new Date().toISOString(),
+  };
+
+  STATE.vaciados.push(vaciado);
+
+  // Limpiar formulario
+  ["f-id","f-fecha","f-proveedor","f-remision","f-slump","f-volumen","f-responsable","f-cil7","f-cil28"]
+    .forEach(id => document.getElementById(id).value = "");
+  STATE.seleccionados = [];
+  actualizarListaSeleccionados();
+
+  actualizarStats();
+  actualizarListaVaciados();
+  actualizarAlertas();
+  colorearPorVaciados();
+
+  toast("✓ Vaciado " + id + " registrado — " + vaciado.elementos.length + " elementos");
+  switchTab("vaciados");
+};
+
+// ══════════════════════════════════════════════════════
+// COLOREAR MODELO POR ESTADO DE VACIADO
+// ══════════════════════════════════════════════════════
+window.colorearPorVaciados = async function() {
+  if (!STATE.model || !STATE.highlighter) return;
+  mostrarLoading("Aplicando colores de vaciado...");
+
+  try {
+    await STATE.highlighter.clear();
+    const modelId = STATE.model.modelId;
+
+    // Agrupar localIds por estado de vaciado
+    const grupos = { aprobado: [], pendiente: [], reprobado: [], sinVaciar: [] };
+
+    // Marcar todos los elementos con vaciado
+    const conVaciado = new Set();
+    for (const v of STATE.vaciados) {
+      for (const lid of v.elementos) {
+        conVaciado.add(lid);
+        grupos[v.estado].push(lid);
+      }
+    }
+
+    // Los demás → sinVaciar
+    for (const lid of Object.keys(STATE.localIdToEl)) {
+      if (!conVaciado.has(parseInt(lid))) {
+        grupos.sinVaciar.push(parseInt(lid));
+      }
+    }
+
+    // Aplicar colores
+    for (const [estado, ids] of Object.entries(grupos)) {
+      if (!ids.length) continue;
+      await STATE.highlighter.highlightByID(estado, { [modelId]: new Set(ids) }, false, false);
+    }
+
+    await STATE.fragments.core.update(true);
+    ocultarLoading();
+    toast("✓ Modelo coloreado por estado de vaciado");
+  } catch(err) {
+    ocultarLoading();
+    toast("Error: " + err.message);
+    console.error(err);
+  }
+};
+
+// ══════════════════════════════════════════════════════
+// ACTUALIZAR UI
+// ══════════════════════════════════════════════════════
+function actualizarStats() {
+  const total      = STATE.vaciados.length;
+  const aprobados  = STATE.vaciados.filter(v => v.estado === "aprobado").length;
+  const pendientes = STATE.vaciados.filter(v => v.estado === "pendiente").length;
+  const reprobados = STATE.vaciados.filter(v => v.estado === "reprobado").length;
+  document.getElementById("st-total").textContent      = total;
+  document.getElementById("st-aprobados").textContent  = aprobados;
+  document.getElementById("st-pendientes").textContent = pendientes;
+  document.getElementById("st-reprobados").textContent = reprobados;
+}
+
+function actualizarListaVaciados() {
+  const lista = document.getElementById("lista-vaciados");
+  if (!STATE.vaciados.length) {
+    lista.innerHTML = '<div class="elem-sel-empty">No hay vaciados registrados aún</div>';
+    return;
+  }
+  lista.innerHTML = STATE.vaciados.slice().reverse().map(v => `
+    <div class="vaciado-item" onclick="verVaciado('${v.id}')">
+      <div class="vaciado-id">${v.id}</div>
+      <div class="vaciado-info">${v.fecha} · ${v.proveedor}</div>
+      <div class="vaciado-info">${v.elementos.length} elementos · F'c ${v.fc} MPa</div>
+      <div class="vaciado-estado est-${v.estado}">${v.estado.toUpperCase()}</div>
+    </div>
+  `).join('');
+}
+
+function actualizarAlertas() {
+  const lista = document.getElementById("lista-alertas");
+  const alertas = [];
+
+  for (const v of STATE.vaciados) {
+    // Alerta: pendiente de resultado a 28 días
+    if (v.estado === "pendiente") {
+      const fechaVac = new Date(v.fecha);
+      const hoy = new Date();
+      const diasTranscurridos = Math.floor((hoy - fechaVac) / (1000 * 60 * 60 * 24));
+      if (diasTranscurridos >= 25) {
+        alertas.push({
+          tipo: "warn",
+          titulo: `${v.id} — Resultado 28 días próximo`,
+          body: `Vaciado del ${v.fecha}. Han transcurrido ${diasTranscurridos} días. Solicitar resultado al laboratorio.`
+        });
+      }
+    }
+    // Alerta: reprobado
+    if (v.estado === "reprobado") {
+      alertas.push({
+        tipo: "err",
+        titulo: `${v.id} — CILINDROS REPROBADOS ⚠`,
+        body: `F'c especificado: ${v.fc} MPa · Resultado 28 días: ${v.cil28} MPa · ${v.elementos.length} elementos afectados. Notificar a interventoría.`
+      });
+    }
+  }
+
+  if (!alertas.length) {
+    lista.innerHTML = '<div class="elem-sel-empty">Sin alertas activas</div>';
+    return;
+  }
+
+  lista.innerHTML = alertas.map(a => `
+    <div class="alerta-box alerta-${a.tipo}">
+      <div class="alerta-title">${a.titulo}</div>
+      <div class="alerta-body">${a.body}</div>
+    </div>
+  `).join('');
+}
+
+window.verVaciado = function(id) {
+  const v = STATE.vaciados.find(v => v.id === id);
+  if (!v) return;
+  toast(`${v.id} · ${v.elementos.length} elementos · Estado: ${v.estado}`);
+};
+
+// ══════════════════════════════════════════════════════
+// EXPORTAR JSON
+// ══════════════════════════════════════════════════════
+window.exportarVaciadosJSON = function() {
+  if (!STATE.vaciados.length) { toast("No hay vaciados para exportar"); return; }
+  const data = {
+    proyecto: STATE.jsonData?.proyecto || "Proyecto",
+    fecha_export: new Date().toISOString().split("T")[0],
+    version: "LF BIM Studio — Control de Vaciados v1.0",
+    vaciados: STATE.vaciados,
+  };
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(blob);
+  link.download = `ControlVaciados_${data.fecha_export}.json`;
+  link.click();
+  URL.revokeObjectURL(link.href);
+  toast("✓ Exportado ControlVaciados_" + data.fecha_export + ".json");
+};
+
+// ══════════════════════════════════════════════════════
+// CARGA DE ARCHIVOS
+// ══════════════════════════════════════════════════════
+window.cargarIFC = async function(file) {
+  if (!file) return;
+  mostrarLoading("Cargando modelo IFC...");
+  try {
+    const buffer = await file.arrayBuffer();
+    await STATE.ifcLoader.load(new Uint8Array(buffer), true, file.name.replace(".ifc",""), {
+      processData: { progressCallback: (p) => {
+        document.getElementById("load-txt").textContent = "Procesando... " + Math.round(p*100) + "%";
+      }},
+    });
+    document.getElementById("dz-ifc").classList.add("loaded");
+    document.getElementById("dz-ifc-txt").textContent = "✓ " + file.name;
+  } catch(err) {
+    ocultarLoading();
+    toast("Error IFC: " + err.message);
+  }
+};
+
+window.cargarJSON = function(file) {
+  if (!file) return;
+  const r = new FileReader();
+  r.onload = async (e) => {
+    try {
+      const data = JSON.parse(e.target.result);
+      STATE.jsonData = data.elementos ? data : { proyecto:"Proyecto", elementos: [] };
+      STATE.elementMap = {};
+      STATE.ifcGuidMap = {};
+      STATE.jsonData.elementos.forEach(el => {
+        el._est = normEst(el.estado_ejecucion || "");
+        STATE.elementMap[el.element_id] = el;
+        if (el.ifc_guid) STATE.ifcGuidMap[el.ifc_guid] = el;
+      });
+
+      // Mapear GUIDs a localIds si el modelo ya está cargado
+      if (STATE.model) await mapearGuids();
+
+      document.getElementById("dz-json").classList.add("loaded");
+      document.getElementById("dz-json-txt").textContent = "✓ " + (STATE.jsonData.proyecto || file.name);
+      toast("✓ JSON cargado — " + STATE.jsonData.elementos.length + " elementos");
+    } catch(err) { toast("JSON inválido"); }
+  };
+  r.readAsText(file);
+};
+
+async function mapearGuids() {
+  if (!STATE.model || !STATE.jsonData) return;
+  const allGuids = STATE.jsonData.elementos.filter(el => el.ifc_guid).map(el => el.ifc_guid);
+  if (!allGuids.length) return;
+  const localIdsList = await STATE.model.getLocalIdsByGuids(allGuids);
+  allGuids.forEach((guid, i) => {
+    if (localIdsList[i] !== null && localIdsList[i] !== undefined) {
+      STATE.guidToLocalId[guid] = localIdsList[i];
+      STATE.localIdToEl[localIdsList[i]] = STATE.ifcGuidMap[guid];
+    }
+  });
+}
+
+// ══════════════════════════════════════════════════════
+// BADGE RESULTADO EN TIEMPO REAL
+// ══════════════════════════════════════════════════════
+document.addEventListener("DOMContentLoaded", () => {
+  document.getElementById("f-cil28").addEventListener("input", () => {
+    const cil28 = parseFloat(document.getElementById("f-cil28").value);
+    const fc    = parseFloat(document.getElementById("f-fc").value);
+    const badge = document.getElementById("badge-estado");
+    if (isNaN(cil28)) {
+      badge.style.background = "#18181B";
+      badge.style.color = "#52525B";
+      badge.style.border = "1px solid #27272A";
+      badge.textContent = "—";
+    } else if (cil28 >= fc && cil28 >= (fc - 3.5)) {
+      badge.style.background = "#052E16";
+      badge.style.color = "#22C55E";
+      badge.style.border = "1px solid #22C55E";
+      badge.textContent = "OK";
+    } else {
+      badge.style.background = "#2D0A0A";
+      badge.style.color = "#EF4444";
+      badge.style.border = "1px solid #EF4444";
+      badge.textContent = "FALLA";
+    }
+  });
+
+  // Fecha por defecto: hoy
+  document.getElementById("f-fecha").value = new Date().toISOString().split("T")[0];
+});
+
+// ══════════════════════════════════════════════════════
+// TABS
+// ══════════════════════════════════════════════════════
+window.switchTab = function(tab) {
+  ["registrar","vaciados","alertas"].forEach(t => {
+    document.getElementById("tab-" + t).classList.toggle("active", t === tab);
+    document.getElementById("pane-" + t).style.display = t === tab ? "block" : "none";
+  });
+};
+
+// ══════════════════════════════════════════════════════
+// HELPERS
+// ══════════════════════════════════════════════════════
+async function ajustarCamara() {
+  try {
+    const box = new THREE.Box3();
+    STATE.world.scene.three.traverse(obj => {
+      if (obj.isMesh) {
+        obj.geometry?.computeBoundingBox();
+        if (obj.geometry?.boundingBox)
+          box.union(obj.geometry.boundingBox.clone().applyMatrix4(obj.matrixWorld));
+      }
+    });
+    if (box.isEmpty()) return;
+    const center = new THREE.Vector3(); box.getCenter(center);
+    const size   = new THREE.Vector3(); box.getSize(size);
+    const d = Math.max(size.x, size.y, size.z);
+    await STATE.world.camera.controls.setLookAt(
+      center.x+d, center.y+d*0.6, center.z+d,
+      center.x, center.y, center.z, true
+    );
+  } catch(e) {}
+}
+
+function normEst(raw) {
+  if (!raw) return "Sin estado";
+  const n = raw.normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().trim();
+  if (n==="terminado") return "Terminado";
+  if (n==="inspeccionado") return "Inspeccionado";
+  if (n==="en proceso") return "En proceso";
+  if (n==="no iniciado") return "No iniciado";
+  return raw.trim();
+}
+
+function mostrarLoading(txt) {
+  document.getElementById("load-txt").textContent = txt || "Cargando...";
+  document.getElementById("loading").classList.add("on");
+}
+function ocultarLoading() {
+  document.getElementById("loading").classList.remove("on");
+}
+function toast(msg) {
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.classList.add("on");
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => t.classList.remove("on"), 3500);
+}
+
+window.dzOver = (e, id) => { e.preventDefault(); document.getElementById(id).classList.add("drag"); };
+window.dzOut  = (id)    => { document.getElementById(id).classList.remove("drag"); };
+window.dzDrop = (e, tipo) => {
+  e.preventDefault();
+  const id = tipo === "ifc" ? "dz-ifc" : "dz-json";
+  document.getElementById(id).classList.remove("drag");
+  const file = e.dataTransfer.files[0];
+  if (!file) return;
+  if (tipo === "ifc")  window.cargarIFC(file);
+  if (tipo === "json") window.cargarJSON(file);
+};
+
+// ══════════════════════════════════════════════════════
+// INICIAR
+// ══════════════════════════════════════════════════════
+initVisor().catch(console.error);
+initVisor().catch(console.error);
+</script>
+</body>
+</html>
