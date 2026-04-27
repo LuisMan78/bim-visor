@@ -471,7 +471,7 @@ html,body{height:100%;overflow:hidden;background:#0A0A0B;color:#F4F4F0;font-fami
     <div id="modulo-vaciados" style="display:none"><div id="app">
 
   <!-- TOPBAR -->
-  <div id="topbar">
+  <div id="V-topbar">
     <div class="tb-mark">LF</div>
     <div>
       <div class="tb-title">Control de Vaciados</div>
@@ -480,7 +480,7 @@ html,body{height:100%;overflow:hidden;background:#0A0A0B;color:#F4F4F0;font-fami
     <div class="tb-sep"></div>
     <div class="tb-stats">
       <div class="tb-stat">
-        <div class="tb-stat-val" id="st-total" style="color:#FACC15">0</div>
+        <div class="tb-stat-val" id="V-st-total" style="color:#FACC15">0</div>
         <div class="tb-stat-lbl">Vaciados</div>
       </div>
       <div class="tb-stat">
@@ -507,18 +507,18 @@ html,body{height:100%;overflow:hidden;background:#0A0A0B;color:#F4F4F0;font-fami
       <!-- Carga archivos -->
       <div class="panel-section">
         <div class="panel-label">Modelo y datos</div>
-        <div class="drop-zone" id="dz-ifc"
+        <div class="drop-zone" id="V-dz-ifc"
              ondragover="dzOver(event,'dz-ifc')" ondragleave="dzOut('dz-ifc')" ondrop="dzDrop(event,'ifc')"
              onclick="document.getElementById('in-ifc').click()">
           <input type="file" id="in-ifc" accept=".ifc" onchange="cargarIFC(this.files[0])"/>
-          <div class="dz-txt" id="dz-ifc-txt">🏗 Cargar IFC</div>
+          <div class="dz-txt" id="V-dz-ifc-txt">🏗 Cargar IFC</div>
           <div class="dz-sub">Modelo estructural</div>
         </div>
-        <div class="drop-zone" id="dz-json"
+        <div class="drop-zone" id="V-dz-json"
              ondragover="dzOver(event,'dz-json')" ondragleave="dzOut('dz-json')" ondrop="dzDrop(event,'json')"
              onclick="document.getElementById('in-json').click()">
           <input type="file" id="in-json" accept=".json" onchange="cargarJSON(this.files[0])"/>
-          <div class="dz-txt" id="dz-json-txt">📊 Cargar JSON de avance</div>
+          <div class="dz-txt" id="V-dz-json-txt">📊 Cargar JSON de avance</div>
           <div class="dz-sub">BIMMonitorPro_Avance_*.json</div>
         </div>
       </div>
@@ -648,22 +648,22 @@ html,body{height:100%;overflow:hidden;background:#0A0A0B;color:#F4F4F0;font-fami
 
     <!-- VISOR 3D -->
     <div id="visor-wrap">
-      <div id="visor-container"></div>
+      <div id="V-visor-container"></div>
 
       <!-- Panel info elemento -->
       <div id="info-panel">
         <div class="info-head">
-          <span class="info-id" id="info-id">—</span>
+          <span class="info-id" id="V-info-id">—</span>
           <span class="info-close" onclick="cerrarInfo()">✕</span>
         </div>
         <div class="info-body">
           <div class="info-row">
             <div class="info-row-lbl">Categoría</div>
-            <div class="info-row-val" id="info-cat">—</div>
+            <div class="info-row-val" id="V-info-cat">—</div>
           </div>
           <div class="info-row">
             <div class="info-row-lbl">Nivel</div>
-            <div class="info-row-val" id="info-nivel">—</div>
+            <div class="info-row-val" id="V-info-nivel">—</div>
           </div>
           <div class="info-row">
             <div class="info-row-lbl">Estado de avance</div>
@@ -682,18 +682,18 @@ html,body{height:100%;overflow:hidden;background:#0A0A0B;color:#F4F4F0;font-fami
       </div>
 
       <!-- Loading -->
-      <div id="loading">
+      <div id="V-loading">
         <div class="spinner"></div>
         <div class="load-txt" id="load-txt">Cargando...</div>
       </div>
 
-      <div id="instrucciones">Click en elemento: info · Click + drag: rotar · Rueda: zoom</div>
+      <div id="V-instrucciones">Click en elemento: info · Click + drag: rotar · Rueda: zoom</div>
     </div>
 
   </div>
 </div>
 
-<div id="toast"></div></div>
+<div id="V-toast"></div></div>
     <script type="module" src="/src/main.js"></script>
   </body>
 </html>

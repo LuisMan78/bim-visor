@@ -433,7 +433,7 @@ const COL_VACIADO = {
 // INICIALIZAR VISOR
 // ══════════════════════════════════════════════════════
 async function initVaciados() {
-  const container = document.getElementById("visor-container");
+  const container = document.getElementById("V-visor-container");
   VSTATE.components = new OBC.Components();
   const worlds = VSTATE.components.get(OBC.Worlds);
   VSTATE.world = worlds.create();
@@ -518,9 +518,9 @@ async function manejarClickElemento(localId) {
   // Mostrar panel info
   const panel = document.getElementById("info-panel");
   panel.style.display = "block";
-  document.getElementById("info-id").textContent = "#" + localId;
-  document.getElementById("info-cat").textContent    = el?.categoria || "—";
-  document.getElementById("info-nivel").textContent  = el?.nivel || "—";
+  document.getElementById("V-info-id").textContent = "#" + localId;
+  document.getElementById("V-info-cat").textContent    = el?.categoria || "—";
+  document.getElementById("V-info-nivel").textContent  = el?.nivel || "—";
   document.getElementById("info-estado").textContent = el?._est || "Sin estado";
 
   // Buscar si tiene vaciado
@@ -712,7 +712,7 @@ function V_V_actualizarStats() {
   const aprobados  = VSTATE.vaciados.filter(v => v.estado === "aprobado").length;
   const pendientes = VSTATE.vaciados.filter(v => v.estado === "pendiente").length;
   const reprobados = VSTATE.vaciados.filter(v => v.estado === "reprobado").length;
-  document.getElementById("st-total").textContent      = total;
+  document.getElementById("V-st-total").textContent      = total;
   document.getElementById("st-aprobados").textContent  = aprobados;
   document.getElementById("st-pendientes").textContent = pendientes;
   document.getElementById("st-reprobados").textContent = reprobados;
@@ -814,8 +814,8 @@ window.cargarIFC = async function(file) {
         document.getElementById("load-txt").textContent = "Procesando... " + Math.round(p*100) + "%";
       }},
     });
-    document.getElementById("dz-ifc").classList.add("loaded");
-    document.getElementById("dz-ifc-txt").textContent = "✓ " + file.name;
+    document.getElementById("V-dz-ifc").classList.add("loaded");
+    document.getElementById("V-dz-ifc-txt").textContent = "✓ " + file.name;
   } catch(err) {
     V_ocultarLoading();
     V_toast("Error IFC: " + err.message);
@@ -840,8 +840,8 @@ window.cargarJSON = function(file) {
       // Mapear GUIDs a localIds si el modelo ya está cargado
       if (VSTATE.model) await mapearGuids();
 
-      document.getElementById("dz-json").classList.add("loaded");
-      document.getElementById("dz-json-txt").textContent = "✓ " + (VSTATE.jsonData.proyecto || file.name);
+      document.getElementById("V-dz-json").classList.add("loaded");
+      document.getElementById("V-dz-json-txt").textContent = "✓ " + (VSTATE.jsonData.proyecto || file.name);
       V_toast("✓ JSON cargado — " + VSTATE.jsonData.elementos.length + " elementos");
     } catch(err) { V_toast("JSON inválido"); }
   };
@@ -937,13 +937,13 @@ function V_V_normEst(raw) {
 
 function V_V_mostrarLoading(txt) {
   document.getElementById("load-txt").textContent = txt || "Cargando...";
-  document.getElementById("loading").classList.add("on");
+  document.getElementById("V-loading").classList.add("on");
 }
 function V_V_ocultarLoading() {
-  document.getElementById("loading").classList.remove("on");
+  document.getElementById("V-loading").classList.remove("on");
 }
 function V_V_toast(msg) {
-  const t = document.getElementById("toast");
+  const t = document.getElementById("V-toast");
   t.textContent = msg;
   t.classList.add("on");
   clearTimeout(t._timer);
