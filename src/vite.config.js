@@ -1,5 +1,4 @@
 import { defineConfig } from 'vite'
-import { resolve } from 'path'
 
 export default defineConfig({
   preview: {
@@ -14,8 +13,8 @@ export default defineConfig({
     chunkSizeWarningLimit: 10000,
     rollupOptions: {
       input: {
-        main:     resolve(__dirname, 'index.html'),
-        vaciados: resolve(__dirname, 'vaciados_entry.html'),
+        main:     'index.html',
+        vaciados: 'vaciados_entry.html',
       }
     }
   }
