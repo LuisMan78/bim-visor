@@ -1,4 +1,8 @@
 import { defineConfig } from 'vite'
+import { fileURLToPath } from 'url'
+import { resolve } from 'path'
+
+const __dirname = fileURLToPath(new URL('.', import.meta.url))
 
 export default defineConfig({
   preview: {
@@ -9,13 +13,14 @@ export default defineConfig({
   server: {
     port: 5173
   },
+  define: {
+    'process.env.NODE_ENV': '"production"',
+  },
+  resolve: {
+    conditions: ['browser', 'module', 'import', 'default'],
+  },
   build: {
     chunkSizeWarningLimit: 10000,
-    rollupOptions: {
-      input: {
-        main:     'index.html',
-        vaciados: 'vaciados_entry.html',
-      }
-    }
+    target: 'esnext',
   }
 })
