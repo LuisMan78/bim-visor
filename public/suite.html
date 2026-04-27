@@ -436,8 +436,14 @@ function abrirCampo() {
 }
 
 function abrirVaciados() {
-  try { sessionStorage.setItem('BIM_JSON_DATA', JSON.stringify(JSON_DATA)); } catch(e) {}
-  window.open('/vaciados.html', '_blank');
+  fetch('http://localhost:5173', { mode: 'no-cors' })
+    .then(() => {
+      try { sessionStorage.setItem('BIM_JSON_DATA', JSON.stringify(JSON_DATA)); } catch(e) {}
+      window.open('http://localhost:5173/vaciados_entry.html', '_blank');
+    })
+    .catch(() => {
+      toast('⚠ Ejecuta: npm run dev en la terminal', '#FB923C');
+    });
 }
 
 function abrirVisor() {
