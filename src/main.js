@@ -401,7 +401,6 @@ window.dzDrop=(e,tipo)=>{
 };
 
 
-
 // ══════════════════════════════════════════════════════
 // ESTADO GLOBAL
 // ══════════════════════════════════════════════════════
@@ -649,7 +648,7 @@ window.registrarVaciado = function() {
   VSTATE.seleccionados = [];
   actualizarListaSeleccionados();
 
-  actualizarStats();
+  V_actualizarStats();
   actualizarListaVaciados();
   actualizarAlertas();
   colorearPorVaciados();
@@ -811,7 +810,7 @@ window.cargarIFC = async function(file) {
     const buffer = await file.arrayBuffer();
     await VSTATE.ifcLoader.load(new Uint8Array(buffer), true, file.name.replace(".ifc",""), {
       processData: { progressCallback: (p) => {
-        document.getElementById("load-txt").textContent = "Procesando... " + Math.round(p*100) + "%";
+        document.getElementById("V-load-txt").textContent = "Procesando... " + Math.round(p*100) + "%";
       }},
     });
     document.getElementById("V-dz-ifc").classList.add("loaded");
@@ -936,7 +935,7 @@ function V_V_normEst(raw) {
 }
 
 function V_V_mostrarLoading(txt) {
-  document.getElementById("load-txt").textContent = txt || "Cargando...";
+  document.getElementById("V-load-txt").textContent = txt || "Cargando...";
   document.getElementById("V-loading").classList.add("on");
 }
 function V_V_ocultarLoading() {
@@ -954,7 +953,7 @@ window.dzOver = (e, id) => { e.preventDefault(); document.getElementById(id).cla
 window.dzOut  = (id)    => { document.getElementById(id).classList.remove("drag"); };
 window.dzDrop = (e, tipo) => {
   e.preventDefault();
-  const id = tipo === "ifc" ? "dz-ifc" : "dz-json";
+  const id = tipo === "ifc" ? "V-dz-ifc" : "V-dz-json";
   document.getElementById(id).classList.remove("drag");
   const file = e.dataTransfer.files[0];
   if (!file) return;
@@ -968,20 +967,14 @@ window.dzDrop = (e, tipo) => {
 
 
 // ══════════════════════════════════════════════════════
-// ROUTER — detectar módulo según URL
+// ROUTER
 // ══════════════════════════════════════════════════════
 if (window.location.pathname.includes('vaciados')) {
-  // Mostrar módulo vaciados, ocultar visor
-  const mv = document.getElementById('modulo-vaciados');
-  const vv = document.getElementById('modulo-visor');
-  if (mv) mv.style.display = 'block';
-  if (vv) vv.style.display = 'none';
+  document.getElementById('modulo-vaciados').style.display = 'block';
+  document.getElementById('modulo-visor').style.display = 'none';
   initVaciados().catch(console.error);
 } else {
-  // Mostrar visor, ocultar vaciados
-  const mv = document.getElementById('modulo-vaciados');
-  const vv = document.getElementById('modulo-visor');
-  if (vv) vv.style.display = 'block';
-  if (mv) mv.style.display = 'none';
+  document.getElementById('modulo-visor').style.display = 'block';
+  document.getElementById('modulo-vaciados').style.display = 'none';
   initVisor().catch(console.error);
 }
