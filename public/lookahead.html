@@ -1,0 +1,742 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Lookahead Semanal — LF BIM Studio</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=Barlow:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;background:#0A0A0B;color:#F4F4F0;font-family:'Barlow',sans-serif;-webkit-font-smoothing:antialiased;overflow-x:hidden;}
+
+/* ── TOPBAR ── */
+#topbar{
+  position:sticky;top:0;z-index:100;
+  background:rgba(10,10,11,0.97);border-bottom:2px solid #FACC15;
+  display:flex;align-items:center;gap:14px;padding:0 24px;height:52px;
+  backdrop-filter:blur(12px);
+}
+.tb-mark{width:34px;height:34px;background:#FACC15;color:#0A0A0B;display:flex;align-items:center;justify-content:center;font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:13px;flex-shrink:0;}
+.tb-title{font-size:14px;font-weight:700;letter-spacing:0.04em;text-transform:uppercase;}
+.tb-sub{font-size:9px;color:#FACC15;letter-spacing:0.14em;text-transform:uppercase;margin-top:1px;font-family:'JetBrains Mono',monospace;}
+.tb-sep{flex:1;}
+.tb-proyecto{font-size:11px;color:#9A9A95;font-style:italic;max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+
+/* ── CONTENEDOR PRINCIPAL ── */
+#main{max-width:1400px;margin:0 auto;padding:24px;}
+
+/* ── CARGA JSON ── */
+#zona-carga{
+  border:1px dashed #3F3F46;background:#111113;padding:32px;
+  text-align:center;cursor:pointer;transition:all 0.2s;margin-bottom:24px;
+}
+#zona-carga:hover,#zona-carga.drag{border-color:#FACC15;background:#1A180A;}
+#zona-carga.loaded{border-style:solid;border-color:#22C55E;background:#052E16;}
+#zona-carga input{display:none;}
+.carga-ico{font-size:32px;margin-bottom:8px;}
+.carga-txt{font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#F4F4F0;}
+.carga-sub{font-size:11px;color:#52525B;margin-top:4px;font-family:'JetBrains Mono',monospace;}
+
+/* ── DASHBOARD SEMANAS ── */
+#dashboard{display:none;}
+
+/* Selector semana */
+#selector-semana{
+  display:flex;align-items:center;gap:12px;margin-bottom:24px;
+  flex-wrap:wrap;
+}
+.sem-btn{
+  padding:8px 16px;background:#18181B;border:1px solid #27272A;
+  color:#9A9A95;font-family:'Barlow Condensed',sans-serif;
+  font-size:12px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;
+  cursor:pointer;transition:all 0.15s;
+}
+.sem-btn:hover{border-color:#FACC15;color:#FACC15;}
+.sem-btn.active{background:#1A180A;border-color:#FACC15;color:#FACC15;}
+.sem-label{font-family:'JetBrains Mono',monospace;font-size:11px;color:#52525B;}
+#sem-fecha{font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:700;color:#F4F4F0;}
+.btn-pdf{
+  margin-left:auto;padding:10px 20px;background:#FACC15;color:#0A0A0B;
+  border:none;font-family:'Barlow Condensed',sans-serif;font-size:12px;
+  font-weight:800;letter-spacing:0.1em;text-transform:uppercase;cursor:pointer;
+  transition:all 0.2s;
+}
+.btn-pdf:hover{background:#FDE047;}
+
+/* ── KPIs ── */
+#kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:24px;}
+.kpi{background:#111113;border:1px solid #27272A;padding:16px;border-top:2px solid;}
+.kpi-val{font-family:'Barlow Condensed',sans-serif;font-size:32px;font-weight:900;line-height:1;}
+.kpi-lbl{font-size:9px;color:#52525B;letter-spacing:0.12em;text-transform:uppercase;margin-top:4px;font-family:'JetBrains Mono',monospace;}
+.kpi-sub{font-size:10px;color:#3F3F46;margin-top:2px;}
+
+/* PPC gauge */
+#ppc-gauge{background:#111113;border:1px solid #27272A;padding:20px;margin-bottom:24px;display:flex;align-items:center;gap:24px;}
+.ppc-circle{position:relative;width:100px;height:100px;flex-shrink:0;}
+.ppc-circle svg{transform:rotate(-90deg);}
+.ppc-circle-txt{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+.ppc-pct{font-family:'Barlow Condensed',sans-serif;font-size:26px;font-weight:900;line-height:1;}
+.ppc-lbl-sm{font-size:8px;color:#52525B;letter-spacing:0.1em;text-transform:uppercase;font-family:'JetBrains Mono',monospace;}
+.ppc-info{flex:1;}
+.ppc-title{font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:800;text-transform:uppercase;letter-spacing:0.04em;margin-bottom:6px;}
+.ppc-desc{font-size:12px;color:#9A9A95;line-height:1.6;}
+.ppc-meta{display:flex;gap:24px;margin-top:10px;}
+.ppc-meta-item{font-family:'JetBrains Mono',monospace;font-size:10px;color:#52525B;}
+.ppc-meta-val{font-weight:700;color:#F4F4F0;}
+
+/* ── GRID SEMANAS ── */
+#grid-semanas{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px;}
+.semana-panel{background:#111113;border:1px solid #27272A;}
+.semana-header{padding:12px 16px;border-bottom:1px solid #27272A;display:flex;align-items:center;gap:10px;}
+.semana-num{font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;padding:3px 10px;border:1px solid;}
+.semana-fecha{font-size:11px;color:#9A9A95;font-family:'JetBrains Mono',monospace;}
+.semana-count{margin-left:auto;font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;}
+.semana-body{max-height:320px;overflow-y:auto;}
+.elem-row{
+  display:grid;grid-template-columns:1fr auto auto;
+  padding:8px 16px;border-bottom:1px solid #18181B;
+  align-items:center;gap:12px;transition:background 0.1s;
+}
+.elem-row:hover{background:#18181B;}
+.elem-info{}
+.elem-cat{font-size:11px;font-weight:700;color:#F4F4F0;}
+.elem-det{font-size:10px;color:#52525B;font-family:'JetBrains Mono',monospace;margin-top:1px;}
+.elem-resp{font-size:10px;color:#9A9A95;text-align:right;}
+.elem-estado{font-size:9px;font-weight:700;padding:2px 8px;letter-spacing:0.06em;text-transform:uppercase;white-space:nowrap;}
+.est-t{background:#052E16;color:#22C55E;border:1px solid #22C55E;}
+.est-p{background:#1C1208;color:#FB923C;border:1px solid #FB923C;}
+.est-n{background:#18181B;color:#52525B;border:1px solid #27272A;}
+.est-a{background:#2D0A0A;color:#EF4444;border:1px solid #EF4444;}
+.est-i{background:#082F49;color:#38BDF8;border:1px solid #38BDF8;}
+
+/* ── TABLA LOOKAHEAD S1 vs S2 ── */
+#tabla-wrap{background:#111113;border:1px solid #27272A;margin-bottom:24px;overflow-x:auto;}
+.tabla-header{padding:12px 16px;border-bottom:1px solid #27272A;display:flex;align-items:center;gap:10px;}
+.tabla-title{font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#FACC15;}
+table{width:100%;border-collapse:collapse;font-size:11px;}
+th{padding:8px 12px;background:#18181B;color:#52525B;font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:0.1em;text-transform:uppercase;text-align:left;border-bottom:1px solid #27272A;white-space:nowrap;}
+td{padding:8px 12px;border-bottom:1px solid #18181B;color:#F4F4F0;vertical-align:middle;}
+tr:hover td{background:#18181B;}
+.td-cat{font-weight:700;}
+.td-nivel{color:#9A9A95;font-family:'JetBrains Mono',monospace;}
+.td-resp{color:#9A9A95;}
+.td-fecha{font-family:'JetBrains Mono',monospace;color:#52525B;white-space:nowrap;}
+.td-pct{font-weight:700;font-family:'JetBrains Mono',monospace;}
+
+/* ── CUMPLIMIENTO POR RESPONSABLE ── */
+#resp-wrap{background:#111113;border:1px solid #27272A;margin-bottom:24px;}
+.resp-row{display:grid;grid-template-columns:160px 1fr 80px 80px;align-items:center;gap:12px;padding:10px 16px;border-bottom:1px solid #18181B;}
+.resp-name{font-size:12px;font-weight:700;color:#F4F4F0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.resp-bar-wrap{background:#18181B;height:6px;border-radius:0;}
+.resp-bar{height:6px;border-radius:0;transition:width 0.4s ease;}
+.resp-num{font-family:'JetBrains Mono',monospace;font-size:10px;color:#9A9A95;text-align:right;}
+.resp-ppc{font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:800;text-align:right;}
+
+/* ── TOAST ── */
+#toast{
+  position:fixed;bottom:20px;right:20px;
+  background:#18181B;border:1px solid #27272A;border-left:3px solid #FACC15;
+  padding:10px 16px;font-size:11px;font-weight:600;
+  letter-spacing:0.06em;text-transform:uppercase;
+  opacity:0;transform:translateY(8px);transition:all 0.3s;z-index:500;
+  font-family:'Barlow Condensed',sans-serif;
+}
+#toast.on{opacity:1;transform:translateY(0);}
+
+/* Scrollbar */
+::-webkit-scrollbar{width:4px;height:4px;}
+::-webkit-scrollbar-track{background:#111113;}
+::-webkit-scrollbar-thumb{background:#27272A;}
+::-webkit-scrollbar-thumb:hover{background:#3F3F46;}
+
+@media(max-width:900px){
+  #kpis{grid-template-columns:1fr 1fr;}
+  #grid-semanas{grid-template-columns:1fr;}
+  .resp-row{grid-template-columns:120px 1fr 60px 60px;}
+}
+</style>
+</head>
+<body>
+
+<div id="topbar">
+  <div class="tb-mark">LF</div>
+  <div>
+    <div class="tb-title">Lookahead Semanal</div>
+    <div class="tb-sub">LF BIM Studio · Last Planner · PPC</div>
+  </div>
+  <div class="tb-sep"></div>
+  <div class="tb-proyecto" id="tb-proyecto">Carga el JSON de avance</div>
+</div>
+
+<div id="main">
+
+  <!-- ZONA CARGA -->
+  <div id="zona-carga"
+       ondragover="dzOver(event)" ondragleave="dzOut()" ondrop="dzDrop(event)"
+       onclick="document.getElementById('json-in').click()">
+    <input type="file" id="json-in" accept=".json" onchange="cargarJSON(this.files[0])"/>
+    <div class="carga-ico">📅</div>
+    <div class="carga-txt">Cargar JSON de avance</div>
+    <div class="carga-sub">BIMMonitorPro_Avance_YYYYMMDD.json · Arrastra o haz click</div>
+  </div>
+
+  <!-- DASHBOARD -->
+  <div id="dashboard">
+
+    <!-- Selector de semana -->
+    <div id="selector-semana">
+      <button class="sem-btn" onclick="cambiarSemana(-1)">◀ Anterior</button>
+      <div>
+        <div class="sem-label">Semana seleccionada</div>
+        <div id="sem-fecha">—</div>
+      </div>
+      <button class="sem-btn" onclick="cambiarSemana(1)">Siguiente ▶</button>
+      <button class="sem-btn active" onclick="irHoy()">⚡ Semana actual</button>
+      <button class="btn-pdf" onclick="exportarPDF()">↓ Exportar PDF</button>
+    </div>
+
+    <!-- KPIs -->
+    <div id="kpis">
+      <div class="kpi" style="border-top-color:#FACC15;">
+        <div class="kpi-val" id="kpi-plan" style="color:#FACC15;">—</div>
+        <div class="kpi-lbl">Planificados S1</div>
+        <div class="kpi-sub">Elementos programados</div>
+      </div>
+      <div class="kpi" style="border-top-color:#22C55E;">
+        <div class="kpi-val" id="kpi-ejec" style="color:#22C55E;">—</div>
+        <div class="kpi-lbl">Ejecutados S1</div>
+        <div class="kpi-sub">Terminados + Inspeccionados</div>
+      </div>
+      <div class="kpi" style="border-top-color:#EF4444;">
+        <div class="kpi-val" id="kpi-atraso" style="color:#EF4444;">—</div>
+        <div class="kpi-lbl">No ejecutados</div>
+        <div class="kpi-sub">Pendientes de S1</div>
+      </div>
+      <div class="kpi" style="border-top-color:#38BDF8;">
+        <div class="kpi-val" id="kpi-s2" style="color:#38BDF8;">—</div>
+        <div class="kpi-lbl">Planificados S2</div>
+        <div class="kpi-sub">Próxima semana</div>
+      </div>
+      <div class="kpi" style="border-top-color:#FB923C;">
+        <div class="kpi-val" id="kpi-resp" style="color:#FB923C;">—</div>
+        <div class="kpi-lbl">Responsables</div>
+        <div class="kpi-sub">Activos en S1+S2</div>
+      </div>
+    </div>
+
+    <!-- PPC -->
+    <div id="ppc-gauge">
+      <div class="ppc-circle">
+        <svg width="100" height="100" viewBox="0 0 100 100">
+          <circle cx="50" cy="50" r="40" fill="none" stroke="#27272A" stroke-width="8"/>
+          <circle cx="50" cy="50" r="40" fill="none" stroke="#FACC15" stroke-width="8"
+            stroke-dasharray="251.2" id="ppc-arc"
+            stroke-dashoffset="251.2" stroke-linecap="butt"/>
+        </svg>
+        <div class="ppc-circle-txt">
+          <div class="ppc-pct" id="ppc-num" style="color:#FACC15;">—</div>
+          <div class="ppc-lbl-sm">PPC</div>
+        </div>
+      </div>
+      <div class="ppc-info">
+        <div class="ppc-title">Porcentaje de Plan Completado (PPC)</div>
+        <div class="ppc-desc">Métrica Last Planner® — mide el cumplimiento real de lo prometido en la semana anterior. Meta recomendada: ≥ 80%.</div>
+        <div class="ppc-meta">
+          <div class="ppc-meta-item">Planificados: <span class="ppc-meta-val" id="ppc-plan-n">—</span></div>
+          <div class="ppc-meta-item">Completados: <span class="ppc-meta-val" id="ppc-comp-n">—</span></div>
+          <div class="ppc-meta-item">No completados: <span class="ppc-meta-val" id="ppc-ncomp-n" style="color:#EF4444;">—</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Grid S1 y S2 -->
+    <div id="grid-semanas">
+      <div class="semana-panel">
+        <div class="semana-header">
+          <div class="semana-num" style="color:#FACC15;border-color:#FACC15;">S1 — SEMANA ACTUAL</div>
+          <div class="semana-fecha" id="s1-fecha">—</div>
+          <div class="semana-count" id="s1-count" style="color:#FACC15;">0 elem.</div>
+        </div>
+        <div class="semana-body" id="s1-lista"></div>
+      </div>
+      <div class="semana-panel">
+        <div class="semana-header">
+          <div class="semana-num" style="color:#38BDF8;border-color:#38BDF8;">S2 — PRÓXIMA SEMANA</div>
+          <div class="semana-fecha" id="s2-fecha">—</div>
+          <div class="semana-count" id="s2-count" style="color:#38BDF8;">0 elem.</div>
+        </div>
+        <div class="semana-body" id="s2-lista"></div>
+      </div>
+    </div>
+
+    <!-- Tabla completa -->
+    <div id="tabla-wrap">
+      <div class="tabla-header">
+        <div class="tabla-title">📋 Detalle S1 + S2 — Todos los elementos</div>
+      </div>
+      <table id="tabla-detalle">
+        <thead>
+          <tr>
+            <th>Semana</th>
+            <th>Categoría</th>
+            <th>Nivel</th>
+            <th>Responsable</th>
+            <th>Frente</th>
+            <th>Inicio plan</th>
+            <th>Fin plan</th>
+            <th>Estado</th>
+            <th>% Avance</th>
+          </tr>
+        </thead>
+        <tbody id="tabla-body"></tbody>
+      </table>
+    </div>
+
+    <!-- Cumplimiento por responsable -->
+    <div id="resp-wrap">
+      <div class="tabla-header">
+        <div class="tabla-title">👷 Cumplimiento por responsable — S1</div>
+      </div>
+      <div class="resp-row" style="border-bottom:1px solid #27272A;">
+        <div style="font-size:9px;color:#52525B;letter-spacing:0.1em;text-transform:uppercase;font-family:'JetBrains Mono',monospace;">Responsable</div>
+        <div style="font-size:9px;color:#52525B;letter-spacing:0.1em;text-transform:uppercase;font-family:'JetBrains Mono',monospace;">Progreso</div>
+        <div style="font-size:9px;color:#52525B;letter-spacing:0.1em;text-transform:uppercase;font-family:'JetBrains Mono',monospace;text-align:right;">Elem.</div>
+        <div style="font-size:9px;color:#52525B;letter-spacing:0.1em;text-transform:uppercase;font-family:'JetBrains Mono',monospace;text-align:right;">PPC</div>
+      </div>
+      <div id="resp-lista"></div>
+    </div>
+
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ══════════════════════════════════════════════════════
+// ESTADO
+// ══════════════════════════════════════════════════════
+let DATA = null;
+let SEMANA_OFFSET = 0; // 0 = semana actual, -1 = anterior, +1 = siguiente
+
+// ── Helpers de fecha ──────────────────────────────────
+function parseF(s) {
+  if (!s) return null;
+  const m = s.toString().match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  return m ? new Date(+m[1], +m[2]-1, +m[3]) : null;
+}
+function fmtF(d) {
+  if (!d) return '—';
+  return d.toLocaleDateString('es-CO', { day:'2-digit', month:'short', year:'numeric' });
+}
+function fmtFCorto(d) {
+  if (!d) return '—';
+  return d.toLocaleDateString('es-CO', { day:'2-digit', month:'short' });
+}
+function lunesDe(d) {
+  const c = new Date(d);
+  const dia = c.getDay();
+  const diff = dia === 0 ? -6 : 1 - dia;
+  c.setDate(c.getDate() + diff);
+  c.setHours(0,0,0,0);
+  return c;
+}
+function domingo(lunes) {
+  const d = new Date(lunes);
+  d.setDate(d.getDate() + 6);
+  d.setHours(23,59,59,999);
+  return d;
+}
+function enRango(ini, fin, semIni, semFin) {
+  // El elemento tiene actividad en la semana si hay solapamiento
+  if (!ini && !fin) return false;
+  const eIni = ini || fin;
+  const eFin = fin || ini;
+  return eIni <= semFin && eFin >= semIni;
+}
+
+// ── Normalizar estado ─────────────────────────────────
+function normEst(raw) {
+  if (!raw) return 'No iniciado';
+  const n = raw.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
+  if (n==='terminado'||n==='terminada') return 'Terminado';
+  if (n==='inspeccionado'||n==='aprobado') return 'Inspeccionado';
+  if (n==='en proceso'||n==='en construccion') return 'En proceso';
+  if (n==='no iniciado'||n==='pendiente') return 'No iniciado';
+  return raw.trim();
+}
+
+function badgeEst(est, atrasado) {
+  if (atrasado) return '<span class="elem-estado est-a">ATRASADO</span>';
+  const m = {
+    'Terminado':     'est-t',
+    'Inspeccionado': 'est-i',
+    'En proceso':    'est-p',
+    'No iniciado':   'est-n',
+  };
+  const lbl = { 'Terminado':'Terminado','Inspeccionado':'Inspeccionado','En proceso':'En proceso','No iniciado':'No iniciado' };
+  const cls = m[est] || 'est-n';
+  return `<span class="elem-estado ${cls}">${lbl[est]||est}</span>`;
+}
+
+// ── Carga de JSON ─────────────────────────────────────
+function dzOver(e) { e.preventDefault(); document.getElementById('zona-carga').classList.add('drag'); }
+function dzOut()   { document.getElementById('zona-carga').classList.remove('drag'); }
+function dzDrop(e) { e.preventDefault(); dzOut(); const f=e.dataTransfer.files[0]; if(f) cargarJSON(f); }
+
+function cargarJSON(file) {
+  if (!file) return;
+  const r = new FileReader();
+  r.onload = ev => {
+    try {
+      const raw = JSON.parse(ev.target.result);
+      DATA = raw.elementos ? raw : { proyecto:'Proyecto', elementos:[] };
+      DATA.elementos.forEach(el => {
+        el._est = normEst(el.estado_ejecucion || el.estado || '');
+        el._ini = parseF(el.fecha_inicio_plan);
+        el._fin = parseF(el.fecha_fin_plan);
+        el._iniR = parseF(el.fecha_inicio_real);
+        el._finR = parseF(el.fecha_fin_real);
+      });
+      document.getElementById('zona-carga').classList.add('loaded');
+      document.getElementById('zona-carga').querySelector('.carga-ico').textContent = '✓';
+      document.getElementById('zona-carga').querySelector('.carga-txt').textContent = DATA.proyecto || file.name;
+      document.getElementById('tb-proyecto').textContent = DATA.proyecto || file.name;
+      document.getElementById('dashboard').style.display = 'block';
+      SEMANA_OFFSET = 0;
+      renderizar();
+      toast('✓ ' + DATA.elementos.length.toLocaleString('es-CO') + ' elementos cargados');
+    } catch(e) { toast('JSON inválido'); }
+  };
+  r.readAsText(file);
+}
+
+// También leer desde sessionStorage si viene de la Suite
+window.addEventListener('message', ev => {
+  if (ev.data?.tipo === 'BIM_JSON_DATA') cargarDesdeObjeto(ev.data.data);
+});
+(function() {
+  const raw = sessionStorage.getItem('BIM_JSON_DATA');
+  if (raw) try { cargarDesdeObjeto(JSON.parse(raw)); } catch(e) {}
+})();
+
+function cargarDesdeObjeto(raw) {
+  DATA = raw.elementos ? raw : { proyecto:'Proyecto', elementos:[] };
+  DATA.elementos.forEach(el => {
+    el._est = normEst(el.estado_ejecucion || el.estado || '');
+    el._ini = parseF(el.fecha_inicio_plan);
+    el._fin = parseF(el.fecha_fin_plan);
+    el._iniR = parseF(el.fecha_inicio_real);
+    el._finR = parseF(el.fecha_fin_real);
+  });
+  document.getElementById('zona-carga').classList.add('loaded');
+  document.getElementById('zona-carga').querySelector('.carga-ico').textContent = '✓';
+  document.getElementById('zona-carga').querySelector('.carga-txt').textContent = DATA.proyecto;
+  document.getElementById('tb-proyecto').textContent = DATA.proyecto;
+  document.getElementById('dashboard').style.display = 'block';
+  SEMANA_OFFSET = 0;
+  renderizar();
+}
+
+// ── Navegación de semanas ─────────────────────────────
+function cambiarSemana(d) { SEMANA_OFFSET += d; renderizar(); }
+function irHoy()           { SEMANA_OFFSET = 0; renderizar(); }
+
+// ── Renderizar ────────────────────────────────────────
+function renderizar() {
+  if (!DATA) return;
+  const hoy = new Date(); hoy.setHours(0,0,0,0);
+
+  // Calcular semanas S1 y S2
+  const s1Ini = lunesDe(hoy);
+  s1Ini.setDate(s1Ini.getDate() + SEMANA_OFFSET * 7);
+  const s1Fin = domingo(s1Ini);
+  const s2Ini = new Date(s1Ini); s2Ini.setDate(s2Ini.getDate() + 7);
+  const s2Fin = domingo(s2Ini);
+
+  // Actualizar labels
+  document.getElementById('sem-fecha').textContent =
+    `S1: ${fmtFCorto(s1Ini)} – ${fmtFCorto(s1Fin)}   ·   S2: ${fmtFCorto(s2Ini)} – ${fmtFCorto(s2Fin)}`;
+  document.getElementById('s1-fecha').textContent = `${fmtFCorto(s1Ini)} – ${fmtFCorto(s1Fin)}`;
+  document.getElementById('s2-fecha').textContent = `${fmtFCorto(s2Ini)} – ${fmtFCorto(s2Fin)}`;
+
+  // Filtrar elementos por semana
+  const elsS1 = DATA.elementos.filter(el => enRango(el._ini, el._fin, s1Ini, s1Fin));
+  const elsS2 = DATA.elementos.filter(el => enRango(el._ini, el._fin, s2Ini, s2Fin));
+
+  // PPC — elementos de S1 planificados vs completados
+  const planS1 = elsS1.length;
+  const compS1 = elsS1.filter(el => el._est==='Terminado' || el._est==='Inspeccionado').length;
+  const ppc = planS1 > 0 ? Math.round(compS1 / planS1 * 100) : 0;
+
+  // KPIs
+  document.getElementById('kpi-plan').textContent   = planS1;
+  document.getElementById('kpi-ejec').textContent   = compS1;
+  document.getElementById('kpi-atraso').textContent = planS1 - compS1;
+  document.getElementById('kpi-s2').textContent     = elsS2.length;
+
+  const resps = new Set([...elsS1, ...elsS2].map(el => el.responsable).filter(Boolean));
+  document.getElementById('kpi-resp').textContent = resps.size;
+
+  // PPC gauge
+  const color = ppc >= 80 ? '#22C55E' : ppc >= 60 ? '#FB923C' : '#EF4444';
+  const arc = document.getElementById('ppc-arc');
+  const circumference = 2 * Math.PI * 40;
+  arc.style.stroke = color;
+  arc.style.strokeDashoffset = circumference * (1 - ppc/100);
+  document.getElementById('ppc-num').textContent = ppc + '%';
+  document.getElementById('ppc-num').style.color = color;
+  document.getElementById('ppc-plan-n').textContent = planS1;
+  document.getElementById('ppc-comp-n').textContent = compS1;
+  document.getElementById('ppc-ncomp-n').textContent = planS1 - compS1;
+
+  // Listas S1 y S2
+  renderLista('s1-lista', 's1-count', elsS1, hoy, s1Fin);
+  renderLista('s2-lista', 's2-count', elsS2, hoy, s2Fin);
+
+  // Tabla completa
+  renderTabla([...elsS1.map(el=>({...el,_sem:'S1'})), ...elsS2.map(el=>({...el,_sem:'S2'}))], hoy);
+
+  // Ranking responsables
+  renderResponsables(elsS1, hoy);
+}
+
+function renderLista(listaId, countId, els, hoy, semFin) {
+  const lista = document.getElementById(listaId);
+  document.getElementById(countId).textContent = els.length + ' elem.';
+  if (!els.length) {
+    lista.innerHTML = '<div style="padding:20px;text-align:center;color:#3F3F46;font-size:12px;">Sin elementos en esta semana</div>';
+    return;
+  }
+  lista.innerHTML = els.map(el => {
+    const atrasado = (el._est!=='Terminado' && el._est!=='Inspeccionado') && el._fin && el._fin < hoy;
+    return `<div class="elem-row">
+      <div class="elem-info">
+        <div class="elem-cat">${el.categoria||'—'}</div>
+        <div class="elem-det">${el.nivel||'—'} · ${el.tipo?.substring(0,30)||'—'}</div>
+      </div>
+      <div class="elem-resp">${(el.responsable||'Sin asignar').split(' ').slice(-1)[0]}</div>
+      ${badgeEst(el._est, atrasado)}
+    </div>`;
+  }).join('');
+}
+
+function renderTabla(els, hoy) {
+  const tbody = document.getElementById('tabla-body');
+  tbody.innerHTML = els.map(el => {
+    const atrasado = (el._est!=='Terminado' && el._est!=='Inspeccionado') && el._fin && el._fin < hoy;
+    const semColor = el._sem === 'S1' ? '#FACC15' : '#38BDF8';
+    return `<tr>
+      <td><span style="font-family:'JetBrains Mono',monospace;font-size:9px;padding:2px 8px;border:1px solid ${semColor};color:${semColor};">${el._sem}</span></td>
+      <td class="td-cat">${el.categoria||'—'}</td>
+      <td class="td-nivel">${el.nivel||'—'}</td>
+      <td class="td-resp">${el.responsable||'Sin asignar'}</td>
+      <td class="td-resp">${el.frente_trabajo||'—'}</td>
+      <td class="td-fecha">${el.fecha_inicio_plan||'—'}</td>
+      <td class="td-fecha">${el.fecha_fin_plan||'—'}</td>
+      <td>${badgeEst(el._est, atrasado)}</td>
+      <td class="td-pct" style="color:${el._est==='Terminado'||el._est==='Inspeccionado'?'#22C55E':'#FB923C'}">${el.porcentaje_avance||'0'}%</td>
+    </tr>`;
+  }).join('');
+}
+
+function renderResponsables(elsS1, hoy) {
+  const lista = document.getElementById('resp-lista');
+  const mapa = {};
+  elsS1.forEach(el => {
+    const r = el.responsable || 'Sin asignar';
+    if (!mapa[r]) mapa[r] = { plan:0, comp:0 };
+    mapa[r].plan++;
+    if (el._est==='Terminado'||el._est==='Inspeccionado') mapa[r].comp++;
+  });
+  const sorted = Object.entries(mapa).sort((a,b) => b[1].plan - a[1].plan);
+  if (!sorted.length) { lista.innerHTML = '<div style="padding:16px;color:#3F3F46;font-size:12px;">Sin datos</div>'; return; }
+  lista.innerHTML = sorted.map(([resp, d]) => {
+    const ppc = d.plan > 0 ? Math.round(d.comp/d.plan*100) : 0;
+    const color = ppc>=80?'#22C55E':ppc>=60?'#FB923C':'#EF4444';
+    return `<div class="resp-row">
+      <div class="resp-name" title="${resp}">${resp}</div>
+      <div class="resp-bar-wrap"><div class="resp-bar" style="width:${ppc}%;background:${color};"></div></div>
+      <div class="resp-num">${d.comp}/${d.plan}</div>
+      <div class="resp-ppc" style="color:${color};">${ppc}%</div>
+    </div>`;
+  }).join('');
+}
+
+// ── Exportar PDF ──────────────────────────────────────
+function exportarPDF() {
+  if (!DATA) { toast('Carga primero el JSON'); return; }
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ orientation:'landscape', unit:'mm', format:'a4' });
+  const W = 297, H = 210;
+
+  // Fondo
+  doc.setFillColor(10,10,11);
+  doc.rect(0,0,W,H,'F');
+
+  // Header
+  doc.setFillColor(250,204,21);
+  doc.rect(0,0,W,14,'F');
+  doc.setTextColor(10,10,11);
+  doc.setFont('helvetica','bold');
+  doc.setFontSize(11);
+  doc.text('LF BIM STUDIO — LOOKAHEAD SEMANAL', 10, 9);
+  doc.setFontSize(8);
+  doc.text(DATA.proyecto || 'Proyecto', W-10, 9, {align:'right'});
+
+  // Fecha
+  doc.setFillColor(17,17,19);
+  doc.rect(0,14,W,8,'F');
+  doc.setTextColor(250,204,21);
+  doc.setFont('helvetica','normal');
+  doc.setFontSize(7);
+  doc.text(document.getElementById('sem-fecha').textContent, 10, 19);
+  doc.text('Generado: ' + new Date().toLocaleDateString('es-CO'), W-10, 19, {align:'right'});
+
+  // KPIs
+  const kpis = [
+    {lbl:'Planificados S1', val:document.getElementById('kpi-plan').textContent, color:[250,204,21]},
+    {lbl:'Ejecutados S1', val:document.getElementById('kpi-ejec').textContent, color:[34,197,94]},
+    {lbl:'No ejecutados', val:document.getElementById('kpi-atraso').textContent, color:[239,68,68]},
+    {lbl:'PPC', val:document.getElementById('ppc-num').textContent, color:[250,204,21]},
+    {lbl:'Planificados S2', val:document.getElementById('kpi-s2').textContent, color:[56,189,248]},
+  ];
+  kpis.forEach((k,i) => {
+    const x = 10 + i*56;
+    doc.setFillColor(17,17,19);
+    doc.rect(x, 26, 52, 20, 'F');
+    doc.setFillColor(...k.color);
+    doc.rect(x, 26, 52, 1.5, 'F');
+    doc.setTextColor(...k.color);
+    doc.setFont('helvetica','bold');
+    doc.setFontSize(18);
+    doc.text(k.val, x+26, 37, {align:'center'});
+    doc.setTextColor(82,82,91);
+    doc.setFont('helvetica','normal');
+    doc.setFontSize(6);
+    doc.text(k.lbl.toUpperCase(), x+26, 43, {align:'center'});
+  });
+
+  // Tabla S1
+  doc.setFillColor(250,204,21);
+  doc.rect(10,50,130,5,'F');
+  doc.setTextColor(10,10,11);
+  doc.setFont('helvetica','bold');
+  doc.setFontSize(7);
+  doc.text('SEMANA 1 — PLANIFICADO VS EJECUTADO', 12, 53.5);
+
+  // Tabla S2
+  doc.setFillColor(56,189,248);
+  doc.rect(148,50,139,5,'F');
+  doc.setTextColor(10,10,11);
+  doc.text('SEMANA 2 — PRÓXIMA SEMANA', 150, 53.5);
+
+  // Contenido tablas
+  const elsS1 = Array.from(document.getElementById('s1-lista').querySelectorAll('.elem-row'));
+  const elsS2 = Array.from(document.getElementById('s2-lista').querySelectorAll('.elem-row'));
+
+  let y1 = 59, y2 = 59;
+  const maxY = 170;
+
+  doc.setFont('helvetica','normal');
+  doc.setFontSize(6.5);
+
+  elsS1.slice(0,18).forEach((row, i) => {
+    if (y1 > maxY) return;
+    const cat = row.querySelector('.elem-cat')?.textContent || '—';
+    const det = row.querySelector('.elem-det')?.textContent || '—';
+    const resp = row.querySelector('.elem-resp')?.textContent || '—';
+    const est = row.querySelector('.elem-estado')?.textContent || '—';
+    doc.setFillColor(i%2===0?17:24, i%2===0?17:24, i%2===0?19:26);
+    doc.rect(10, y1-3.5, 130, 5.5, 'F');
+    doc.setTextColor(244,244,240);
+    doc.text(cat.substring(0,22), 12, y1);
+    doc.setTextColor(82,82,91);
+    doc.text(det.substring(0,20), 60, y1);
+    doc.text(resp.substring(0,15), 100, y1);
+    const ec = est==='Terminado'?[34,197,94]:est==='En proceso'?[251,146,60]:est==='ATRASADO'?[239,68,68]:[82,82,91];
+    doc.setTextColor(...ec);
+    doc.text(est.substring(0,12), 125, y1);
+    y1 += 5.5;
+  });
+
+  elsS2.slice(0,18).forEach((row, i) => {
+    if (y2 > maxY) return;
+    const cat = row.querySelector('.elem-cat')?.textContent || '—';
+    const det = row.querySelector('.elem-det')?.textContent || '—';
+    const resp = row.querySelector('.elem-resp')?.textContent || '—';
+    const est = row.querySelector('.elem-estado')?.textContent || '—';
+    doc.setFillColor(i%2===0?17:24, i%2===0?17:24, i%2===0?19:26);
+    doc.rect(148, y2-3.5, 139, 5.5, 'F');
+    doc.setTextColor(244,244,240);
+    doc.text(cat.substring(0,22), 150, y2);
+    doc.setTextColor(82,82,91);
+    doc.text(det.substring(0,20), 198, y2);
+    doc.text(resp.substring(0,15), 238, y2);
+    const ec = est==='Terminado'?[34,197,94]:est==='En proceso'?[251,146,60]:est==='ATRASADO'?[239,68,68]:[82,82,91];
+    doc.setTextColor(...ec);
+    doc.text(est.substring(0,12), 275, y2);
+    y2 += 5.5;
+  });
+
+  // Responsables
+  const maxY2 = Math.max(y1, y2) + 8;
+  if (maxY2 < H-20) {
+    doc.setFillColor(17,17,19);
+    doc.rect(10, maxY2, 277, 4, 'F');
+    doc.setTextColor(250,204,21);
+    doc.setFont('helvetica','bold');
+    doc.setFontSize(7);
+    doc.text('CUMPLIMIENTO POR RESPONSABLE — S1', 12, maxY2+3);
+
+    const rows = document.getElementById('resp-lista').querySelectorAll('.resp-row');
+    let ry = maxY2 + 7;
+    rows.forEach((row, i) => {
+      if (ry > H-10) return;
+      const name = row.querySelector('.resp-name')?.textContent || '—';
+      const ppc = row.querySelector('.resp-ppc')?.textContent || '0%';
+      const num = row.querySelector('.resp-num')?.textContent || '—';
+      const ppcN = parseInt(ppc);
+      const color = ppcN>=80?[34,197,94]:ppcN>=60?[251,146,60]:[239,68,68];
+      doc.setFillColor(i%2===0?17:24,i%2===0?17:24,i%2===0?19:26);
+      doc.rect(10, ry-3, 277, 5, 'F');
+      doc.setFont('helvetica','normal');
+      doc.setFontSize(6.5);
+      doc.setTextColor(244,244,240);
+      doc.text(name.substring(0,30), 12, ry);
+      doc.setTextColor(82,82,91);
+      doc.text(num, 160, ry);
+      doc.setTextColor(...color);
+      doc.setFont('helvetica','bold');
+      doc.text(ppc, 180, ry);
+      // Barra
+      doc.setFillColor(27,27,27);
+      doc.rect(190, ry-2.5, 80, 3, 'F');
+      doc.setFillColor(...color);
+      doc.rect(190, ry-2.5, 80*ppcN/100, 3, 'F');
+      ry += 5;
+    });
+  }
+
+  // Footer
+  doc.setFillColor(17,17,19);
+  doc.rect(0,H-8,W,8,'F');
+  doc.setTextColor(63,63,70);
+  doc.setFont('helvetica','normal');
+  doc.setFontSize(6);
+  doc.text('Ing. Luis Manuel Fuentes Perez · LF BIM Studio · Last Planner® Method · ' + new Date().toLocaleDateString('es-CO'), W/2, H-3, {align:'center'});
+
+  const fecha = new Date().toISOString().split('T')[0];
+  doc.save(`Lookahead_${(DATA.proyecto||'Proyecto').replace(/[^\w]/g,'_')}_${fecha}.pdf`);
+  toast('✓ PDF exportado');
+}
+
+// ── Toast ─────────────────────────────────────────────
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('on');
+  clearTimeout(t._t); t._t = setTimeout(()=>t.classList.remove('on'), 3500);
+}
+</script>
+</body>
+</html>
