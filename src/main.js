@@ -971,7 +971,17 @@ window.dzDrop = (e, tipo) => {
 // ROUTER — detectar módulo según URL
 // ══════════════════════════════════════════════════════
 if (window.location.pathname.includes('vaciados')) {
+  // Mostrar módulo vaciados, ocultar visor
+  const mv = document.getElementById('modulo-vaciados');
+  const vv = document.getElementById('modulo-visor');
+  if (mv) mv.style.display = 'block';
+  if (vv) vv.style.display = 'none';
   initVaciados().catch(console.error);
 } else {
+  // Mostrar visor, ocultar vaciados
+  const mv = document.getElementById('modulo-vaciados');
+  const vv = document.getElementById('modulo-visor');
+  if (vv) vv.style.display = 'block';
+  if (mv) mv.style.display = 'none';
   initVisor().catch(console.error);
 }
