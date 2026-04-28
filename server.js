@@ -11,9 +11,11 @@ const ADMIN_USER = process.env.ADMIN_USER || 'lfbim'
 const ADMIN_PASS = process.env.ADMIN_PASS || 'LFBim2026!'
 
 const CONFIG = {
-  SUPABASE_URL:     process.env.SUPABASE_URL  || '',
-  SUPABASE_ANON:    process.env.SUPABASE_ANON || '',
+  SUPABASE_URL:     process.env.SUPABASE_URL     || '',
+  SUPABASE_ANON:    process.env.SUPABASE_ANON    || '',
   SUPABASE_SERVICE: process.env.SUPABASE_SERVICE || '',
+  ADMIN_USER:       ADMIN_USER,
+  ADMIN_PASS:       ADMIN_PASS,
 }
 
 const configScript = `<script>window.LF_CONFIG=${JSON.stringify(CONFIG)};</script>`

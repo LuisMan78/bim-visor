@@ -253,7 +253,9 @@ let ARCHIVOS = { json: null, ifc: null };
 window.login = function() {
   const u = document.getElementById('login-user').value;
   const p = document.getElementById('login-pass').value;
-  if (u === ADMIN_USER && p === ADMIN_PASS) {
+  const validUser = window.LF_CONFIG?.ADMIN_USER || 'lfbim';
+  const validPass = window.LF_CONFIG?.ADMIN_PASS || 'LFBim2026!';
+  if (u === validUser && p === validPass) {
     document.getElementById('login-screen').style.display = 'none';
     document.getElementById('app').style.display = 'flex';
     sessionStorage.setItem('lf_admin', '1');
