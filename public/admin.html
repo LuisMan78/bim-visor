@@ -219,15 +219,15 @@ html,body{min-height:100vh;background:#0A0A0B;color:#F4F4F0;font-family:'Barlow'
         <div class="progress-bar"><div class="progress-fill" id="prog-json"></div></div>
       </div>
       <div class="form-group">
-        <label class="form-label">Modelo IFC (opcional)</label>
-        <div class="upload-zone" id="uz-ifc"
-             ondragover="uzOver(event,'uz-ifc')" ondragleave="uzOut('uz-ifc')" ondrop="uzDrop(event,'ifc')"
-             onclick="document.getElementById('uf-ifc').click()">
-          <input type="file" id="uf-ifc" accept=".ifc" onchange="seleccionarArchivo('ifc',this.files[0])"/>
-          <div class="upload-txt" id="uz-ifc-txt">🏗 Seleccionar IFC</div>
-          <div class="upload-sub">Exportado desde Revit · puede tardar varios minutos</div>
+        <label class="form-label">Modelo 3D (.frag) — recomendado</label>
+        <div class="upload-zone" id="uz-frag"
+             ondragover="uzOver(event,'uz-frag')" ondragleave="uzOut('uz-frag')" ondrop="uzDrop(event,'frag')"
+             onclick="document.getElementById('uf-frag').click()">
+          <input type="file" id="uf-frag" accept=".frag" onchange="seleccionarArchivo('frag',this.files[0])"/>
+          <div class="upload-txt" id="uz-frag-txt">🏗 Seleccionar .frag</div>
+          <div class="upload-sub">Exportar desde Visor 3D local → botón "Exportar .frag"</div>
         </div>
-        <div class="progress-bar"><div class="progress-fill" id="prog-ifc"></div></div>
+        <div class="progress-bar"><div class="progress-fill" id="prog-frag"></div></div>
       </div>
     </div>
     <div class="modal-footer">
@@ -247,7 +247,7 @@ const ADMIN_USER = window.LF_CONFIG?.ADMIN_USER || 'lfbim';
 const ADMIN_PASS = window.LF_CONFIG?.ADMIN_PASS || '';
 
 let PROYECTO_ACTIVO = null;
-let ARCHIVOS = { json: null, ifc: null };
+let ARCHIVOS = { json: null, frag: null };
 
 // ── Login ──────────────────────────────────────────────
 window.login = function() {
@@ -401,7 +401,7 @@ document.addEventListener('DOMContentLoaded', () => {
 // ── Subir archivos ─────────────────────────────────────
 window.abrirModalArchivos = function(proyectoId, nombre) {
   PROYECTO_ACTIVO = proyectoId;
-  ARCHIVOS = { json: null, ifc: null };
+  ARCHIVOS = { json: null, frag: null };
   document.getElementById('modal-archivos-title').textContent = 'Subir archivos — ' + nombre;
   document.getElementById('uz-json').classList.remove('loaded');
   document.getElementById('uz-ifc').classList.remove('loaded');
@@ -415,15 +415,15 @@ window.abrirModalArchivos = function(proyectoId, nombre) {
 window.seleccionarArchivo = function(tipo, file) {
   if (!file) return;
   ARCHIVOS[tipo] = file;
-  const id = tipo === 'json' ? 'uz-json' : 'uz-ifc';
-  const txtId = tipo === 'json' ? 'uz-json-txt' : 'uz-ifc-txt';
+  const id = tipo === 'json' ? 'uz-json' : 'uz-frag';
+  const txtId = tipo === 'json' ? 'uz-json-txt' : 'uz-frag-txt';
   document.getElementById(id).classList.add('loaded');
   document.getElementById(txtId).textContent = '✓ ' + file.name;
 };
 
 window.subirArchivos = async function() {
   if (!PROYECTO_ACTIVO) return;
-  if (!ARCHIVOS.json && !ARCHIVOS.ifc) { toast('⚠ Selecciona al menos un archivo'); return; }
+  if (!ARCHIVOS.json && !ARCHIVOS.frag) { toast('⚠ Selecciona al menos un archivo'); return; }
 
   const updates = {};
 
@@ -451,11 +451,11 @@ window.subirArchivos = async function() {
       }
     }
 
-    if (ARCHIVOS.ifc) {
-      toast('Subiendo IFC... puede tardar varios minutos');
-      const path = PROYECTO_ACTIVO + '/modelo.ifc';
-      await sbUpload('bim-files', path, ARCHIVOS.ifc, p => {
-        document.getElementById('prog-ifc').style.width = p + '%';
+    if (ARCHIVOS.frag) {
+      toast('Subiendo modelo .frag...');
+      const path = PROYECTO_ACTIVO + '/modelo.frag';
+      await sbUpload('bim-files', path, ARCHIVOS.frag, p => {
+        document.getElementById('prog-frag').style.width = p + '%';
       });
       updates.ifc_url = SUPABASE_URL + '/storage/v1/object/public/bim-files/' + path;
     }

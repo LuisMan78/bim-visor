@@ -24,7 +24,7 @@ html,body{min-height:100vh;background:#0A0A0B;color:#F4F4F0;font-family:'Barlow'
 .est-ico{font-size:48px;}
 .est-txt{font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;font-family:'Barlow Condensed',sans-serif;}
 .est-sub{font-size:11px;color:#3F3F46;font-family:'JetBrains Mono',monospace;}
-.spinner{width:40px;height:40px;border:3px solid #27272A;border-top-color:#FACC15;border-radius:50%;animation:spin 0.8s linear infinite;}
+.spinner{width:36px;height:36px;border:3px solid #27272A;border-top-color:#FACC15;border-radius:50%;animation:spin 0.8s linear infinite;}
 @keyframes spin{to{transform:rotate(360deg);}}
 
 /* Contenido */
@@ -70,6 +70,16 @@ td{padding:7px 10px;border-bottom:1px solid #18181B;color:#F4F4F0;}
 
 @media(max-width:768px){.kpis{grid-template-columns:1fr 1fr;}.alertas-grid{grid-template-columns:1fr;}}
 </style>
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://esm.sh/three@0.184.0",
+    "@thatopen/components": "https://esm.sh/@thatopen/components@3.4.2",
+    "@thatopen/components-front": "https://esm.sh/@thatopen/components-front@3.4.2",
+    "@thatopen/fragments": "https://esm.sh/@thatopen/fragments@3.4.3"
+  }
+}
+</script>
 </head>
 <body>
 
@@ -120,6 +130,21 @@ td{padding:7px 10px;border-bottom:1px solid #18181B;color:#F4F4F0;}
       <div class="kpi" style="border-top-color:#EF4444;">
         <div class="kpi-val" id="kpi-atrasados" style="color:#EF4444;">—</div>
         <div class="kpi-lbl">Atrasados</div>
+      </div>
+    </div>
+
+    <!-- Visor 3D -->
+    <div class="section" id="section-visor" style="margin-bottom:16px;display:none;">
+      <div class="section-header">
+        <div class="section-title">🏗 Modelo BIM 3D — Avance por elemento</div>
+      </div>
+      <div class="section-body" style="padding:0;">
+        <div id="visor-3d" style="width:100%;height:400px;position:relative;background:#0A0A0B;">
+          <div id="visor-loading" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px;background:#0A0A0B;">
+            <div class="spinner"></div>
+            <div style="font-size:10px;color:#52525B;font-family:'JetBrains Mono',monospace;letter-spacing:0.1em;">CARGANDO MODELO 3D...</div>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -255,6 +280,11 @@ async function cargarPortal() {
     // Mostrar contenido
     document.getElementById('estado').style.display = 'none';
     document.getElementById('contenido').style.display = 'block';
+
+    // Iniciar visor 3D si hay modelo .frag
+    if (proyecto.ifc_url && proyecto.ifc_url.endsWith('.frag')) {
+      iniciarVisor3D(proyecto.ifc_url, null);
+    }
 
   } catch(e) {
     mostrarError('Error de conexión', e.message);
