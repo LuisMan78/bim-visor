@@ -404,11 +404,11 @@ window.abrirModalArchivos = function(proyectoId, nombre) {
   ARCHIVOS = { json: null, frag: null };
   document.getElementById('modal-archivos-title').textContent = 'Subir archivos — ' + nombre;
   document.getElementById('uz-json').classList.remove('loaded');
-  document.getElementById('uz-ifc').classList.remove('loaded');
+  document.getElementById('uz-frag').classList.remove('loaded');
   document.getElementById('uz-json-txt').textContent = '📊 Seleccionar JSON';
-  document.getElementById('uz-ifc-txt').textContent = '🏗 Seleccionar IFC';
+  document.getElementById('uz-frag-txt').textContent = '🏗 Seleccionar IFC';
   document.getElementById('prog-json').style.width = '0%';
-  document.getElementById('prog-ifc').style.width = '0%';
+  document.getElementById('prog-frag').style.width = '0%';
   document.getElementById('modal-archivos').classList.add('on');
 };
 
@@ -491,7 +491,7 @@ window.uzOver = (e,id) => { e.preventDefault(); document.getElementById(id).clas
 window.uzOut  = (id)    => { document.getElementById(id).classList.remove('drag'); };
 window.uzDrop = (e,tipo) => {
   e.preventDefault();
-  const id = tipo === 'json' ? 'uz-json' : 'uz-ifc';
+  const id = tipo === 'json' ? 'uz-json' : 'uz-frag';
   document.getElementById(id).classList.remove('drag');
   const file = e.dataTransfer.files[0];
   if (file) seleccionarArchivo(tipo, file);
