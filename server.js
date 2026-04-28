@@ -9,11 +9,11 @@ const __dirname = dirname(fileURLToPath(import.meta.url))
 app.use(express.json({ limit: '100mb' }))
 app.use(express.raw({ limit: '200mb', type: '*/*' }))
 
-const ADMIN_USER       = process.env.ADMIN_USER        || 'lfbim'
-const ADMIN_PASS       = process.env.ADMIN_PASS        || 'LFBim2026!'
-const SUPABASE_URL     = process.env.SUPABASE_URL      || ''
-const SUPABASE_ANON    = process.env.SUPABASE_ANON     || ''
-const SUPABASE_SERVICE = process.env.SUPABASE_SERVICE  || ''
+const ADMIN_USER = process.env.ADMIN_USER || 'lfbim'
+const ADMIN_PASS = process.env.ADMIN_PASS || 'LFBim2026!'
+const SUPABASE_URL = process.env.SUPABASE_URL || ''
+const SUPABASE_ANON = process.env.SUPABASE_ANON || ''
+const SUPABASE_SERVICE = process.env.SUPABASE_SERVICE || ''
 
 // Config pública para el frontend (sin service key)
 const CONFIG_PUBLIC = {
@@ -30,7 +30,7 @@ function servirConConfig(filePath) {
       const html = readFileSync(filePath, 'utf-8')
       res.setHeader('Content-Type', 'text/html')
       res.send(html.replace('</head>', configScript + '</head>'))
-    } catch(e) { res.status(500).send('Error: ' + e.message) }
+    } catch (e) { res.status(500).send('Error: ' + e.message) }
   }
 }
 
@@ -94,7 +94,7 @@ app.post(/^\/api\/upload\/([^/]+)\/(.+)$/, authAdmin, async (req, res) => {
     })
     const data = await r.text()
     res.status(r.status).json(data ? JSON.parse(data) : {})
-  } catch(e) {
+  } catch (e) {
     res.status(500).json({ error: e.message })
   }
 })
@@ -105,6 +105,12 @@ app.get('/visor', (req, res) => res.sendFile(join(__dirname, 'dist', 'index.html
 app.get('/vaciados', (req, res) => res.sendFile(join(__dirname, 'dist', 'vaciados.html')))
 app.get('/admin', servirConConfig(join(__dirname, 'dist', 'admin.html')))
 app.get('/p/:slug', servirConConfig(join(__dirname, 'dist', 'portal.html')))
+
+// Listar proyectos para selector
+app.get('/api/proyectos-publicos', async (req, res) => {
+  const r = await sbAdmin('proyectos?activo=eq.true&select=id,nombre&order=nombre.asc')
+  res.status(r.status).json(r.data)
+})
 
 app.use(express.static(join(__dirname, 'dist')))
 app.get('/{*path}', (req, res) => res.sendFile(join(__dirname, 'dist', 'suite.html')))
