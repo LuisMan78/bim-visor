@@ -75,22 +75,28 @@ app.patch('/api/proyectos/:id', authAdmin, async (req, res) => {
 })
 
 // Upload archivo a Supabase Storage
-app.post('/api/upload/:bucket/:path', authAdmin, async (req, res) => {
+app.post(/^\/api\/upload\/([^/]+)\/(.+)$/, authAdmin, async (req, res) => {
+  const bucket = req.params[0]
+  const filePath = req.params[1]
   const chunks = []
   req.on('data', chunk => chunks.push(chunk))
   req.on('end', async () => {
-    const buffer = Buffer.concat(chunks)
-    const r = await fetch(`${SUPABASE_URL}/storage/v1/object/${req.params.bucket}/${req.params.path}`, {
-      method: 'POST',
-      headers: {
-        'apikey': SUPABASE_SERVICE,
-        'Authorization': 'Bearer ' + SUPABASE_SERVICE,
-        'Content-Type': req.headers['content-type'] || 'application/octet-stream',
-      },
-      body: buffer,
-    })
-    const data = await r.text()
-    res.status(r.status).json(data ? JSON.parse(data) : {})
+    try {
+      const buffer = Buffer.concat(chunks)
+      const r = await fetch(`${SUPABASE_URL}/storage/v1/object/${bucket}/${filePath}`, {
+        method: 'POST',
+        headers: {
+          'apikey': SUPABASE_SERVICE,
+          'Authorization': 'Bearer ' + SUPABASE_SERVICE,
+          'Content-Type': req.headers['content-type'] || 'application/octet-stream',
+        },
+        body: buffer,
+      })
+      const data = await r.text()
+      res.status(r.status).json(data ? JSON.parse(data) : {})
+    } catch(e) {
+      res.status(500).json({ error: e.message })
+    }
   })
 })
 
