@@ -1,576 +1,900 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>LF BIM Studio — Suite</title>
-<style>
-@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=Barlow:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LF BIM Studio — Suite</title>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=Barlow:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap"
+    rel="stylesheet" />
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
 
-* { box-sizing: border-box; margin: 0; padding: 0; }
-html, body { height: 100%; overflow: hidden; background: #0A0A0B; }
+    html,
+    body {
+      min-height: 100vh;
+      background: #0A0A0B;
+      color: #F4F4F0;
+      font-family: 'Barlow', sans-serif;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
 
-/* ── VISTAS ── */
-.view { position: fixed; inset: 0; display: none; flex-direction: column; }
-.view.active { display: flex; }
+    /* ── TOPBAR ── */
+    #topbar {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(10, 10, 11, 0.97);
+      border-bottom: 1px solid #1F1F23;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 0 48px;
+      height: 56px;
+      backdrop-filter: blur(16px);
+    }
 
-/* ── HOME ── */
-#view-home {
-  background: radial-gradient(ellipse 80% 60% at 50% -5%, rgba(250,204,21,0.07) 0%, transparent 60%), #0A0A0B;
-  font-family: 'Barlow', sans-serif;
-  color: #F4F4F0;
-  overflow-y: auto;
-  -webkit-font-smoothing: antialiased;
-  min-height: 100vh;
-  height: 100vh;
-}
+    .tb-mark {
+      width: 36px;
+      height: 36px;
+      background: #FACC15;
+      color: #0A0A0B;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Barlow Condensed', sans-serif;
+      font-weight: 900;
+      font-size: 14px;
+      flex-shrink: 0;
+    }
 
-.home-topbar {
-  padding: 20px 48px;
-  display: flex; align-items: center; gap: 16px;
-  border-bottom: 1px solid #18181B;
-  flex-shrink: 0;
-}
-.home-mark {
-  width: 40px; height: 40px; background: #FACC15; color: #0A0A0B;
-  display: flex; align-items: center; justify-content: center;
-  font-family: 'Barlow Condensed', sans-serif; font-weight: 900; font-size: 15px;
-}
-.home-brand { font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 18px; letter-spacing: 0.06em; text-transform: uppercase; }
-.home-tagline { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #FACC15; letter-spacing: 0.15em; text-transform: uppercase; margin-top: 2px; }
-.home-sep { flex: 1; }
-.home-version { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #3F3F46; }
+    .tb-brand {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 16px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
 
-.home-hero {
-  flex: 1; display: flex; flex-direction: column;
-  align-items: center; justify-content: center;
-  padding: 40px 48px; text-align: center;
-}
-.home-title {
-  font-family: 'Barlow Condensed', sans-serif;
-  font-size: clamp(36px, 5vw, 64px); font-weight: 900;
-  color: #F4F4F0; letter-spacing: -0.01em; line-height: 1;
-  text-transform: uppercase; margin-bottom: 8px;
-}
-.home-title span { color: #FACC15; }
-.home-subtitle {
-  font-size: 12px; color: #6B6B65; letter-spacing: 0.1em;
-  text-transform: uppercase; margin-bottom: 48px;
-  font-family: 'JetBrains Mono', monospace;
-}
+    .tb-tagline {
+      font-size: 9px;
+      color: #52525B;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      margin-top: 1px;
+      font-family: 'JetBrains Mono', monospace;
+    }
 
-/* Drop JSON */
-.home-loader {
-  width: 100%; max-width: 520px;
-  background: #111113; border: 1px solid #27272A;
-  padding: 24px; margin-bottom: 48px; position: relative;
-}
-.home-loader::before {
-  content: ''; position: absolute; top: 0; left: 0; right: 0;
-  height: 2px; background: #FACC15;
-}
-.home-loader-lbl {
-  font-family: 'Barlow Condensed', sans-serif; font-size: 11px;
-  font-weight: 700; color: #FACC15; letter-spacing: 0.2em;
-  text-transform: uppercase; margin-bottom: 14px;
-  display: flex; align-items: center; gap: 8px;
-}
-.home-loader-lbl::before { content: ''; width: 16px; height: 1px; background: #FACC15; }
-.home-drop {
-  border: 1px dashed #3F3F46; background: #18181B;
-  padding: 22px; text-align: center; cursor: pointer; transition: all 0.2s;
-}
-.home-drop:hover, .home-drop.drag { border-color: #FACC15; background: #1A180A; }
-.home-drop.loaded { border-style: solid; border-color: #22C55E; background: #052E16; }
-.home-drop input { display: none; }
-.home-drop-ico { font-size: 26px; margin-bottom: 8px; }
-.home-drop-txt {
-  font-family: 'Barlow Condensed', sans-serif; font-size: 14px; font-weight: 700;
-  color: #F4F4F0; text-transform: uppercase; letter-spacing: 0.08em;
-  margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-}
-.home-drop-sub { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #52525B; }
+    .tb-sep {
+      flex: 1;
+    }
 
-/* Cards */
-.home-cards { display: grid; grid-template-columns: repeat(4,1fr); gap: 14px; width: 100%; max-width: 1200px; }
+    .tb-version {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 9px;
+      color: #3F3F46;
+      letter-spacing: 0.08em;
+    }
 
-.tool-card {
-  background: #111113; border: 1px solid #27272A;
-  padding: 28px 24px; cursor: pointer; transition: all 0.25s;
-  position: relative; overflow: hidden;
-  display: flex; flex-direction: column; gap: 14px; text-align: left;
-}
-.tool-card::before {
-  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
-  transform: scaleX(0); transform-origin: left; transition: transform 0.25s ease;
-}
-.tool-card:hover { transform: translateY(-4px); }
-.tool-card:hover::before { transform: scaleX(1); }
-.tool-card.disabled { opacity: 0.3; cursor: not-allowed; pointer-events: none; }
-.tool-card.t-dash::before  { background: #FACC15; }
-.tool-card.t-campo::before { background: #22C55E; }
-.tool-card.t-visor::before { background: #38BDF8; }
-.tool-card:hover.t-dash  { box-shadow: 0 12px 40px rgba(250,204,21,0.12); border-color: rgba(250,204,21,0.2); }
-.tool-card:hover.t-campo { box-shadow: 0 12px 40px rgba(34,197,94,0.12);  border-color: rgba(34,197,94,0.2); }
-.tool-card:hover.t-visor { box-shadow: 0 12px 40px rgba(56,189,248,0.12); border-color: rgba(56,189,248,0.2); }
+    /* ── HERO ── */
+    #hero {
+      padding: 64px 48px 48px;
+      border-bottom: 1px solid #1F1F23;
+      position: relative;
+      overflow: hidden;
+    }
 
-.tool-ico { width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; font-size: 22px; border: 1px solid #27272A; background: #18181B; }
-.t-dash  .tool-ico { border-color: rgba(250,204,21,0.3); color: #FACC15; }
-.t-campo .tool-ico { border-color: rgba(34,197,94,0.3);  color: #22C55E; }
-.t-visor .tool-ico { border-color: rgba(56,189,248,0.3); color: #38BDF8; }
-.tool-name { font-family: 'Barlow Condensed', sans-serif; font-size: 20px; font-weight: 800; color: #F4F4F0; text-transform: uppercase; letter-spacing: 0.02em; line-height: 1.1; }
-.tool-desc { font-size: 13px; color: #6B6B65; line-height: 1.6; }
-.tool-tags { display: flex; flex-wrap: wrap; gap: 6px; }
-.tool-tag { font-family: 'JetBrains Mono', monospace; font-size: 9px; padding: 3px 8px; border: 1px solid #27272A; color: #52525B; letter-spacing: 0.06em; text-transform: uppercase; }
-.tool-arrow { margin-top: auto; font-size: 20px; color: #27272A; transition: all 0.2s; align-self: flex-end; }
-.tool-card:hover .tool-arrow { transform: translateX(4px); }
-.t-dash:hover  .tool-arrow { color: #FACC15; }
-.t-campo:hover .tool-arrow { color: #22C55E; }
-.t-visor:hover .tool-arrow { color: #38BDF8; }
-.tool-badge { position: absolute; top: 12px; right: 12px; font-family: 'JetBrains Mono', monospace; font-size: 9px; padding: 3px 8px; background: #082F49; color: #38BDF8; border: 1px solid rgba(56,189,248,0.3); letter-spacing: 0.06em; text-transform: uppercase; }
+    #hero::before {
+      content: '';
+      position: absolute;
+      top: -100px;
+      right: -100px;
+      width: 600px;
+      height: 600px;
+      background: radial-gradient(circle, rgba(250, 204, 21, 0.06) 0%, transparent 70%);
+      pointer-events: none;
+    }
 
-.home-footer {
-  padding: 20px 48px; border-top: 1px solid #18181B;
-  display: flex; justify-content: space-between; align-items: center;
-  flex-shrink: 0;
-}
-.home-footer-txt { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #3F3F46; letter-spacing: 0.08em; text-transform: uppercase; }
+    .hero-eyebrow {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      color: #FACC15;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
 
-/* ── VISTAS DE HERRAMIENTAS ── */
-#view-dash, #view-campo, #view-visor {
-  background: #0A0A0B;
-}
-.tool-iframe {
-  flex: 1; border: none; width: 100%; height: 100%;
-  display: block;
-}
+    .hero-eyebrow::before {
+      content: '';
+      width: 24px;
+      height: 1px;
+      background: #FACC15;
+    }
 
-/* ── BOTÓN VOLVER ── */
-.btn-back {
-  position: fixed; top: 16px; left: 16px; z-index: 9999;
-  width: 40px; height: 40px;
-  background: rgba(10,10,11,0.92); border: 1px solid #27272A;
-  color: #9A9A95;
-  cursor: pointer; transition: all 0.25s; backdrop-filter: blur(8px);
-  display: none; align-items: center; justify-content: center;
-  font-size: 18px; overflow: hidden;
-  border-radius: 2px;
-}
-.btn-back:hover {
-  width: 100px; border-color: #FACC15; color: #FACC15;
-  gap: 6px;
-}
-.btn-back .back-txt {
-  font-family: 'Barlow Condensed', sans-serif;
-  font-size: 11px; font-weight: 700; letter-spacing: 0.1em;
-  text-transform: uppercase; white-space: nowrap;
-  max-width: 0; overflow: hidden; transition: max-width 0.25s ease;
-}
-.btn-back:hover .back-txt { max-width: 60px; }
-.btn-back.visible { display: flex; }
+    .hero-title {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: clamp(40px, 6vw, 72px);
+      font-weight: 900;
+      line-height: 0.95;
+      letter-spacing: -0.01em;
+      text-transform: uppercase;
+      margin-bottom: 20px;
+    }
 
-/* ── TOAST ── */
-#toast {
-  position: fixed; bottom: 24px; right: 24px;
-  background: #18181B; border: 1px solid #27272A; border-left: 3px solid #FACC15;
-  padding: 12px 18px;
-  font-family: 'Barlow Condensed', sans-serif; font-size: 13px; font-weight: 600;
-  color: #F4F4F0; letter-spacing: 0.05em; text-transform: uppercase;
-  z-index: 10000; opacity: 0; transform: translateY(10px);
-  transition: all 0.3s; pointer-events: none;
-}
-#toast.on { opacity: 1; transform: translateY(0); }
+    .hero-title em {
+      color: #FACC15;
+      font-style: normal;
+    }
 
-/* ── LOADING IFRAME ── */
-.iframe-loading {
-  position: absolute; inset: 0;
-  display: flex; flex-direction: column; align-items: center; justify-content: center;
-  background: #0A0A0B; gap: 16px; z-index: 1;
-}
-.iframe-loading .spinner {
-  width: 44px; height: 44px; border: 3px solid #27272A;
-  border-top-color: #FACC15; border-radius: 50%;
-  animation: spin 0.8s linear infinite;
-}
-@keyframes spin { to { transform: rotate(360deg); } }
-.iframe-loading p {
-  font-family: 'JetBrains Mono', monospace; font-size: 11px;
-  color: #52525B; letter-spacing: 0.1em; text-transform: uppercase;
-}
+    .hero-desc {
+      font-size: 14px;
+      color: #6B6B65;
+      line-height: 1.7;
+      max-width: 560px;
+      margin-bottom: 32px;
+    }
 
-@media (max-width: 900px) {
-  .home-cards { grid-template-columns: 1fr; max-width: 480px; }
-  .home-topbar, .home-hero, .home-footer { padding-left: 24px; padding-right: 24px; }
-}
-.tool-card.t-vaciados::before { background: #22C55E; }
-.tool-card.t-lookahead::before { background: #A78BFA; }
-.tool-card:hover.t-lookahead { box-shadow: 0 12px 40px rgba(167,139,250,0.12); border-color: rgba(167,139,250,0.2); }
-.tool-card.t-lookahead .tool-ico { border-color: rgba(167,139,250,0.3); color: #A78BFA; }
-.tool-card.t-lookahead:hover .tool-arrow { color: #A78BFA; }
-.tool-card.t-ncr::before { background: #EF4444; }
-.tool-card:hover.t-ncr { box-shadow: 0 12px 40px rgba(239,68,68,0.12); border-color: rgba(239,68,68,0.2); }
-.tool-card.t-ncr .tool-ico { border-color: rgba(239,68,68,0.3); color: #EF4444; }
-.tool-card.t-ncr:hover .tool-arrow { color: #EF4444; }
-.tool-card.t-rfi::before { background: #38BDF8; }
-.tool-card:hover.t-rfi { box-shadow: 0 12px 40px rgba(56,189,248,0.12); border-color: rgba(56,189,248,0.2); }
-.tool-card.t-rfi .tool-ico { border-color: rgba(56,189,248,0.3); color: #38BDF8; }
-.tool-card.t-rfi:hover .tool-arrow { color: #38BDF8; }
-.tool-card.t-informe::before { background: #FACC15; }
-.tool-card:hover.t-informe { box-shadow: 0 12px 40px rgba(250,204,21,0.12); border-color: rgba(250,204,21,0.2); }
-.tool-card.t-informe .tool-ico { border-color: rgba(250,204,21,0.3); color: #FACC15; }
-.tool-card.t-informe:hover .tool-arrow { color: #FACC15; }
-.tool-card:hover.t-lookahead { box-shadow: 0 12px 40px rgba(167,139,250,0.12); border-color: rgba(167,139,250,0.2); }
-.tool-card.t-lookahead .tool-ico { border-color: rgba(167,139,250,0.3); color: #A78BFA; }
-.tool-card.t-lookahead:hover .tool-arrow { color: #A78BFA; }
-.tool-card:hover.t-vaciados { box-shadow: 0 12px 40px rgba(34,197,94,0.12); border-color: rgba(34,197,94,0.2); }
-.tool-card.t-vaciados .tool-ico { border-color: rgba(34,197,94,0.3); color: #22C55E; }
-.tool-card.t-vaciados:hover .tool-arrow { color: #22C55E; }
-</style>
+    /* Drop zone */
+    #drop-wrap {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    #home-drop {
+      flex: 1;
+      max-width: 480px;
+      border: 1px dashed #27272A;
+      background: #111113;
+      padding: 16px 20px;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    #home-drop:hover,
+    #home-drop.drag {
+      border-color: #FACC15;
+      background: #1A180A;
+    }
+
+    #home-drop.loaded {
+      border-style: solid;
+      border-color: #22C55E;
+      background: #052E16;
+    }
+
+    #home-drop input {
+      display: none;
+    }
+
+    .drop-ico {
+      font-size: 22px;
+      flex-shrink: 0;
+    }
+
+    .drop-content {}
+
+    .drop-title {
+      font-size: 13px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: #F4F4F0;
+    }
+
+    .drop-sub {
+      font-size: 10px;
+      color: #52525B;
+      font-family: 'JetBrains Mono', monospace;
+      margin-top: 2px;
+    }
+
+    /* Proyecto info */
+    #proyecto-info {
+      display: none;
+      background: #111113;
+      border: 1px solid #27272A;
+      border-left: 3px solid #22C55E;
+      padding: 12px 16px;
+    }
+
+    .proy-nombre {
+      font-size: 13px;
+      font-weight: 700;
+      color: #F4F4F0;
+    }
+
+    .proy-meta {
+      font-size: 10px;
+      color: #52525B;
+      font-family: 'JetBrains Mono', monospace;
+      margin-top: 3px;
+    }
+
+    /* ── MAIN ── */
+    #main {
+      padding: 48px;
+    }
+
+    /* Grupo de módulos */
+    .grupo {
+      margin-bottom: 48px;
+    }
+
+    .grupo-header {
+      display: flex;
+      align-items: baseline;
+      gap: 16px;
+      margin-bottom: 20px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid #1F1F23;
+    }
+
+    .grupo-num {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 9px;
+      color: #3F3F46;
+      letter-spacing: 0.1em;
+      flex-shrink: 0;
+    }
+
+    .grupo-nombre {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 11px;
+      font-weight: 700;
+      color: #FACC15;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+    }
+
+    .grupo-desc {
+      font-size: 12px;
+      color: #3F3F46;
+      margin-left: auto;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* Grid de cards */
+    .cards-grid {
+      display: grid;
+      gap: 12px;
+    }
+
+    .cards-grid.cols-3 {
+      grid-template-columns: repeat(3, 1fr);
+    }
+
+    .cards-grid.cols-2 {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    .cards-grid.cols-1 {
+      grid-template-columns: 1fr;
+    }
+
+    /* Card de herramienta */
+    .tool-card {
+      background: #111113;
+      border: 1px solid #1F1F23;
+      padding: 20px;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      gap: 16px;
+      align-items: start;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .tool-card::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background: currentColor;
+      opacity: 0;
+      transform: scaleX(0);
+      transform-origin: left;
+      transition: all 0.3s;
+    }
+
+    .tool-card:hover {
+      border-color: #27272A;
+      background: #151518;
+    }
+
+    .tool-card:hover::after {
+      opacity: 0.3;
+      transform: scaleX(1);
+    }
+
+    .tool-card.disabled {
+      opacity: 0.35;
+      cursor: not-allowed;
+      pointer-events: none;
+    }
+
+    /* Ícono */
+    .card-ico {
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      background: #18181B;
+      border: 1px solid #27272A;
+      flex-shrink: 0;
+      transition: all 0.2s;
+    }
+
+    .tool-card:hover .card-ico {
+      background: #1F1F23;
+    }
+
+    /* Contenido */
+    .card-content {}
+
+    .card-name {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 16px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      color: #F4F4F0;
+      margin-bottom: 4px;
+      line-height: 1.1;
+    }
+
+    .card-desc {
+      font-size: 12px;
+      color: #52525B;
+      line-height: 1.6;
+      margin-bottom: 10px;
+    }
+
+    .card-tags {
+      display: flex;
+      gap: 5px;
+      flex-wrap: wrap;
+    }
+
+    .card-tag {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 8px;
+      padding: 2px 7px;
+      border: 1px solid #27272A;
+      color: #3F3F46;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    /* Flecha */
+    .card-arrow {
+      font-size: 16px;
+      color: #27272A;
+      transition: all 0.2s;
+      align-self: center;
+    }
+
+    .tool-card:hover .card-arrow {
+      transform: translateX(3px);
+    }
+
+    /* Badge local */
+    .card-badge {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 8px;
+      padding: 2px 8px;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    .badge-local {
+      background: #1C1208;
+      color: #FB923C;
+      border: 1px solid rgba(251, 146, 60, 0.3);
+    }
+
+    .badge-ifc {
+      background: #082F49;
+      color: #38BDF8;
+      border: 1px solid rgba(56, 189, 248, 0.3);
+    }
+
+    .badge-new {
+      background: #052E16;
+      color: #22C55E;
+      border: 1px solid rgba(34, 197, 94, 0.3);
+    }
+
+    /* Colores por grupo */
+    .g-planificacion .card-ico {
+      color: #FACC15;
+      border-color: rgba(250, 204, 21, 0.2);
+    }
+
+    .g-planificacion .tool-card {
+      color: #FACC15;
+    }
+
+    .g-planificacion .tool-card:hover .card-arrow {
+      color: #FACC15;
+    }
+
+    .g-planificacion .grupo-nombre {
+      color: #FACC15;
+    }
+
+    .g-modelo .card-ico {
+      color: #38BDF8;
+      border-color: rgba(56, 189, 248, 0.2);
+    }
+
+    .g-modelo .tool-card {
+      color: #38BDF8;
+    }
+
+    .g-modelo .tool-card:hover .card-arrow {
+      color: #38BDF8;
+    }
+
+    .g-modelo .grupo-nombre {
+      color: #38BDF8;
+    }
+
+    .g-obra .card-ico {
+      color: #22C55E;
+      border-color: rgba(34, 197, 94, 0.2);
+    }
+
+    .g-obra .tool-card {
+      color: #22C55E;
+    }
+
+    .g-obra .tool-card:hover .card-arrow {
+      color: #22C55E;
+    }
+
+    .g-obra .grupo-nombre {
+      color: #22C55E;
+    }
+
+    .g-calidad .card-ico {
+      color: #EF4444;
+      border-color: rgba(239, 68, 68, 0.2);
+    }
+
+    .g-calidad .tool-card {
+      color: #EF4444;
+    }
+
+    .g-calidad .tool-card:hover .card-arrow {
+      color: #EF4444;
+    }
+
+    .g-calidad .grupo-nombre {
+      color: #EF4444;
+    }
+
+    /* Footer */
+    #footer {
+      padding: 24px 48px;
+      border-top: 1px solid #1F1F23;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .footer-txt {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 9px;
+      color: #3F3F46;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    /* Toast */
+    #toast {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: #111113;
+      border: 1px solid #27272A;
+      border-left: 3px solid #FACC15;
+      padding: 10px 16px;
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 12px;
+      font-weight: 600;
+      color: #F4F4F0;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      z-index: 1000;
+      opacity: 0;
+      transform: translateY(8px);
+      transition: all 0.3s;
+      pointer-events: none;
+    }
+
+    #toast.on {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    @media(max-width:1100px) {
+      .cards-grid.cols-3 {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    @media(max-width:768px) {
+
+      #topbar,
+      #hero,
+      #main,
+      #footer {
+        padding-left: 20px;
+        padding-right: 20px;
+      }
+
+      .cards-grid.cols-3,
+      .cards-grid.cols-2 {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
 </head>
+
 <body>
 
-<!-- BOTÓN VOLVER -->
-<button class="btn-back" id="btn-back" onclick="irAlHome()">←<span class="back-txt">Inicio</span></button>
-<div id="toast"></div>
-
-<!-- ══ HOME ════════════════════════════════════════ -->
-<div class="view active" id="view-home">
-  <div class="home-topbar">
-    <div class="home-mark">LF</div>
+  <!-- TOPBAR -->
+  <div id="topbar">
+    <div class="tb-mark">LF</div>
     <div>
-      <div class="home-brand">LF BIM Studio</div>
-      <div class="home-tagline">Suite de herramientas BIM</div>
+      <div class="tb-brand">LF BIM Studio</div>
+      <div class="tb-tagline">Ecosistema BIM para control de obra</div>
     </div>
-    <div class="home-sep"></div>
-    <div class="home-version">BIM Monitor Pro v6.0 · 2026</div>
+    <div class="tb-sep"></div>
+    <div class="tb-version">Suite v6.0 · 2026</div>
   </div>
 
-  <div class="home-hero">
-    <div class="home-title">BIM <span>Monitor</span> Pro</div>
-    <div class="home-subtitle">Dashboard · Campo · Visor 3D · Vaciados · Lookahead · NCR · RFI · Informe</div>
+  <!-- HERO -->
+  <div id="hero">
+    <div class="hero-eyebrow">Plataforma BIM para ingeniería de campo</div>
+    <div class="hero-title">BIM <em>Monitor</em><br />Pro</div>
+    <div class="hero-desc">Suite integral de herramientas BIM para el control de avance, calidad y trazabilidad en
+      proyectos de construcción. Diseñada para ingenieros residentes e interventorías.</div>
 
-    <!-- Carga JSON -->
-    <div class="home-loader">
-      <div class="home-loader-lbl">Proyecto activo</div>
-      <div class="home-drop" id="home-drop"
-           ondragover="dzOver(event)" ondragleave="dzOut()" ondrop="dzDrop(event)"
-           onclick="document.getElementById('json-in').click()">
-        <input type="file" id="json-in" accept=".json" onchange="cargarJSON(this.files[0])"/>
-        <div class="home-drop-ico" id="drop-ico">📂</div>
-        <div class="home-drop-txt" id="drop-txt">Cargar JSON de avance</div>
-        <div class="home-drop-sub" id="drop-sub">BIMMonitorPro_Avance_YYYYMMDD.json</div>
-      </div>
-    </div>
-
-    <!-- Cards herramientas -->
-    <div class="home-cards">
-
-      <div class="tool-card t-dash disabled" id="card-dash" onclick="abrirDash()">
-        <div class="tool-ico">📊</div>
-        <div class="tool-name">Control de<br/>Avance</div>
-        <div class="tool-desc">Dashboard completo con curva S, mapa de calor, ranking de responsables, comparación entre cortes y acta semanal PDF.</div>
-        <div class="tool-tags">
-          <span class="tool-tag">Dashboard</span>
-          <span class="tool-tag">PDF</span>
-          <span class="tool-tag">Comparación</span>
+    <div id="drop-wrap">
+      <div id="home-drop" ondragover="dzOver(event)" ondragleave="dzOut()" ondrop="dzDrop(event)"
+        onclick="document.getElementById('json-in').click()">
+        <input type="file" id="json-in" accept=".json" onchange="cargarJSON(this.files[0])" />
+        <div class="drop-ico" id="drop-ico">📂</div>
+        <div class="drop-content">
+          <div class="drop-title" id="drop-title">Cargar JSON de avance</div>
+          <div class="drop-sub" id="drop-sub">BIMMonitorPro_Avance_YYYYMMDD.json · Arrastra o haz click</div>
         </div>
-        <div class="tool-arrow">→</div>
       </div>
-
-      <div class="tool-card t-campo disabled" id="card-campo" onclick="abrirCampo()">
-        <div class="tool-ico">📱</div>
-        <div class="tool-name">Vista de<br/>Campo</div>
-        <div class="tool-desc">Herramienta móvil para actualizar estados en obra. Marca elementos como terminados, adjunta fotos y reporta problemas.</div>
-        <div class="tool-tags">
-          <span class="tool-tag">Móvil</span>
-          <span class="tool-tag">Campo</span>
-          <span class="tool-tag">Fotos</span>
-        </div>
-        <div class="tool-arrow">→</div>
+      <div id="proyecto-info">
+        <div class="proy-nombre" id="proy-nombre">—</div>
+        <div class="proy-meta" id="proy-meta">—</div>
       </div>
-
-      <div class="tool-card t-visor" id="card-visor" onclick="abrirVisor()">
-        <div class="tool-badge">+ IFC</div>
-        <div class="tool-ico">🏗</div>
-        <div class="tool-name">Visor<br/>3D IFC</div>
-        <div class="tool-desc">Modelo BIM en 3D coloreado por estado de ejecución. Filtra por nivel, categoría y responsable directamente en el modelo.</div>
-        <div class="tool-tags">
-          <span class="tool-tag">IFC</span>
-          <span class="tool-tag">3D</span>
-          <span class="tool-tag">Colores</span>
-        </div>
-        <div class="tool-arrow">→</div>
-      </div>
-
-      <div class="tool-card t-vaciados disabled" id="card-vaciados" onclick="abrirVaciados()">
-        <div class="tool-badge" style="background:#052E16;color:#22C55E;border-color:rgba(34,197,94,0.3);">+ IFC</div>
-        <div class="tool-ico">🧪</div>
-        <div class="tool-name">Control de<br/>Vaciados</div>
-        <div class="tool-desc">Registro de coladas, trazabilidad de cilindros y alertas NSR-10. Modelo 3D coloreado por estado de vaciado.</div>
-        <div class="tool-tags">
-          <span class="tool-tag">NSR-10</span>
-          <span class="tool-tag">Cilindros</span>
-          <span class="tool-tag">Trazabilidad</span>
-        </div>
-        <div class="tool-arrow">→</div>
-      </div>
-
-      <div class="tool-card t-lookahead disabled" id="card-lookahead" onclick="abrirLookahead()">
-        <div class="tool-ico">📅</div>
-        <div class="tool-name">Lookahead<br/>Semanal</div>
-        <div class="tool-desc">Programación S1 y S2 con PPC Last Planner. Cumplimiento por responsable y exportación PDF para reunión de obra.</div>
-        <div class="tool-tags">
-          <span class="tool-tag">Last Planner</span>
-          <span class="tool-tag">PPC</span>
-          <span class="tool-tag">PDF</span>
-        </div>
-        <div class="tool-arrow">→</div>
-      </div>
-
-      <div class="tool-card t-ncr" id="card-ncr" onclick="abrirNCR()">
-        <div class="tool-ico">⚠️</div>
-        <div class="tool-name">No<br/>Conformidades</div>
-        <div class="tool-desc">Registro y trazabilidad de NCR. Flujo completo desde detección hasta cierre con evidencia fotográfica y PDF para interventoría.</div>
-        <div class="tool-tags">
-          <span class="tool-tag">NCR</span>
-          <span class="tool-tag">Calidad</span>
-          <span class="tool-tag">NSR-10</span>
-        </div>
-        <div class="tool-arrow">→</div>
-      </div>
-
-      <div class="tool-card t-rfi" id="card-rfi" onclick="abrirRFI()">
-        <div class="tool-ico">💬</div>
-        <div class="tool-name">Solicitudes<br/>de Información</div>
-        <div class="tool-desc">Registro de RFI con flujo pregunta-respuesta, control de vencimientos y PDF listo para diseñador e interventoría.</div>
-        <div class="tool-tags">
-          <span class="tool-tag">RFI</span>
-          <span class="tool-tag">Diseñador</span>
-          <span class="tool-tag">Trazabilidad</span>
-        </div>
-        <div class="tool-arrow">→</div>
-      </div>
-
-      <div class="tool-card t-informe disabled" id="card-informe" onclick="abrirInforme()">
-        <div class="tool-ico">📄</div>
-        <div class="tool-name">Informe<br/>Mensual</div>
-        <div class="tool-desc">Reporte ejecutivo mensual con curva S, vaciados, NCR, RFI y fotos de avance. PDF profesional para cliente e interventoría.</div>
-        <div class="tool-tags">
-          <span class="tool-tag">PDF</span>
-          <span class="tool-tag">Ejecutivo</span>
-          <span class="tool-tag">Cliente</span>
-        </div>
-        <div class="tool-arrow">→</div>
-      </div>
-
     </div>
   </div>
 
-  <div class="home-footer">
-    <div class="home-footer-txt">Ing. Luis Manuel Fuentes Perez · LF BIM Studio · 2026</div>
-    <div class="home-footer-txt">ENF-GR2-P00-MFD-EST-110</div>
-  </div>
-</div>
+  <!-- MAIN -->
+  <div id="main">
 
-<!-- ══ DASHBOARD ════════════════════════════════════ -->
-<div class="view" id="view-dash" style="position:fixed;inset:0;">
-  <div class="iframe-loading" id="load-dash">
-    <div class="spinner"></div>
-    <p>Cargando dashboard...</p>
-  </div>
-  <iframe class="tool-iframe" id="iframe-dash"
-    style="position:absolute;inset:0;width:100%;height:100%;border:none;">
-  </iframe>
-</div>
+    <!-- ── GRUPO 1: PLANIFICACIÓN ── -->
+    <div class="grupo g-planificacion">
+      <div class="grupo-header">
+        <div class="grupo-num">01</div>
+        <div class="grupo-nombre">Planificación y seguimiento</div>
+        <div class="grupo-desc">Requiere JSON de avance</div>
+      </div>
+      <div class="cards-grid cols-3">
 
-<!-- ══ CAMPO ════════════════════════════════════════ -->
-<div class="view" id="view-campo" style="position:fixed;inset:0;">
-  <div class="iframe-loading" id="load-campo">
-    <div class="spinner"></div>
-    <p>Cargando vista de campo...</p>
-  </div>
-  <iframe class="tool-iframe" id="iframe-campo"
-    style="position:absolute;inset:0;width:100%;height:100%;border:none;">
-  </iframe>
-</div>
+        <div class="tool-card disabled" id="card-dash" onclick="abrirDash()">
+          <div class="card-ico">📊</div>
+          <div class="card-content">
+            <div class="card-name">Control de avance</div>
+            <div class="card-desc">Dashboard ejecutivo con curva S real vs planificada, mapa de calor por nivel, ranking
+              de responsables y comparación entre cortes de obra. Genera acta semanal en PDF.</div>
+            <div class="card-tags">
+              <span class="card-tag">Curva S</span>
+              <span class="card-tag">Mapa de calor</span>
+              <span class="card-tag">PDF</span>
+              <span class="card-tag">Comparación</span>
+            </div>
+          </div>
+          <div class="card-arrow">→</div>
+        </div>
 
-<!-- ══ VISOR 3D ══════════════════════════════════════ -->
-<div class="view" id="view-visor" style="position:fixed;inset:0;">
-  <iframe class="tool-iframe" id="iframe-visor"
-    src="http://localhost:5173"
-    style="position:absolute;inset:0;width:100%;height:100%;border:none;">
-  </iframe>
-  <div id="visor-offline" style="display:none;position:absolute;inset:0;background:#0A0A0B;align-items:center;justify-content:center;flex-direction:column;gap:16px;font-family:JetBrains Mono,monospace;text-align:center;padding:24px;">
-    <div style="font-size:48px;">🏗</div>
-    <div style="font-size:14px;color:#FACC15;letter-spacing:0.1em;text-transform:uppercase;font-weight:700;">Visor 3D — Servidor requerido</div>
-    <div style="font-size:12px;color:#52525B;line-height:2;max-width:400px;">
-      El visor 3D necesita que el servidor Vite esté corriendo.<br/>
-      <span style="color:#3F3F46;">En la terminal ejecuta:</span>
+        <div class="tool-card disabled" id="card-lookahead" onclick="abrirLookahead()">
+          <div class="card-ico">📅</div>
+          <div class="card-content">
+            <div class="card-name">Lookahead semanal</div>
+            <div class="card-desc">Programación de las próximas dos semanas con métricas Last Planner®. Calcula el PPC
+              (Porcentaje de Plan Completado) por responsable y genera el acta de reunión en PDF.</div>
+            <div class="card-tags">
+              <span class="card-tag">Last Planner</span>
+              <span class="card-tag">PPC</span>
+              <span class="card-tag">S1 + S2</span>
+              <span class="card-tag">PDF</span>
+            </div>
+          </div>
+          <div class="card-arrow">→</div>
+        </div>
+
+        <div class="tool-card disabled" id="card-campo" onclick="abrirCampo()">
+          <div class="card-ico">📱</div>
+          <div class="card-content">
+            <div class="card-name">Vista de campo</div>
+            <div class="card-desc">Herramienta optimizada para uso en obra desde el celular. Actualiza el estado de
+              elementos, adjunta fotos de evidencia y reporta problemas directamente desde el sitio.</div>
+            <div class="card-tags">
+              <span class="card-tag">Móvil</span>
+              <span class="card-tag">Fotos</span>
+              <span class="card-tag">Actualización</span>
+            </div>
+          </div>
+          <div class="card-arrow">→</div>
+        </div>
+
+      </div>
     </div>
-    <div style="background:#111113;border:1px solid #27272A;border-left:3px solid #FACC15;padding:14px 24px;font-size:13px;color:#FACC15;">
-      cd bim-visor &nbsp;&nbsp;&&nbsp;&nbsp; npm run dev
+
+    <!-- ── GRUPO 2: MODELO BIM ── -->
+    <div class="grupo g-modelo">
+      <div class="grupo-header">
+        <div class="grupo-num">02</div>
+        <div class="grupo-nombre">Modelo BIM 3D</div>
+        <div class="grupo-desc">Requiere archivo IFC + JSON de avance</div>
+      </div>
+      <div class="cards-grid cols-1">
+
+        <div class="tool-card" id="card-visor" onclick="abrirVisor()">
+          <div class="card-badge badge-ifc">+ IFC</div>
+          <div class="card-ico">🏗</div>
+          <div class="card-content">
+            <div class="card-name">Visor 3D IFC</div>
+            <div class="card-desc">Visualización del modelo BIM en 3D con colorización automática por estado de
+              ejecución. Navega el modelo, filtra por nivel, categoría o responsable, e inspecciona el estado de cada
+              elemento directamente en el modelo. Powered by That Open Engine.</div>
+            <div class="card-tags">
+              <span class="card-tag">IFC</span>
+              <span class="card-tag">3D interactivo</span>
+              <span class="card-tag">Colorización</span>
+              <span class="card-tag">Filtros</span>
+              <span class="card-tag">That Open Engine</span>
+            </div>
+          </div>
+          <div class="card-arrow">→</div>
+        </div>
+
+      </div>
     </div>
-    <div style="font-size:11px;color:#3F3F46;">Luego abre el visor de nuevo</div>
-    <button onclick="reintentarVisor()" style="margin-top:8px;padding:12px 24px;background:#FACC15;color:#0A0A0B;border:none;font-family:JetBrains Mono,monospace;font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;cursor:pointer;">
-      ↺ Reintentar conexión
-    </button>
+
+    <!-- ── GRUPO 3: CONTROL DE OBRA ── -->
+    <div class="grupo g-obra">
+      <div class="grupo-header">
+        <div class="grupo-num">03</div>
+        <div class="grupo-nombre">Control de obra</div>
+        <div class="grupo-desc">Disponible en modo local · npm run dev</div>
+      </div>
+      <div class="cards-grid cols-1">
+
+        <div class="tool-card" id="card-vaciados" onclick="abrirVaciados()">
+          <div class="card-badge badge-local">Local</div>
+          <div class="card-ico">🧪</div>
+          <div class="card-content">
+            <div class="card-name">Control de vaciados NSR-10</div>
+            <div class="card-desc">Registro y trazabilidad completa de coladas de concreto según NSR-10. Registra
+              proveedor, remisión, slump y volumen. Gestiona el seguimiento de cilindros a 7 y 28 días con criterio
+              automático de aprobación. Coloriza el modelo 3D por estado de vaciado: aprobado, pendiente o reprobado.
+            </div>
+            <div class="card-tags">
+              <span class="card-tag">NSR-10</span>
+              <span class="card-tag">Cilindros 7/28 días</span>
+              <span class="card-tag">Trazabilidad</span>
+              <span class="card-tag">Coladas</span>
+              <span class="card-tag">3D integrado</span>
+            </div>
+          </div>
+          <div class="card-arrow">→</div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ── GRUPO 4: CALIDAD ── -->
+    <div class="grupo g-calidad">
+      <div class="grupo-header">
+        <div class="grupo-num">04</div>
+        <div class="grupo-nombre">Calidad y trazabilidad</div>
+        <div class="grupo-desc">Datos persistentes en el navegador</div>
+      </div>
+      <div class="cards-grid cols-3">
+
+        <div class="tool-card" id="card-ncr" onclick="abrirNCR()">
+          <div class="card-ico">⚠️</div>
+          <div class="card-content">
+            <div class="card-name">No conformidades</div>
+            <div class="card-desc">Registro formal de NCR con flujo completo desde detección hasta cierre. Asigna
+              responsables, controla fechas límite, adjunta evidencia fotográfica y genera PDF para interventoría con
+              campo de firmas.</div>
+            <div class="card-tags">
+              <span class="card-tag">NCR</span>
+              <span class="card-tag">NSR-10</span>
+              <span class="card-tag">Fotos</span>
+              <span class="card-tag">PDF firmas</span>
+            </div>
+          </div>
+          <div class="card-arrow">→</div>
+        </div>
+
+        <div class="tool-card" id="card-rfi" onclick="abrirRFI()">
+          <div class="card-ico">💬</div>
+          <div class="card-content">
+            <div class="card-name">Solicitudes de información</div>
+            <div class="card-desc">Gestión de RFI con flujo pregunta-respuesta trazable. Controla vencimientos, asigna
+              nivel de impacto en obra y registra la respuesta del diseñador o interventoría. Genera PDF con firmas de
+              aprobación.</div>
+            <div class="card-tags">
+              <span class="card-tag">RFI</span>
+              <span class="card-tag">Vencimientos</span>
+              <span class="card-tag">Diseñador</span>
+              <span class="card-tag">PDF firmas</span>
+            </div>
+          </div>
+          <div class="card-arrow">→</div>
+        </div>
+
+        <div class="tool-card disabled" id="card-informe" onclick="abrirInforme()">
+          <div class="card-ico">📄</div>
+          <div class="card-content">
+            <div class="card-name">Informe mensual</div>
+            <div class="card-desc">Reporte ejecutivo mensual que consolida automáticamente el avance, la curva S, los
+              vaciados del mes con resultado de cilindros, NCR activas, RFI pendientes y registro fotográfico. PDF
+              profesional para cliente e interventoría.</div>
+            <div class="card-tags">
+              <span class="card-tag">Ejecutivo</span>
+              <span class="card-tag">Consolidado</span>
+              <span class="card-tag">PDF</span>
+              <span class="card-tag">Cliente</span>
+            </div>
+          </div>
+          <div class="card-arrow">→</div>
+        </div>
+
+      </div>
+    </div>
+
   </div>
-</div>
 
-<script>
-// ══════════════════════════════════════════════════════
-// APP — LF BIM STUDIO SUITE
-// ══════════════════════════════════════════════════════
-let JSON_DATA  = null;  // JSON del proyecto cargado
-let JSON_URL   = null;  // URL del blob para pasar a los iframes
-let VISTA_ACT  = 'home';
+  <!-- FOOTER -->
+  <div id="footer">
+    <div class="footer-txt">Ing. Luis Manuel Fuentes Perez · LF BIM Studio · 2026</div>
+    <div class="footer-txt">ENF-GR2-P00-MFD-EST-110</div>
+  </div>
 
-// ── Navegación ────────────────────────────────────────
-function mostrarVista(id) {
-  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-  document.getElementById('view-' + id).classList.add('active');
-  VISTA_ACT = id;
-  const btn = document.getElementById('btn-back');
-  btn.className = id === 'home' ? 'btn-back' : 'btn-back visible';
-}
+  <div id="toast"></div>
 
-function irAlHome() {
-  mostrarVista('home');
-}
+  <script>
+    let JSON_DATA = null;
 
-// ── Carga del JSON ────────────────────────────────────
-function dzOver(e)  { e.preventDefault(); document.getElementById('home-drop').classList.add('drag'); }
-function dzOut()    { document.getElementById('home-drop').classList.remove('drag'); }
-function dzDrop(e)  { e.preventDefault(); dzOut(); const f = e.dataTransfer.files[0]; if(f) cargarJSON(f); }
+    // ── Drop JSON ──────────────────────────────────────────
+    function dzOver(e) { e.preventDefault(); document.getElementById('home-drop').classList.add('drag'); }
+    function dzOut() { document.getElementById('home-drop').classList.remove('drag'); }
+    function dzDrop(e) { e.preventDefault(); dzOut(); const f = e.dataTransfer.files[0]; if (f) cargarJSON(f); }
 
-function cargarJSON(file) {
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = ev => {
-    try {
-      JSON_DATA = JSON.parse(ev.target.result);
-      const total = JSON_DATA.elementos?.length || 0;
-      const proyecto = JSON_DATA.proyecto || file.name;
+    function cargarJSON(file) {
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = ev => {
+        try {
+          JSON_DATA = JSON.parse(ev.target.result);
+          const total = JSON_DATA.elementos?.length || 0;
+          const proyecto = JSON_DATA.proyecto || file.name;
 
-      // Actualizar UI
-      document.getElementById('home-drop').classList.add('loaded');
-      document.getElementById('drop-ico').textContent = '✓';
-      document.getElementById('drop-txt').textContent = proyecto;
-      document.getElementById('drop-sub').textContent =
-        total.toLocaleString('es-CO') + ' elementos · ' + (JSON_DATA.fecha_gen || '');
+          // Drop actualizado
+          const drop = document.getElementById('home-drop');
+          drop.classList.add('loaded');
+          document.getElementById('drop-ico').textContent = '✓';
+          document.getElementById('drop-title').textContent = proyecto;
+          document.getElementById('drop-sub').textContent = total.toLocaleString('es-CO') + ' elementos · ' + (JSON_DATA.fecha_gen || file.name);
 
-      // Crear blob URL para pasar a los iframes
-      if (JSON_URL) URL.revokeObjectURL(JSON_URL);
-      JSON_URL = URL.createObjectURL(new Blob([ev.target.result], {type:'application/json'}));
+          // Mostrar info proyecto
+          document.getElementById('proyecto-info').style.display = 'block';
+          document.getElementById('proy-nombre').textContent = proyecto;
+          document.getElementById('proy-meta').textContent = total.toLocaleString('es-CO') + ' elementos · Cargado correctamente';
 
-      // Habilitar cards
-      document.getElementById('card-dash').classList.remove('disabled');
-      document.getElementById('card-campo').classList.remove('disabled');
-      document.getElementById('card-vaciados').classList.remove('disabled');
-      document.getElementById('card-lookahead').classList.remove('disabled');
-      document.getElementById('card-informe').classList.remove('disabled');
+          // Habilitar cards que requieren JSON
+          ['card-dash', 'card-campo', 'card-lookahead', 'card-informe'].forEach(id => {
+            document.getElementById(id)?.classList.remove('disabled');
+          });
 
-      toast('✓ ' + total.toLocaleString('es-CO') + ' elementos cargados', '#22C55E');
-
-    } catch(err) {
-      toast('✗ JSON inválido', '#EF4444');
+          toast('✓ ' + total.toLocaleString('es-CO') + ' elementos cargados');
+        } catch (err) {
+          toast('✗ JSON inválido');
+        }
+      };
+      reader.readAsText(file);
     }
-  };
-  reader.readAsText(file);
-}
 
-// ── Abrir herramientas ────────────────────────────────
-function enviarJSON(iframeId, loaderId) {
-  const iframe = document.getElementById(iframeId);
-  if (!iframe || !iframe.contentWindow || !JSON_DATA) return;
-  iframe.contentWindow.postMessage({ tipo: 'BIM_JSON_DATA', data: JSON_DATA }, '*');
-  const loader = document.getElementById(loaderId);
-  if (loader) loader.style.display = 'none';
-}
+    // ── Abrir herramientas ─────────────────────────────────
+    function abrirDash() {
+      if (!JSON_DATA) { toast('Carga primero el JSON de avance'); return; }
+      try { sessionStorage.setItem('BIM_JSON_DATA', JSON.stringify(JSON_DATA)); } catch (e) { }
+      window.open('/dashboard.html', '_blank');
+    }
 
-function abrirDash() {
-  if (!JSON_DATA) { toast('Carga primero el JSON', '#EF4444'); return; }
-  try {
-    sessionStorage.setItem('BIM_JSON_DATA', JSON.stringify(JSON_DATA));
-  } catch(e) {}
-  window.open('/dashboard.html', '_blank');
-}
+    function abrirCampo() {
+      if (!JSON_DATA) { toast('Carga primero el JSON de avance'); return; }
+      try { sessionStorage.setItem('BIM_JSON_DATA', JSON.stringify(JSON_DATA)); } catch (e) { }
+      window.open('/campo.html', '_blank');
+    }
 
-function abrirCampo() {
-  if (!JSON_DATA) { toast('Carga primero el JSON', '#EF4444'); return; }
-  try {
-    sessionStorage.setItem('BIM_JSON_DATA', JSON.stringify(JSON_DATA));
-  } catch(e) {}
-  window.open('/campo.html', '_blank');
-}
+    function abrirLookahead() {
+      if (!JSON_DATA) { toast('Carga primero el JSON de avance'); return; }
+      try { sessionStorage.setItem('BIM_JSON_DATA', JSON.stringify(JSON_DATA)); } catch (e) { }
+      window.open('/lookahead.html', '_blank');
+    }
 
-function abrirNCR() {
-  window.open('/ncr.html', '_blank');
-}
+    function abrirVisor() {
+      window.open('/visor', '_blank');
+    }
 
-function abrirRFI() {
-  window.open('/rfi.html', '_blank');
-}
+    function abrirVaciados() {
+      fetch('http://localhost:5173', { mode: 'no-cors' })
+        .then(() => {
+          window.open('http://localhost:5173/vaciados_entry.html', '_blank');
+        })
+        .catch(() => {
+          toast('⚠ Ejecuta: npm run dev en la terminal');
+        });
+    }
 
-function abrirInforme() {
-  if (!JSON_DATA) { toast('Carga primero el JSON', '#EF4444'); return; }
-  try { sessionStorage.setItem('BIM_JSON_DATA', JSON.stringify(JSON_DATA)); } catch(e) {}
-  window.open('/informe.html', '_blank');
-}
+    function abrirNCR() {
+      window.open('/ncr.html', '_blank');
+    }
 
-function abrirLookahead() {
-  if (!JSON_DATA) { toast('Carga primero el JSON', '#EF4444'); return; }
-  try { sessionStorage.setItem('BIM_JSON_DATA', JSON.stringify(JSON_DATA)); } catch(e) {}
-  window.open('/lookahead.html', '_blank');
-}
+    function abrirRFI() {
+      window.open('/rfi.html', '_blank');
+    }
 
-function abrirVaciados() {
-  fetch('http://localhost:5173', { mode: 'no-cors' })
-    .then(() => {
-      try { sessionStorage.setItem('BIM_JSON_DATA', JSON.stringify(JSON_DATA)); } catch(e) {}
-      window.open('http://localhost:5173/vaciados_entry.html', '_blank');
-    })
-    .catch(() => {
-      toast('⚠ Ejecuta: npm run dev en la terminal', '#FB923C');
-    });
-}
+    function abrirInforme() {
+      if (!JSON_DATA) { toast('Carga primero el JSON de avance'); return; }
+      try { sessionStorage.setItem('BIM_JSON_DATA', JSON.stringify(JSON_DATA)); } catch (e) { }
+      window.open('/informe.html', '_blank');
+    }
 
-function abrirVisor() {
-  mostrarVista('visor');
-  const offline = document.getElementById('visor-offline');
-  const iframe  = document.getElementById('iframe-visor');
-  if (offline) offline.style.display = 'none';
-
-  // Intentar cargar — si falla mostrar mensaje offline
-  fetch('http://localhost:5173', { mode: 'no-cors' })
-    .then(() => {
-      // Servidor disponible — el iframe ya tiene src fijo
-      iframe.src = 'http://localhost:5173';
-    })
-    .catch(() => {
-      // Servidor no disponible
-      if (offline) offline.style.display = 'flex';
-    });
-}
-
-function reintentarVisor() {
-  const offline = document.getElementById('visor-offline');
-  const iframe  = document.getElementById('iframe-visor');
-  if (offline) offline.style.display = 'none';
-  fetch('http://localhost:5173', { mode: 'no-cors' })
-    .then(() => { iframe.src = 'http://localhost:5173'; })
-    .catch(() => { if (offline) offline.style.display = 'flex'; });
-}
-
-// ── Toast ─────────────────────────────────────────────
-function toast(msg, color) {
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.style.borderLeftColor = color || '#FACC15';
-  t.classList.add('on');
-  clearTimeout(t._t);
-  t._t = setTimeout(() => t.classList.remove('on'), 3500);
-}
-</script>
+    // ── Toast ──────────────────────────────────────────────
+    function toast(msg) {
+      const t = document.getElementById('toast');
+      t.textContent = msg; t.classList.add('on');
+      clearTimeout(t._t); t._t = setTimeout(() => t.classList.remove('on'), 3500);
+    }
+  </script>
 </body>
+
 </html>
