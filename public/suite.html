@@ -1,900 +1,557 @@
 <!DOCTYPE html>
 <html lang="es">
-
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>LF BIM Studio — Suite</title>
-  <link
-    href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=Barlow:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap"
-    rel="stylesheet" />
-  <style>
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-
-    html,
-    body {
-      min-height: 100vh;
-      background: #0A0A0B;
-      color: #F4F4F0;
-      font-family: 'Barlow', sans-serif;
-      -webkit-font-smoothing: antialiased;
-      overflow-x: hidden;
-    }
-
-    /* ── TOPBAR ── */
-    #topbar {
-      position: sticky;
-      top: 0;
-      z-index: 100;
-      background: rgba(10, 10, 11, 0.97);
-      border-bottom: 1px solid #1F1F23;
-      display: flex;
-      align-items: center;
-      gap: 16px;
-      padding: 0 48px;
-      height: 56px;
-      backdrop-filter: blur(16px);
-    }
-
-    .tb-mark {
-      width: 36px;
-      height: 36px;
-      background: #FACC15;
-      color: #0A0A0B;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-family: 'Barlow Condensed', sans-serif;
-      font-weight: 900;
-      font-size: 14px;
-      flex-shrink: 0;
-    }
-
-    .tb-brand {
-      font-family: 'Barlow Condensed', sans-serif;
-      font-size: 16px;
-      font-weight: 700;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-    }
-
-    .tb-tagline {
-      font-size: 9px;
-      color: #52525B;
-      letter-spacing: 0.15em;
-      text-transform: uppercase;
-      margin-top: 1px;
-      font-family: 'JetBrains Mono', monospace;
-    }
-
-    .tb-sep {
-      flex: 1;
-    }
-
-    .tb-version {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 9px;
-      color: #3F3F46;
-      letter-spacing: 0.08em;
-    }
-
-    /* ── HERO ── */
-    #hero {
-      padding: 64px 48px 48px;
-      border-bottom: 1px solid #1F1F23;
-      position: relative;
-      overflow: hidden;
-    }
-
-    #hero::before {
-      content: '';
-      position: absolute;
-      top: -100px;
-      right: -100px;
-      width: 600px;
-      height: 600px;
-      background: radial-gradient(circle, rgba(250, 204, 21, 0.06) 0%, transparent 70%);
-      pointer-events: none;
-    }
-
-    .hero-eyebrow {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 10px;
-      color: #FACC15;
-      letter-spacing: 0.2em;
-      text-transform: uppercase;
-      margin-bottom: 16px;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-
-    .hero-eyebrow::before {
-      content: '';
-      width: 24px;
-      height: 1px;
-      background: #FACC15;
-    }
-
-    .hero-title {
-      font-family: 'Barlow Condensed', sans-serif;
-      font-size: clamp(40px, 6vw, 72px);
-      font-weight: 900;
-      line-height: 0.95;
-      letter-spacing: -0.01em;
-      text-transform: uppercase;
-      margin-bottom: 20px;
-    }
-
-    .hero-title em {
-      color: #FACC15;
-      font-style: normal;
-    }
-
-    .hero-desc {
-      font-size: 14px;
-      color: #6B6B65;
-      line-height: 1.7;
-      max-width: 560px;
-      margin-bottom: 32px;
-    }
-
-    /* Drop zone */
-    #drop-wrap {
-      display: flex;
-      align-items: center;
-      gap: 16px;
-      flex-wrap: wrap;
-    }
-
-    #home-drop {
-      flex: 1;
-      max-width: 480px;
-      border: 1px dashed #27272A;
-      background: #111113;
-      padding: 16px 20px;
-      cursor: pointer;
-      transition: all 0.2s;
-      display: flex;
-      align-items: center;
-      gap: 14px;
-    }
-
-    #home-drop:hover,
-    #home-drop.drag {
-      border-color: #FACC15;
-      background: #1A180A;
-    }
-
-    #home-drop.loaded {
-      border-style: solid;
-      border-color: #22C55E;
-      background: #052E16;
-    }
-
-    #home-drop input {
-      display: none;
-    }
-
-    .drop-ico {
-      font-size: 22px;
-      flex-shrink: 0;
-    }
-
-    .drop-content {}
-
-    .drop-title {
-      font-size: 13px;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.06em;
-      color: #F4F4F0;
-    }
-
-    .drop-sub {
-      font-size: 10px;
-      color: #52525B;
-      font-family: 'JetBrains Mono', monospace;
-      margin-top: 2px;
-    }
-
-    /* Proyecto info */
-    #proyecto-info {
-      display: none;
-      background: #111113;
-      border: 1px solid #27272A;
-      border-left: 3px solid #22C55E;
-      padding: 12px 16px;
-    }
-
-    .proy-nombre {
-      font-size: 13px;
-      font-weight: 700;
-      color: #F4F4F0;
-    }
-
-    .proy-meta {
-      font-size: 10px;
-      color: #52525B;
-      font-family: 'JetBrains Mono', monospace;
-      margin-top: 3px;
-    }
-
-    /* ── MAIN ── */
-    #main {
-      padding: 48px;
-    }
-
-    /* Grupo de módulos */
-    .grupo {
-      margin-bottom: 48px;
-    }
-
-    .grupo-header {
-      display: flex;
-      align-items: baseline;
-      gap: 16px;
-      margin-bottom: 20px;
-      padding-bottom: 12px;
-      border-bottom: 1px solid #1F1F23;
-    }
-
-    .grupo-num {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 9px;
-      color: #3F3F46;
-      letter-spacing: 0.1em;
-      flex-shrink: 0;
-    }
-
-    .grupo-nombre {
-      font-family: 'Barlow Condensed', sans-serif;
-      font-size: 11px;
-      font-weight: 700;
-      color: #FACC15;
-      letter-spacing: 0.2em;
-      text-transform: uppercase;
-    }
-
-    .grupo-desc {
-      font-size: 12px;
-      color: #3F3F46;
-      margin-left: auto;
-      font-family: 'JetBrains Mono', monospace;
-    }
-
-    /* Grid de cards */
-    .cards-grid {
-      display: grid;
-      gap: 12px;
-    }
-
-    .cards-grid.cols-3 {
-      grid-template-columns: repeat(3, 1fr);
-    }
-
-    .cards-grid.cols-2 {
-      grid-template-columns: repeat(2, 1fr);
-    }
-
-    .cards-grid.cols-1 {
-      grid-template-columns: 1fr;
-    }
-
-    /* Card de herramienta */
-    .tool-card {
-      background: #111113;
-      border: 1px solid #1F1F23;
-      padding: 20px;
-      cursor: pointer;
-      transition: all 0.2s;
-      display: grid;
-      grid-template-columns: auto 1fr auto;
-      gap: 16px;
-      align-items: start;
-      position: relative;
-      overflow: hidden;
-    }
-
-    .tool-card::after {
-      content: '';
-      position: absolute;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      height: 1px;
-      background: currentColor;
-      opacity: 0;
-      transform: scaleX(0);
-      transform-origin: left;
-      transition: all 0.3s;
-    }
-
-    .tool-card:hover {
-      border-color: #27272A;
-      background: #151518;
-    }
-
-    .tool-card:hover::after {
-      opacity: 0.3;
-      transform: scaleX(1);
-    }
-
-    .tool-card.disabled {
-      opacity: 0.35;
-      cursor: not-allowed;
-      pointer-events: none;
-    }
-
-    /* Ícono */
-    .card-ico {
-      width: 40px;
-      height: 40px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 18px;
-      background: #18181B;
-      border: 1px solid #27272A;
-      flex-shrink: 0;
-      transition: all 0.2s;
-    }
-
-    .tool-card:hover .card-ico {
-      background: #1F1F23;
-    }
-
-    /* Contenido */
-    .card-content {}
-
-    .card-name {
-      font-family: 'Barlow Condensed', sans-serif;
-      font-size: 16px;
-      font-weight: 800;
-      text-transform: uppercase;
-      letter-spacing: 0.03em;
-      color: #F4F4F0;
-      margin-bottom: 4px;
-      line-height: 1.1;
-    }
-
-    .card-desc {
-      font-size: 12px;
-      color: #52525B;
-      line-height: 1.6;
-      margin-bottom: 10px;
-    }
-
-    .card-tags {
-      display: flex;
-      gap: 5px;
-      flex-wrap: wrap;
-    }
-
-    .card-tag {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 8px;
-      padding: 2px 7px;
-      border: 1px solid #27272A;
-      color: #3F3F46;
-      letter-spacing: 0.06em;
-      text-transform: uppercase;
-    }
-
-    /* Flecha */
-    .card-arrow {
-      font-size: 16px;
-      color: #27272A;
-      transition: all 0.2s;
-      align-self: center;
-    }
-
-    .tool-card:hover .card-arrow {
-      transform: translateX(3px);
-    }
-
-    /* Badge local */
-    .card-badge {
-      position: absolute;
-      top: 10px;
-      right: 10px;
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 8px;
-      padding: 2px 8px;
-      letter-spacing: 0.06em;
-      text-transform: uppercase;
-    }
-
-    .badge-local {
-      background: #1C1208;
-      color: #FB923C;
-      border: 1px solid rgba(251, 146, 60, 0.3);
-    }
-
-    .badge-ifc {
-      background: #082F49;
-      color: #38BDF8;
-      border: 1px solid rgba(56, 189, 248, 0.3);
-    }
-
-    .badge-new {
-      background: #052E16;
-      color: #22C55E;
-      border: 1px solid rgba(34, 197, 94, 0.3);
-    }
-
-    /* Colores por grupo */
-    .g-planificacion .card-ico {
-      color: #FACC15;
-      border-color: rgba(250, 204, 21, 0.2);
-    }
-
-    .g-planificacion .tool-card {
-      color: #FACC15;
-    }
-
-    .g-planificacion .tool-card:hover .card-arrow {
-      color: #FACC15;
-    }
-
-    .g-planificacion .grupo-nombre {
-      color: #FACC15;
-    }
-
-    .g-modelo .card-ico {
-      color: #38BDF8;
-      border-color: rgba(56, 189, 248, 0.2);
-    }
-
-    .g-modelo .tool-card {
-      color: #38BDF8;
-    }
-
-    .g-modelo .tool-card:hover .card-arrow {
-      color: #38BDF8;
-    }
-
-    .g-modelo .grupo-nombre {
-      color: #38BDF8;
-    }
-
-    .g-obra .card-ico {
-      color: #22C55E;
-      border-color: rgba(34, 197, 94, 0.2);
-    }
-
-    .g-obra .tool-card {
-      color: #22C55E;
-    }
-
-    .g-obra .tool-card:hover .card-arrow {
-      color: #22C55E;
-    }
-
-    .g-obra .grupo-nombre {
-      color: #22C55E;
-    }
-
-    .g-calidad .card-ico {
-      color: #EF4444;
-      border-color: rgba(239, 68, 68, 0.2);
-    }
-
-    .g-calidad .tool-card {
-      color: #EF4444;
-    }
-
-    .g-calidad .tool-card:hover .card-arrow {
-      color: #EF4444;
-    }
-
-    .g-calidad .grupo-nombre {
-      color: #EF4444;
-    }
-
-    /* Footer */
-    #footer {
-      padding: 24px 48px;
-      border-top: 1px solid #1F1F23;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    .footer-txt {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 9px;
-      color: #3F3F46;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-    }
-
-    /* Toast */
-    #toast {
-      position: fixed;
-      bottom: 24px;
-      right: 24px;
-      background: #111113;
-      border: 1px solid #27272A;
-      border-left: 3px solid #FACC15;
-      padding: 10px 16px;
-      font-family: 'Barlow Condensed', sans-serif;
-      font-size: 12px;
-      font-weight: 600;
-      color: #F4F4F0;
-      letter-spacing: 0.05em;
-      text-transform: uppercase;
-      z-index: 1000;
-      opacity: 0;
-      transform: translateY(8px);
-      transition: all 0.3s;
-      pointer-events: none;
-    }
-
-    #toast.on {
-      opacity: 1;
-      transform: translateY(0);
-    }
-
-    @media(max-width:1100px) {
-      .cards-grid.cols-3 {
-        grid-template-columns: repeat(2, 1fr);
-      }
-    }
-
-    @media(max-width:768px) {
-
-      #topbar,
-      #hero,
-      #main,
-      #footer {
-        padding-left: 20px;
-        padding-right: 20px;
-      }
-
-      .cards-grid.cols-3,
-      .cards-grid.cols-2 {
-        grid-template-columns: 1fr;
-      }
-    }
-  </style>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>LF BIM Studio — Suite</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=Barlow:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{min-height:100vh;background:#0A0A0B;color:#F4F4F0;font-family:'Barlow',sans-serif;-webkit-font-smoothing:antialiased;overflow-x:hidden;}
+
+/* ── TOPBAR ── */
+#topbar{
+  position:sticky;top:0;z-index:100;
+  background:rgba(10,10,11,0.97);border-bottom:1px solid #1F1F23;
+  display:flex;align-items:center;gap:16px;padding:0 48px;height:56px;
+  backdrop-filter:blur(16px);
+}
+.tb-mark{width:36px;height:36px;background:#FACC15;color:#0A0A0B;display:flex;align-items:center;justify-content:center;font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:14px;flex-shrink:0;}
+.tb-brand{font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;}
+.tb-tagline{font-size:9px;color:#52525B;letter-spacing:0.15em;text-transform:uppercase;margin-top:1px;font-family:'JetBrains Mono',monospace;}
+.tb-sep{flex:1;}
+.tb-version{font-family:'JetBrains Mono',monospace;font-size:9px;color:#3F3F46;letter-spacing:0.08em;}
+
+/* ── HERO ── */
+#hero{
+  padding:80px 48px 64px;
+  border-bottom:1px solid #1F1F23;
+  position:relative;overflow:hidden;
+  text-align:center;
+}
+#hero::before{
+  content:'';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+  width:800px;height:800px;
+  background:radial-gradient(circle,rgba(250,204,21,0.05) 0%,transparent 65%);
+  pointer-events:none;animation:pulse 4s ease-in-out infinite;
+}
+#hero::after{
+  content:'';position:absolute;inset:0;
+  background:repeating-linear-gradient(0deg,transparent,transparent 39px,rgba(250,204,21,0.02) 39px,rgba(250,204,21,0.02) 40px),
+             repeating-linear-gradient(90deg,transparent,transparent 39px,rgba(250,204,21,0.02) 39px,rgba(250,204,21,0.02) 40px);
+  pointer-events:none;
+}
+@keyframes pulse{0%,100%{opacity:0.6;}50%{opacity:1;}}
+
+.hero-eyebrow{
+  font-family:'JetBrains Mono',monospace;font-size:10px;
+  color:#FACC15;letter-spacing:0.25em;text-transform:uppercase;
+  margin-bottom:20px;display:flex;align-items:center;justify-content:center;gap:12px;
+  position:relative;z-index:1;
+}
+.hero-eyebrow::before,.hero-eyebrow::after{content:'';width:32px;height:1px;background:#FACC15;opacity:0.5;}
+
+.hero-title{
+  font-family:'Barlow Condensed',sans-serif;
+  font-size:clamp(56px,8vw,96px);font-weight:900;
+  line-height:0.92;letter-spacing:-0.02em;text-transform:uppercase;
+  margin-bottom:16px;position:relative;z-index:1;
+}
+.hero-title em{
+  color:#FACC15;font-style:normal;
+  text-shadow:0 0 80px rgba(250,204,21,0.3);
+}
+.hero-subtitle{
+  font-family:'Barlow Condensed',sans-serif;
+  font-size:clamp(14px,2vw,18px);font-weight:400;
+  color:#3F3F46;letter-spacing:0.15em;text-transform:uppercase;
+  margin-bottom:12px;position:relative;z-index:1;
+}
+.hero-desc{
+  font-size:13px;color:#52525B;line-height:1.7;
+  max-width:500px;margin:0 auto 40px;
+  position:relative;z-index:1;
+}
+
+/* Drop zone */
+#drop-wrap{
+  display:flex;flex-direction:column;align-items:center;gap:12px;
+  position:relative;z-index:1;
+}
+#home-drop{
+  width:100%;max-width:480px;
+  border:1px dashed #27272A;background:rgba(17,17,19,0.8);
+  padding:18px 24px;cursor:pointer;transition:all 0.25s;
+  display:flex;align-items:center;gap:14px;
+  backdrop-filter:blur(8px);
+}
+#home-drop:hover,#home-drop.drag{border-color:#FACC15;background:rgba(26,24,10,0.9);transform:translateY(-2px);}
+#home-drop.loaded{border-style:solid;border-color:#22C55E;background:rgba(5,46,22,0.8);}
+#home-drop input{display:none;}
+.drop-ico{font-size:24px;flex-shrink:0;}
+.drop-content{text-align:left;}
+.drop-title{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#F4F4F0;}
+.drop-sub{font-size:10px;color:#52525B;font-family:'JetBrains Mono',monospace;margin-top:2px;}
+
+/* Proyecto info */
+#proyecto-info{
+  display:none;width:100%;max-width:480px;
+  background:rgba(5,46,22,0.6);border:1px solid #22C55E;border-left:3px solid #22C55E;
+  padding:10px 16px;backdrop-filter:blur(8px);
+}
+.proy-nombre{font-size:12px;font-weight:700;color:#22C55E;font-family:'JetBrains Mono',monospace;}
+.proy-meta{font-size:10px;color:#166534;font-family:'JetBrains Mono',monospace;margin-top:2px;}
+
+/* ── MAIN ── */
+#main{padding:48px;max-width:1200px;margin:0 auto;}
+
+/* Grupo de módulos */
+.grupo{margin-bottom:56px;animation:fadeUp 0.5s ease both;}
+.grupo:nth-child(1){animation-delay:0.1s;}
+.grupo:nth-child(2){animation-delay:0.2s;}
+.grupo:nth-child(3){animation-delay:0.3s;}
+.grupo:nth-child(4){animation-delay:0.4s;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:translateY(0);}}
+.grupo-header{
+  display:flex;align-items:baseline;gap:16px;
+  margin-bottom:20px;padding-bottom:12px;
+  border-bottom:1px solid #1F1F23;
+}
+.grupo-num{
+  font-family:'JetBrains Mono',monospace;font-size:9px;
+  color:#3F3F46;letter-spacing:0.1em;
+  flex-shrink:0;
+}
+.grupo-nombre{
+  font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;
+  color:#FACC15;letter-spacing:0.2em;text-transform:uppercase;
+}
+.grupo-desc{font-size:12px;color:#3F3F46;margin-left:auto;font-family:'JetBrains Mono',monospace;}
+
+/* Grid de cards */
+.cards-grid{display:grid;gap:12px;}
+.cards-grid.cols-3{grid-template-columns:repeat(3,1fr);}
+.cards-grid.cols-2{grid-template-columns:repeat(2,1fr);}
+.cards-grid.cols-1{grid-template-columns:1fr;}
+
+/* Card de herramienta */
+.tool-card{
+  background:#111113;border:1px solid #1F1F23;
+  padding:20px;cursor:pointer;transition:all 0.2s;
+  display:grid;grid-template-columns:auto 1fr auto;gap:16px;align-items:start;
+  position:relative;overflow:hidden;
+}
+.tool-card::after{
+  content:'';position:absolute;bottom:0;left:0;right:0;height:1px;
+  background:currentColor;opacity:0;transform:scaleX(0);transform-origin:left;
+  transition:all 0.3s;
+}
+.tool-card:hover{border-color:#27272A;background:#151518;transform:translateY(-2px);box-shadow:0 8px 32px rgba(0,0,0,0.3);}
+.tool-card:hover::after{opacity:0.3;transform:scaleX(1);}
+.tool-card.disabled{opacity:0.35;cursor:not-allowed;pointer-events:none;}
+
+/* Ícono */
+.card-ico{
+  width:40px;height:40px;display:flex;align-items:center;justify-content:center;
+  font-size:18px;background:#18181B;border:1px solid #27272A;flex-shrink:0;
+  transition:all 0.2s;
+}
+.tool-card:hover .card-ico{background:#1F1F23;}
+
+/* Contenido */
+.card-content{}
+.card-name{
+  font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:800;
+  text-transform:uppercase;letter-spacing:0.03em;color:#F4F4F0;
+  margin-bottom:4px;line-height:1.1;
+}
+.card-desc{font-size:12px;color:#52525B;line-height:1.6;margin-bottom:10px;}
+.card-tags{display:flex;gap:5px;flex-wrap:wrap;}
+.card-tag{
+  font-family:'JetBrains Mono',monospace;font-size:8px;
+  padding:2px 7px;border:1px solid #27272A;color:#3F3F46;
+  letter-spacing:0.06em;text-transform:uppercase;
+}
+
+/* Flecha */
+.card-arrow{
+  font-size:16px;color:#27272A;transition:all 0.2s;
+  align-self:center;
+}
+.tool-card:hover .card-arrow{transform:translateX(3px);}
+
+/* Badge local */
+.card-badge{
+  position:absolute;top:10px;right:10px;
+  font-family:'JetBrains Mono',monospace;font-size:8px;
+  padding:2px 8px;letter-spacing:0.06em;text-transform:uppercase;
+}
+.badge-local{background:#1C1208;color:#FB923C;border:1px solid rgba(251,146,60,0.3);}
+.badge-ifc{background:#082F49;color:#38BDF8;border:1px solid rgba(56,189,248,0.3);}
+.badge-new{background:#052E16;color:#22C55E;border:1px solid rgba(34,197,94,0.3);}
+
+/* Colores por grupo */
+.g-planificacion .card-ico{color:#FACC15;border-color:rgba(250,204,21,0.2);}
+.g-planificacion .tool-card{color:#FACC15;}
+.g-planificacion .tool-card:hover .card-arrow{color:#FACC15;}
+.g-planificacion .grupo-nombre{color:#FACC15;}
+
+.g-modelo .card-ico{color:#38BDF8;border-color:rgba(56,189,248,0.2);}
+.g-modelo .tool-card{color:#38BDF8;}
+.g-modelo .tool-card:hover .card-arrow{color:#38BDF8;}
+.g-modelo .grupo-nombre{color:#38BDF8;}
+
+.g-obra .card-ico{color:#22C55E;border-color:rgba(34,197,94,0.2);}
+.g-obra .tool-card{color:#22C55E;}
+.g-obra .tool-card:hover .card-arrow{color:#22C55E;}
+.g-obra .grupo-nombre{color:#22C55E;}
+
+.g-calidad .card-ico{color:#EF4444;border-color:rgba(239,68,68,0.2);}
+.g-calidad .tool-card{color:#EF4444;}
+.g-calidad .tool-card:hover .card-arrow{color:#EF4444;}
+.g-calidad .grupo-nombre{color:#EF4444;}
+
+/* Footer */
+#footer{
+  padding:24px 48px;border-top:1px solid #1F1F23;
+  display:flex;justify-content:space-between;align-items:center;
+}
+.footer-txt{font-family:'JetBrains Mono',monospace;font-size:9px;color:#3F3F46;letter-spacing:0.08em;text-transform:uppercase;}
+
+/* Toast */
+#toast{
+  position:fixed;bottom:24px;right:24px;
+  background:#111113;border:1px solid #27272A;border-left:3px solid #FACC15;
+  padding:10px 16px;font-family:'Barlow Condensed',sans-serif;font-size:12px;
+  font-weight:600;color:#F4F4F0;letter-spacing:0.05em;text-transform:uppercase;
+  z-index:1000;opacity:0;transform:translateY(8px);transition:all 0.3s;pointer-events:none;
+}
+#toast.on{opacity:1;transform:translateY(0);}
+
+@media(max-width:1100px){.cards-grid.cols-3{grid-template-columns:repeat(2,1fr);}}
+@media(max-width:768px){
+  #topbar,#hero,#main,#footer{padding-left:20px;padding-right:20px;}
+  .cards-grid.cols-3,.cards-grid.cols-2{grid-template-columns:1fr;}
+}
+</style>
 </head>
-
 <body>
 
-  <!-- TOPBAR -->
-  <div id="topbar">
-    <div class="tb-mark">LF</div>
-    <div>
-      <div class="tb-brand">LF BIM Studio</div>
-      <div class="tb-tagline">Ecosistema BIM para control de obra</div>
+<!-- TOPBAR -->
+<div id="topbar">
+  <div class="tb-mark">LF</div>
+  <div>
+    <div class="tb-brand">LF BIM Studio</div>
+    <div class="tb-tagline">Ecosistema BIM para control de obra</div>
+  </div>
+  <div class="tb-sep"></div>
+  <div class="tb-version">Suite v6.0 · 2026</div>
+</div>
+
+<!-- HERO -->
+<div id="hero">
+  <div class="hero-eyebrow">Plataforma BIM para ingeniería de campo</div>
+  <div class="hero-title">BIM <em>Monitor</em> Pro</div>
+  <div class="hero-subtitle">Suite de herramientas para ingenieros BIM</div>
+  <div class="hero-desc">Control de avance, calidad y trazabilidad en proyectos de construcción. Diseñada para residentes e interventorías.</div>
+
+  <div id="drop-wrap">
+    <div id="home-drop"
+         ondragover="dzOver(event)" ondragleave="dzOut()" ondrop="dzDrop(event)"
+         onclick="document.getElementById('json-in').click()">
+      <input type="file" id="json-in" accept=".json" onchange="cargarJSON(this.files[0])"/>
+      <div class="drop-ico" id="drop-ico">📂</div>
+      <div class="drop-content">
+        <div class="drop-title" id="drop-title">Cargar JSON de avance</div>
+        <div class="drop-sub" id="drop-sub">BIMMonitorPro_Avance_YYYYMMDD.json · Arrastra o haz click</div>
+      </div>
     </div>
-    <div class="tb-sep"></div>
-    <div class="tb-version">Suite v6.0 · 2026</div>
+    <div id="proyecto-info">
+      <div class="proy-nombre" id="proy-nombre">—</div>
+      <div class="proy-meta" id="proy-meta">—</div>
+    </div>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div id="main">
+
+  <!-- ── GRUPO 1: PLANIFICACIÓN ── -->
+  <div class="grupo g-planificacion">
+    <div class="grupo-header">
+      <div class="grupo-num">01</div>
+      <div class="grupo-nombre">Planificación y seguimiento</div>
+      <div class="grupo-desc">Requiere JSON de avance</div>
+    </div>
+    <div class="cards-grid cols-3">
+
+      <div class="tool-card disabled" id="card-dash" onclick="abrirDash()">
+        <div class="card-ico">📊</div>
+        <div class="card-content">
+          <div class="card-name">Control de avance</div>
+          <div class="card-desc">Dashboard ejecutivo con curva S real vs planificada, mapa de calor por nivel, ranking de responsables y comparación entre cortes de obra. Genera acta semanal en PDF.</div>
+          <div class="card-tags">
+            <span class="card-tag">Curva S</span>
+            <span class="card-tag">Mapa de calor</span>
+            <span class="card-tag">PDF</span>
+            <span class="card-tag">Comparación</span>
+          </div>
+        </div>
+        <div class="card-arrow">→</div>
+      </div>
+
+      <div class="tool-card disabled" id="card-lookahead" onclick="abrirLookahead()">
+        <div class="card-ico">📅</div>
+        <div class="card-content">
+          <div class="card-name">Lookahead semanal</div>
+          <div class="card-desc">Programación de las próximas dos semanas con métricas Last Planner®. Calcula el PPC (Porcentaje de Plan Completado) por responsable y genera el acta de reunión en PDF.</div>
+          <div class="card-tags">
+            <span class="card-tag">Last Planner</span>
+            <span class="card-tag">PPC</span>
+            <span class="card-tag">S1 + S2</span>
+            <span class="card-tag">PDF</span>
+          </div>
+        </div>
+        <div class="card-arrow">→</div>
+      </div>
+
+      <div class="tool-card disabled" id="card-campo" onclick="abrirCampo()">
+        <div class="card-ico">📱</div>
+        <div class="card-content">
+          <div class="card-name">Vista de campo</div>
+          <div class="card-desc">Herramienta optimizada para uso en obra desde el celular. Actualiza el estado de elementos, adjunta fotos de evidencia y reporta problemas directamente desde el sitio.</div>
+          <div class="card-tags">
+            <span class="card-tag">Móvil</span>
+            <span class="card-tag">Fotos</span>
+            <span class="card-tag">Actualización</span>
+          </div>
+        </div>
+        <div class="card-arrow">→</div>
+      </div>
+
+    </div>
   </div>
 
-  <!-- HERO -->
-  <div id="hero">
-    <div class="hero-eyebrow">Plataforma BIM para ingeniería de campo</div>
-    <div class="hero-title">BIM <em>Monitor</em><br />Pro</div>
-    <div class="hero-desc">Suite integral de herramientas BIM para el control de avance, calidad y trazabilidad en
-      proyectos de construcción. Diseñada para ingenieros residentes e interventorías.</div>
+  <!-- ── GRUPO 2: MODELO BIM ── -->
+  <div class="grupo g-modelo">
+    <div class="grupo-header">
+      <div class="grupo-num">02</div>
+      <div class="grupo-nombre">Modelo BIM 3D</div>
+      <div class="grupo-desc">Requiere archivo IFC + JSON de avance</div>
+    </div>
+    <div class="cards-grid cols-1">
 
-    <div id="drop-wrap">
-      <div id="home-drop" ondragover="dzOver(event)" ondragleave="dzOut()" ondrop="dzDrop(event)"
-        onclick="document.getElementById('json-in').click()">
-        <input type="file" id="json-in" accept=".json" onchange="cargarJSON(this.files[0])" />
-        <div class="drop-ico" id="drop-ico">📂</div>
-        <div class="drop-content">
-          <div class="drop-title" id="drop-title">Cargar JSON de avance</div>
-          <div class="drop-sub" id="drop-sub">BIMMonitorPro_Avance_YYYYMMDD.json · Arrastra o haz click</div>
+      <div class="tool-card" id="card-visor" onclick="abrirVisor()">
+        <div class="card-badge badge-ifc">+ IFC</div>
+        <div class="card-ico">🏗</div>
+        <div class="card-content">
+          <div class="card-name">Visor 3D IFC</div>
+          <div class="card-desc">Visualización del modelo BIM en 3D con colorización automática por estado de ejecución. Navega el modelo, filtra por nivel, categoría o responsable, e inspecciona el estado de cada elemento directamente en el modelo. Powered by That Open Engine.</div>
+          <div class="card-tags">
+            <span class="card-tag">IFC</span>
+            <span class="card-tag">3D interactivo</span>
+            <span class="card-tag">Colorización</span>
+            <span class="card-tag">Filtros</span>
+            <span class="card-tag">That Open Engine</span>
+          </div>
         </div>
+        <div class="card-arrow">→</div>
       </div>
-      <div id="proyecto-info">
-        <div class="proy-nombre" id="proy-nombre">—</div>
-        <div class="proy-meta" id="proy-meta">—</div>
-      </div>
+
     </div>
   </div>
 
-  <!-- MAIN -->
-  <div id="main">
-
-    <!-- ── GRUPO 1: PLANIFICACIÓN ── -->
-    <div class="grupo g-planificacion">
-      <div class="grupo-header">
-        <div class="grupo-num">01</div>
-        <div class="grupo-nombre">Planificación y seguimiento</div>
-        <div class="grupo-desc">Requiere JSON de avance</div>
-      </div>
-      <div class="cards-grid cols-3">
-
-        <div class="tool-card disabled" id="card-dash" onclick="abrirDash()">
-          <div class="card-ico">📊</div>
-          <div class="card-content">
-            <div class="card-name">Control de avance</div>
-            <div class="card-desc">Dashboard ejecutivo con curva S real vs planificada, mapa de calor por nivel, ranking
-              de responsables y comparación entre cortes de obra. Genera acta semanal en PDF.</div>
-            <div class="card-tags">
-              <span class="card-tag">Curva S</span>
-              <span class="card-tag">Mapa de calor</span>
-              <span class="card-tag">PDF</span>
-              <span class="card-tag">Comparación</span>
-            </div>
-          </div>
-          <div class="card-arrow">→</div>
-        </div>
-
-        <div class="tool-card disabled" id="card-lookahead" onclick="abrirLookahead()">
-          <div class="card-ico">📅</div>
-          <div class="card-content">
-            <div class="card-name">Lookahead semanal</div>
-            <div class="card-desc">Programación de las próximas dos semanas con métricas Last Planner®. Calcula el PPC
-              (Porcentaje de Plan Completado) por responsable y genera el acta de reunión en PDF.</div>
-            <div class="card-tags">
-              <span class="card-tag">Last Planner</span>
-              <span class="card-tag">PPC</span>
-              <span class="card-tag">S1 + S2</span>
-              <span class="card-tag">PDF</span>
-            </div>
-          </div>
-          <div class="card-arrow">→</div>
-        </div>
-
-        <div class="tool-card disabled" id="card-campo" onclick="abrirCampo()">
-          <div class="card-ico">📱</div>
-          <div class="card-content">
-            <div class="card-name">Vista de campo</div>
-            <div class="card-desc">Herramienta optimizada para uso en obra desde el celular. Actualiza el estado de
-              elementos, adjunta fotos de evidencia y reporta problemas directamente desde el sitio.</div>
-            <div class="card-tags">
-              <span class="card-tag">Móvil</span>
-              <span class="card-tag">Fotos</span>
-              <span class="card-tag">Actualización</span>
-            </div>
-          </div>
-          <div class="card-arrow">→</div>
-        </div>
-
-      </div>
+  <!-- ── GRUPO 3: CONTROL DE OBRA ── -->
+  <div class="grupo g-obra">
+    <div class="grupo-header">
+      <div class="grupo-num">03</div>
+      <div class="grupo-nombre">Control de obra</div>
+      <div class="grupo-desc">Disponible en modo local · npm run dev</div>
     </div>
+    <div class="cards-grid cols-1">
 
-    <!-- ── GRUPO 2: MODELO BIM ── -->
-    <div class="grupo g-modelo">
-      <div class="grupo-header">
-        <div class="grupo-num">02</div>
-        <div class="grupo-nombre">Modelo BIM 3D</div>
-        <div class="grupo-desc">Requiere archivo IFC + JSON de avance</div>
-      </div>
-      <div class="cards-grid cols-1">
-
-        <div class="tool-card" id="card-visor" onclick="abrirVisor()">
-          <div class="card-badge badge-ifc">+ IFC</div>
-          <div class="card-ico">🏗</div>
-          <div class="card-content">
-            <div class="card-name">Visor 3D IFC</div>
-            <div class="card-desc">Visualización del modelo BIM en 3D con colorización automática por estado de
-              ejecución. Navega el modelo, filtra por nivel, categoría o responsable, e inspecciona el estado de cada
-              elemento directamente en el modelo. Powered by That Open Engine.</div>
-            <div class="card-tags">
-              <span class="card-tag">IFC</span>
-              <span class="card-tag">3D interactivo</span>
-              <span class="card-tag">Colorización</span>
-              <span class="card-tag">Filtros</span>
-              <span class="card-tag">That Open Engine</span>
-            </div>
+      <div class="tool-card" id="card-vaciados" onclick="abrirVaciados()">
+        <div class="card-badge badge-local">Local</div>
+        <div class="card-ico">🧪</div>
+        <div class="card-content">
+          <div class="card-name">Control de vaciados NSR-10</div>
+          <div class="card-desc">Registro y trazabilidad completa de coladas de concreto según NSR-10. Registra proveedor, remisión, slump y volumen. Gestiona el seguimiento de cilindros a 7 y 28 días con criterio automático de aprobación. Coloriza el modelo 3D por estado de vaciado: aprobado, pendiente o reprobado.</div>
+          <div class="card-tags">
+            <span class="card-tag">NSR-10</span>
+            <span class="card-tag">Cilindros 7/28 días</span>
+            <span class="card-tag">Trazabilidad</span>
+            <span class="card-tag">Coladas</span>
+            <span class="card-tag">3D integrado</span>
           </div>
-          <div class="card-arrow">→</div>
         </div>
-
+        <div class="card-arrow">→</div>
       </div>
+
     </div>
-
-    <!-- ── GRUPO 3: CONTROL DE OBRA ── -->
-    <div class="grupo g-obra">
-      <div class="grupo-header">
-        <div class="grupo-num">03</div>
-        <div class="grupo-nombre">Control de obra</div>
-        <div class="grupo-desc">Disponible en modo local · npm run dev</div>
-      </div>
-      <div class="cards-grid cols-1">
-
-        <div class="tool-card" id="card-vaciados" onclick="abrirVaciados()">
-          <div class="card-badge badge-local">Local</div>
-          <div class="card-ico">🧪</div>
-          <div class="card-content">
-            <div class="card-name">Control de vaciados NSR-10</div>
-            <div class="card-desc">Registro y trazabilidad completa de coladas de concreto según NSR-10. Registra
-              proveedor, remisión, slump y volumen. Gestiona el seguimiento de cilindros a 7 y 28 días con criterio
-              automático de aprobación. Coloriza el modelo 3D por estado de vaciado: aprobado, pendiente o reprobado.
-            </div>
-            <div class="card-tags">
-              <span class="card-tag">NSR-10</span>
-              <span class="card-tag">Cilindros 7/28 días</span>
-              <span class="card-tag">Trazabilidad</span>
-              <span class="card-tag">Coladas</span>
-              <span class="card-tag">3D integrado</span>
-            </div>
-          </div>
-          <div class="card-arrow">→</div>
-        </div>
-
-      </div>
-    </div>
-
-    <!-- ── GRUPO 4: CALIDAD ── -->
-    <div class="grupo g-calidad">
-      <div class="grupo-header">
-        <div class="grupo-num">04</div>
-        <div class="grupo-nombre">Calidad y trazabilidad</div>
-        <div class="grupo-desc">Datos persistentes en el navegador</div>
-      </div>
-      <div class="cards-grid cols-3">
-
-        <div class="tool-card" id="card-ncr" onclick="abrirNCR()">
-          <div class="card-ico">⚠️</div>
-          <div class="card-content">
-            <div class="card-name">No conformidades</div>
-            <div class="card-desc">Registro formal de NCR con flujo completo desde detección hasta cierre. Asigna
-              responsables, controla fechas límite, adjunta evidencia fotográfica y genera PDF para interventoría con
-              campo de firmas.</div>
-            <div class="card-tags">
-              <span class="card-tag">NCR</span>
-              <span class="card-tag">NSR-10</span>
-              <span class="card-tag">Fotos</span>
-              <span class="card-tag">PDF firmas</span>
-            </div>
-          </div>
-          <div class="card-arrow">→</div>
-        </div>
-
-        <div class="tool-card" id="card-rfi" onclick="abrirRFI()">
-          <div class="card-ico">💬</div>
-          <div class="card-content">
-            <div class="card-name">Solicitudes de información</div>
-            <div class="card-desc">Gestión de RFI con flujo pregunta-respuesta trazable. Controla vencimientos, asigna
-              nivel de impacto en obra y registra la respuesta del diseñador o interventoría. Genera PDF con firmas de
-              aprobación.</div>
-            <div class="card-tags">
-              <span class="card-tag">RFI</span>
-              <span class="card-tag">Vencimientos</span>
-              <span class="card-tag">Diseñador</span>
-              <span class="card-tag">PDF firmas</span>
-            </div>
-          </div>
-          <div class="card-arrow">→</div>
-        </div>
-
-        <div class="tool-card disabled" id="card-informe" onclick="abrirInforme()">
-          <div class="card-ico">📄</div>
-          <div class="card-content">
-            <div class="card-name">Informe mensual</div>
-            <div class="card-desc">Reporte ejecutivo mensual que consolida automáticamente el avance, la curva S, los
-              vaciados del mes con resultado de cilindros, NCR activas, RFI pendientes y registro fotográfico. PDF
-              profesional para cliente e interventoría.</div>
-            <div class="card-tags">
-              <span class="card-tag">Ejecutivo</span>
-              <span class="card-tag">Consolidado</span>
-              <span class="card-tag">PDF</span>
-              <span class="card-tag">Cliente</span>
-            </div>
-          </div>
-          <div class="card-arrow">→</div>
-        </div>
-
-      </div>
-    </div>
-
   </div>
 
-  <!-- FOOTER -->
-  <div id="footer">
-    <div class="footer-txt">Ing. Luis Manuel Fuentes Perez · LF BIM Studio · 2026</div>
-    <div class="footer-txt">ENF-GR2-P00-MFD-EST-110</div>
+  <!-- ── GRUPO 4: CALIDAD ── -->
+  <div class="grupo g-calidad">
+    <div class="grupo-header">
+      <div class="grupo-num">04</div>
+      <div class="grupo-nombre">Calidad y trazabilidad</div>
+      <div class="grupo-desc">Datos persistentes en el navegador</div>
+    </div>
+    <div class="cards-grid cols-3">
+
+      <div class="tool-card" id="card-ncr" onclick="abrirNCR()">
+        <div class="card-ico">⚠️</div>
+        <div class="card-content">
+          <div class="card-name">No conformidades</div>
+          <div class="card-desc">Registro formal de NCR con flujo completo desde detección hasta cierre. Asigna responsables, controla fechas límite, adjunta evidencia fotográfica y genera PDF para interventoría con campo de firmas.</div>
+          <div class="card-tags">
+            <span class="card-tag">NCR</span>
+            <span class="card-tag">NSR-10</span>
+            <span class="card-tag">Fotos</span>
+            <span class="card-tag">PDF firmas</span>
+          </div>
+        </div>
+        <div class="card-arrow">→</div>
+      </div>
+
+      <div class="tool-card" id="card-rfi" onclick="abrirRFI()">
+        <div class="card-ico">💬</div>
+        <div class="card-content">
+          <div class="card-name">Solicitudes de información</div>
+          <div class="card-desc">Gestión de RFI con flujo pregunta-respuesta trazable. Controla vencimientos, asigna nivel de impacto en obra y registra la respuesta del diseñador o interventoría. Genera PDF con firmas de aprobación.</div>
+          <div class="card-tags">
+            <span class="card-tag">RFI</span>
+            <span class="card-tag">Vencimientos</span>
+            <span class="card-tag">Diseñador</span>
+            <span class="card-tag">PDF firmas</span>
+          </div>
+        </div>
+        <div class="card-arrow">→</div>
+      </div>
+
+      <div class="tool-card disabled" id="card-informe" onclick="abrirInforme()">
+        <div class="card-ico">📄</div>
+        <div class="card-content">
+          <div class="card-name">Informe mensual</div>
+          <div class="card-desc">Reporte ejecutivo mensual que consolida automáticamente el avance, la curva S, los vaciados del mes con resultado de cilindros, NCR activas, RFI pendientes y registro fotográfico. PDF profesional para cliente e interventoría.</div>
+          <div class="card-tags">
+            <span class="card-tag">Ejecutivo</span>
+            <span class="card-tag">Consolidado</span>
+            <span class="card-tag">PDF</span>
+            <span class="card-tag">Cliente</span>
+          </div>
+        </div>
+        <div class="card-arrow">→</div>
+      </div>
+
+    </div>
   </div>
 
-  <div id="toast"></div>
+</div>
 
-  <script>
-    let JSON_DATA = null;
+<!-- FOOTER -->
+<div id="footer">
+  <div class="footer-txt">Ing. Luis Manuel Fuentes Perez · LF BIM Studio · 2026</div>
+  <div class="footer-txt">ENF-GR2-P00-MFD-EST-110</div>
+</div>
 
-    // ── Drop JSON ──────────────────────────────────────────
-    function dzOver(e) { e.preventDefault(); document.getElementById('home-drop').classList.add('drag'); }
-    function dzOut() { document.getElementById('home-drop').classList.remove('drag'); }
-    function dzDrop(e) { e.preventDefault(); dzOut(); const f = e.dataTransfer.files[0]; if (f) cargarJSON(f); }
+<div id="toast"></div>
 
-    function cargarJSON(file) {
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = ev => {
-        try {
-          JSON_DATA = JSON.parse(ev.target.result);
-          const total = JSON_DATA.elementos?.length || 0;
-          const proyecto = JSON_DATA.proyecto || file.name;
+<script>
+let JSON_DATA = null;
 
-          // Drop actualizado
-          const drop = document.getElementById('home-drop');
-          drop.classList.add('loaded');
-          document.getElementById('drop-ico').textContent = '✓';
-          document.getElementById('drop-title').textContent = proyecto;
-          document.getElementById('drop-sub').textContent = total.toLocaleString('es-CO') + ' elementos · ' + (JSON_DATA.fecha_gen || file.name);
+// ── Drop JSON ──────────────────────────────────────────
+function dzOver(e) { e.preventDefault(); document.getElementById('home-drop').classList.add('drag'); }
+function dzOut()   { document.getElementById('home-drop').classList.remove('drag'); }
+function dzDrop(e) { e.preventDefault(); dzOut(); const f=e.dataTransfer.files[0]; if(f) cargarJSON(f); }
 
-          // Mostrar info proyecto
-          document.getElementById('proyecto-info').style.display = 'block';
-          document.getElementById('proy-nombre').textContent = proyecto;
-          document.getElementById('proy-meta').textContent = total.toLocaleString('es-CO') + ' elementos · Cargado correctamente';
+function cargarJSON(file) {
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    try {
+      JSON_DATA = JSON.parse(ev.target.result);
+      const total = JSON_DATA.elementos?.length || 0;
+      const proyecto = JSON_DATA.proyecto || file.name;
 
-          // Habilitar cards que requieren JSON
-          ['card-dash', 'card-campo', 'card-lookahead', 'card-informe'].forEach(id => {
-            document.getElementById(id)?.classList.remove('disabled');
-          });
+      // Drop actualizado
+      const drop = document.getElementById('home-drop');
+      drop.classList.add('loaded');
+      document.getElementById('drop-ico').textContent = '✓';
+      document.getElementById('drop-title').textContent = proyecto;
+      document.getElementById('drop-sub').textContent = total.toLocaleString('es-CO') + ' elementos · ' + (JSON_DATA.fecha_gen || file.name);
 
-          toast('✓ ' + total.toLocaleString('es-CO') + ' elementos cargados');
-        } catch (err) {
-          toast('✗ JSON inválido');
-        }
-      };
-      reader.readAsText(file);
+      // Mostrar info proyecto
+      document.getElementById('proyecto-info').style.display = 'block';
+      document.getElementById('proy-nombre').textContent = proyecto;
+      document.getElementById('proy-meta').textContent = total.toLocaleString('es-CO') + ' elementos · Cargado correctamente';
+
+      // Habilitar cards que requieren JSON
+      ['card-dash','card-campo','card-lookahead','card-informe'].forEach(id => {
+        document.getElementById(id)?.classList.remove('disabled');
+      });
+
+      toast('✓ ' + total.toLocaleString('es-CO') + ' elementos cargados');
+    } catch(err) {
+      toast('✗ JSON inválido');
     }
+  };
+  reader.readAsText(file);
+}
 
-    // ── Abrir herramientas ─────────────────────────────────
-    function abrirDash() {
-      if (!JSON_DATA) { toast('Carga primero el JSON de avance'); return; }
-      try { sessionStorage.setItem('BIM_JSON_DATA', JSON.stringify(JSON_DATA)); } catch (e) { }
-      window.open('/dashboard.html', '_blank');
-    }
+// ── Abrir herramientas ─────────────────────────────────
+function abrirDash() {
+  if (!JSON_DATA) { toast('Carga primero el JSON de avance'); return; }
+  try { sessionStorage.setItem('BIM_JSON_DATA', JSON.stringify(JSON_DATA)); } catch(e) {}
+  window.open('/dashboard.html', '_blank');
+}
 
-    function abrirCampo() {
-      if (!JSON_DATA) { toast('Carga primero el JSON de avance'); return; }
-      try { sessionStorage.setItem('BIM_JSON_DATA', JSON.stringify(JSON_DATA)); } catch (e) { }
-      window.open('/campo.html', '_blank');
-    }
+function abrirCampo() {
+  if (!JSON_DATA) { toast('Carga primero el JSON de avance'); return; }
+  try { sessionStorage.setItem('BIM_JSON_DATA', JSON.stringify(JSON_DATA)); } catch(e) {}
+  window.open('/campo.html', '_blank');
+}
 
-    function abrirLookahead() {
-      if (!JSON_DATA) { toast('Carga primero el JSON de avance'); return; }
-      try { sessionStorage.setItem('BIM_JSON_DATA', JSON.stringify(JSON_DATA)); } catch (e) { }
-      window.open('/lookahead.html', '_blank');
-    }
+function abrirLookahead() {
+  if (!JSON_DATA) { toast('Carga primero el JSON de avance'); return; }
+  try { sessionStorage.setItem('BIM_JSON_DATA', JSON.stringify(JSON_DATA)); } catch(e) {}
+  window.open('/lookahead.html', '_blank');
+}
 
-    function abrirVisor() {
-      window.open('/visor', '_blank');
-    }
+function abrirVisor() {
+  window.open('/visor', '_blank');
+}
 
-    function abrirVaciados() {
-      fetch('http://localhost:5173', { mode: 'no-cors' })
-        .then(() => {
-          window.open('http://localhost:5173/vaciados_entry.html', '_blank');
-        })
-        .catch(() => {
-          toast('⚠ Ejecuta: npm run dev en la terminal');
-        });
-    }
+function abrirVaciados() {
+  fetch('http://localhost:5173', { mode: 'no-cors' })
+    .then(() => {
+      window.open('http://localhost:5173/vaciados_entry.html', '_blank');
+    })
+    .catch(() => {
+      toast('⚠ Ejecuta: npm run dev en la terminal');
+    });
+}
 
-    function abrirNCR() {
-      window.open('/ncr.html', '_blank');
-    }
+function abrirNCR() {
+  window.open('/ncr.html', '_blank');
+}
 
-    function abrirRFI() {
-      window.open('/rfi.html', '_blank');
-    }
+function abrirRFI() {
+  window.open('/rfi.html', '_blank');
+}
 
-    function abrirInforme() {
-      if (!JSON_DATA) { toast('Carga primero el JSON de avance'); return; }
-      try { sessionStorage.setItem('BIM_JSON_DATA', JSON.stringify(JSON_DATA)); } catch (e) { }
-      window.open('/informe.html', '_blank');
-    }
+function abrirInforme() {
+  if (!JSON_DATA) { toast('Carga primero el JSON de avance'); return; }
+  try { sessionStorage.setItem('BIM_JSON_DATA', JSON.stringify(JSON_DATA)); } catch(e) {}
+  window.open('/informe.html', '_blank');
+}
 
-    // ── Toast ──────────────────────────────────────────────
-    function toast(msg) {
-      const t = document.getElementById('toast');
-      t.textContent = msg; t.classList.add('on');
-      clearTimeout(t._t); t._t = setTimeout(() => t.classList.remove('on'), 3500);
-    }
-  </script>
+// ── Toast ──────────────────────────────────────────────
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('on');
+  clearTimeout(t._t); t._t = setTimeout(() => t.classList.remove('on'), 3500);
+}
+</script>
 </body>
-
 </html>
