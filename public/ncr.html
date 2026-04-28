@@ -943,11 +943,12 @@ renderLista();
 if (NCRS.length > 0) verNCR(NCRS[0].id);
 
 // ── Sincronizar NCR con portal ─────────────────────────
+const BASE_URL = window.location.origin;
 let PROYECTOS_LISTA = [];
 
 function sincronizarPortal() {
   if (!NCRS.length) { toast('No hay NCR para sincronizar'); return; }
-  fetch('/api/proyectos-publicos')
+  fetch(BASE_URL + '/api/proyectos-publicos')
     .then(r => r.json())
     .then(data => {
       PROYECTOS_LISTA = data;
@@ -970,7 +971,7 @@ async function confirmarSync() {
   toast('Sincronizando ' + NCRS.length + ' NCR...');
   try {
     for (const ncr of NCRS) {
-      await fetch('/api/sync-ncr', {
+      await fetch(BASE_URL + '/api/sync-ncr', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

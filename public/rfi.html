@@ -730,12 +730,13 @@ function toast(msg) {
   clearTimeout(t._t); t._t = setTimeout(()=>t.classList.remove('on'), 3500);
 }
 
+const BASE_URL = window.location.origin;
 let PROYECTOS_LISTA = [];
 
 window.sincronizarPortal = async function() {
   if (!RFIS.length) { toast('No hay RFI para sincronizar'); return; }
   try {
-    const res = await fetch('/api/proyectos-publicos');
+    const res = await fetch(BASE_URL + '/api/proyectos-publicos');
     PROYECTOS_LISTA = await res.json();
     const sel = document.getElementById('sync-proyecto-select');
     sel.innerHTML = '<option value="">-- Selecciona un proyecto --</option>' +
@@ -755,7 +756,7 @@ window.confirmarSync = async function() {
   toast('Sincronizando ' + RFIS.length + ' RFI...');
   try {
     for (const rfi of RFIS) {
-      await fetch('/api/sync-rfi', {
+      await fetch(BASE_URL + '/api/sync-rfi', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -785,11 +786,12 @@ actualizarStats();
 renderLista();
 if (RFIS.length > 0) verRFI(RFIS[0].id);
 
+const BASE_URL = window.location.origin;
 let PROYECTOS_LISTA = [];
 
 function sincronizarPortal() {
   if (!RFIS.length) { toast('No hay RFI para sincronizar'); return; }
-  fetch('/api/proyectos-publicos')
+  fetch(BASE_URL + '/api/proyectos-publicos')
     .then(r => r.json())
     .then(data => {
       PROYECTOS_LISTA = data;
@@ -812,7 +814,7 @@ async function confirmarSync() {
   toast('Sincronizando ' + RFIS.length + ' RFI...');
   try {
     for (const rfi of RFIS) {
-      await fetch('/api/sync-rfi', {
+      await fetch(BASE_URL + '/api/sync-rfi', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
