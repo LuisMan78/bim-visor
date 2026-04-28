@@ -1,699 +1,567 @@
 <!doctype html>
 <html lang="es">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>LF BIM Studio</title>
-    <style>
-      * { margin: 0; padding: 0; box-sizing: border-box; }
-      body { background: #0A0A0B; color: #F4F4F0; font-family: 'Barlow', system-ui, sans-serif; overflow: hidden; height: 100vh; }
-      #visor-container { width: 100vw; height: 100vh; position: relative; }
-      canvas { display: block; }
 
-      /* ── TOPBAR ── */
-      #topbar {
-        position: absolute; top: 0; left: 0; right: 0; height: 52px;
-        background: rgba(10,10,11,0.92); border-bottom: 2px solid #FACC15;
-        backdrop-filter: blur(12px);
-        display: flex; align-items: center; gap: 16px; padding: 0 20px;
-        z-index: 100;
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BIM Visor 3D — LF BIM Studio</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #0A0A0B;
+      color: #F4F4F0;
+      font-family: 'Barlow', system-ui, sans-serif;
+    }
+
+    #visor-container {
+      width: 100%;
+      height: 100%;
+      position: relative;
+    }
+
+    canvas {
+      display: block;
+    }
+
+    #topbar {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 52px;
+      background: rgba(10, 10, 11, 0.92);
+      border-bottom: 2px solid #FACC15;
+      backdrop-filter: blur(12px);
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 0 20px;
+      z-index: 100;
+    }
+
+    .tb-mark {
+      width: 34px;
+      height: 34px;
+      background: #FACC15;
+      color: #0A0A0B;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 900;
+      font-size: 13px;
+      flex-shrink: 0;
+    }
+
+    .tb-title {
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    .tb-sub {
+      font-size: 10px;
+      color: #FACC15;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      margin-top: 1px;
+    }
+
+    .tb-sep {
+      flex: 1;
+    }
+
+    .tb-project {
+      font-size: 12px;
+      color: #9A9A95;
+      font-style: italic;
+    }
+
+    #panel-left {
+      position: absolute;
+      top: 52px;
+      left: 0;
+      bottom: 0;
+      width: 380px;
+      background: rgba(17, 17, 19, 0.95);
+      border-right: 1px solid #27272A;
+      backdrop-filter: blur(8px);
+      display: flex;
+      flex-direction: column;
+      z-index: 90;
+      overflow: hidden;
+    }
+
+    .pl-section {
+      padding: 10px 14px;
+      border-bottom: 1px solid #27272A;
+    }
+
+    .pl-label {
+      font-size: 9px;
+      font-weight: 700;
+      color: #FACC15;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .pl-label::before {
+      content: '';
+      width: 16px;
+      height: 1px;
+      background: #FACC15;
+    }
+
+    .drop-zone {
+      border: 1px dashed #3F3F46;
+      background: #18181B;
+      padding: 10px 12px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      margin-bottom: 6px;
+    }
+
+    .drop-zone:hover,
+    .drop-zone.drag {
+      border-color: #FACC15;
+      background: #1A180A;
+    }
+
+    .drop-zone.loaded {
+      border-color: #22C55E;
+      background: #052E16;
+    }
+
+    .drop-zone input {
+      display: none;
+    }
+
+    .dz-icon {
+      font-size: 18px;
+      margin-bottom: 4px;
+    }
+
+    .dz-txt {
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: #F4F4F0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 100%;
+      display: block;
+    }
+
+    .dz-sub {
+      font-size: 10px;
+      color: #52525B;
+      margin-top: 2px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 100%;
+      display: block;
+    }
+
+    .btn-cargar {
+      width: 100%;
+      padding: 12px;
+      background: #FACC15;
+      color: #0A0A0B;
+      border: none;
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-cargar:hover {
+      background: #FDE047;
+    }
+
+    .btn-cargar:disabled {
+      opacity: 0.3;
+      cursor: not-allowed;
+    }
+
+    .filtros {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .filtro-btn {
+      width: 100%;
+      padding: 9px 12px;
+      background: #18181B;
+      border: 1px solid #27272A;
+      color: #9A9A95;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      cursor: pointer;
+      text-align: left;
+      transition: all 0.15s;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      border-left: 3px solid transparent;
+    }
+
+    .filtro-btn:hover {
+      background: #1F1F23;
+      color: #F4F4F0;
+      border-left-color: #FACC15;
+    }
+
+    .filtro-btn.active {
+      background: #1A180A;
+      border-color: #FACC15;
+      border-left-color: #FACC15;
+      color: #FACC15;
+    }
+
+    .filtro-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 2px;
+      flex-shrink: 0;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .stat-box {
+      background: #18181B;
+      border: 1px solid #27272A;
+      padding: 10px 12px;
+      border-top: 2px solid;
+    }
+
+    .stat-val {
+      font-size: 22px;
+      font-weight: 800;
+      line-height: 1;
+      margin-bottom: 3px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .stat-lbl {
+      font-size: 9px;
+      color: #52525B;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+
+    #panel-info {
+      position: absolute;
+      top: 62px;
+      right: 10px;
+      width: 280px;
+      background: rgba(17, 17, 19, 0.97);
+      border: 1px solid #27272A;
+      border-left: 3px solid #FACC15;
+      backdrop-filter: blur(12px);
+      z-index: 95;
+      display: none;
+    }
+
+    .info-head {
+      padding: 12px 14px;
+      border-bottom: 1px solid #27272A;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .info-id {
+      font-size: 11px;
+      color: #FACC15;
+      font-weight: 700;
+      font-family: monospace;
+    }
+
+    .info-close {
+      cursor: pointer;
+      color: #52525B;
+      font-size: 16px;
+      padding: 2px 6px;
+    }
+
+    .info-close:hover {
+      color: #F4F4F0;
+    }
+
+    .info-body {
+      padding: 12px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .info-row {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .info-row-label {
+      font-size: 9px;
+      color: #52525B;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    .info-row-val {
+      font-size: 13px;
+      color: #F4F4F0;
+      font-weight: 500;
+    }
+
+    .info-estado {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      border: 1px solid;
+    }
+
+    .info-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+    }
+
+    #loading {
+      position: absolute;
+      inset: 0;
+      background: rgba(10, 10, 11, 0.9);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 16px;
+      z-index: 200;
+    }
+
+    #loading.on {
+      display: flex;
+    }
+
+    .load-spinner {
+      width: 44px;
+      height: 44px;
+      border: 3px solid #27272A;
+      border-top-color: #FACC15;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
       }
-      .tb-mark {
-        width: 34px; height: 34px; background: #FACC15; color: #0A0A0B;
-        display: flex; align-items: center; justify-content: center;
-        font-weight: 900; font-size: 13px; letter-spacing: 0.04em;
-        flex-shrink: 0;
-      }
-      .tb-title { font-size: 15px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; }
-      .tb-sub   { font-size: 10px; color: #FACC15; letter-spacing: 0.12em; text-transform: uppercase; margin-top: 1px; }
-      .tb-sep   { flex: 1; }
-      .tb-project { font-size: 12px; color: #9A9A95; font-style: italic; }
+    }
 
-      /* ── PANEL LATERAL IZQUIERDO ── */
-      #panel-left {
-        position: absolute; top: 52px; left: 0; bottom: 0; width: 380px;
-        background: rgba(17,17,19,0.95); border-right: 1px solid #27272A;
-        backdrop-filter: blur(8px);
-        display: flex; flex-direction: column;
-        z-index: 90; overflow: hidden;
-      }
-      .pl-section { padding: 10px 14px; border-bottom: 1px solid #27272A; }
-      .pl-label {
-        font-size: 9px; font-weight: 700; color: #FACC15;
-        letter-spacing: 0.2em; text-transform: uppercase; margin-bottom: 10px;
-        display: flex; align-items: center; gap: 8px;
-      }
-      .pl-label::before { content: ''; width: 16px; height: 1px; background: #FACC15; }
+    .load-txt {
+      font-size: 13px;
+      color: #9A9A95;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
 
-      /* Drop zones */
-      .drop-zone {
-        border: 1px dashed #3F3F46; background: #18181B;
-        padding: 10px 12px; text-align: center; cursor: pointer;
-        transition: all 0.2s; margin-bottom: 6px;
-      }
-      .drop-zone:hover, .drop-zone.drag { border-color: #FACC15; background: #1A180A; }
-      .drop-zone.loaded { border-color: #22C55E; background: #052E16; }
-      .drop-zone input { display: none; }
-      .dz-icon { font-size: 18px; margin-bottom: 4px; }
-      .dz-txt { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #F4F4F0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; display: block; }
-      .dz-sub { font-size: 10px; color: #52525B; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; display: block; }
+    #toast {
+      position: absolute;
+      bottom: 24px;
+      right: 16px;
+      background: #18181B;
+      border: 1px solid #27272A;
+      border-left: 3px solid #FACC15;
+      padding: 12px 16px;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      opacity: 0;
+      transform: translateY(10px);
+      transition: all 0.3s;
+      z-index: 300;
+    }
 
-      /* Botón cargar */
-      .btn-cargar {
-        width: 100%; padding: 12px; background: #FACC15; color: #0A0A0B;
-        border: none; font-size: 12px; font-weight: 800;
-        letter-spacing: 0.1em; text-transform: uppercase;
-        cursor: pointer; transition: all 0.2s;
-      }
-      .btn-cargar:hover { background: #FDE047; }
-      .btn-cargar:disabled { opacity: 0.3; cursor: not-allowed; }
+    #toast.on {
+      opacity: 1;
+      transform: translateY(0);
+    }
 
-      /* Leyenda de estados */
-      .leyenda { display: flex; flex-direction: column; gap: 6px; }
-      .ley-item { display: flex; align-items: center; gap: 10px; font-size: 12px; }
-      .ley-dot { width: 14px; height: 14px; flex-shrink: 0; border-radius: 2px; }
-      .ley-label { color: #D4D4D4; }
-      .ley-count { margin-left: auto; font-size: 11px; font-weight: 700; font-variant-numeric: tabular-nums; }
+    #instrucciones {
+      position: absolute;
+      bottom: 16px;
+      left: 396px;
+      font-size: 11px;
+      color: #3F3F46;
+      font-family: monospace;
+      letter-spacing: 0.05em;
+      z-index: 90;
+      line-height: 1.8;
+    }
 
-      /* Filtros */
-      .filtros { display: flex; flex-direction: column; gap: 6px; }
-      .filtro-btn {
-        width: 100%; padding: 9px 12px; background: #18181B;
-        border: 1px solid #27272A; color: #9A9A95;
-        font-size: 12px; font-weight: 700; letter-spacing: 0.06em;
-        text-transform: uppercase; cursor: pointer; text-align: left;
-        transition: all 0.15s; display: flex; align-items: center; gap: 10px;
-        border-left: 3px solid transparent;
-      }
-      .filtro-btn:hover { background: #1F1F23; color: #F4F4F0; border-left-color: #FACC15; }
-      .filtro-btn.active { background: #1A180A; border-color: #FACC15; border-left-color: #FACC15; color: #FACC15; }
-      .filtro-dot { width: 12px; height: 12px; border-radius: 2px; flex-shrink: 0; }
+    ::-webkit-scrollbar {
+      width: 4px;
+    }
 
-      /* Stats resumen */
-      .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-      .stat-box { background: #18181B; border: 1px solid #27272A; padding: 10px 12px; border-top: 2px solid; }
-      .stat-val { font-size: 22px; font-weight: 800; line-height: 1; margin-bottom: 3px; font-variant-numeric: tabular-nums; }
-      .stat-lbl { font-size: 9px; color: #52525B; letter-spacing: 0.1em; text-transform: uppercase; }
+    ::-webkit-scrollbar-track {
+      background: #111113;
+    }
 
-      /* ── PANEL INFO ELEMENTO (clic) ── */
-      #panel-info {
-        position: absolute; top: 62px; right: 10px;
-        width: 280px; background: rgba(17,17,19,0.97);
-        border: 1px solid #27272A; border-left: 3px solid #FACC15;
-        backdrop-filter: blur(12px);
-        z-index: 95; display: none;
-      }
-      .info-head {
-        padding: 12px 14px; border-bottom: 1px solid #27272A;
-        display: flex; justify-content: space-between; align-items: center;
-      }
-      .info-id { font-size: 11px; color: #FACC15; font-weight: 700; font-family: monospace; }
-      .info-close { cursor: pointer; color: #52525B; font-size: 16px; padding: 2px 6px; }
-      .info-close:hover { color: #F4F4F0; }
-      .info-body { padding: 12px 14px; display: flex; flex-direction: column; gap: 10px; }
-      .info-row { display: flex; flex-direction: column; gap: 2px; }
-      .info-row-label { font-size: 9px; color: #52525B; letter-spacing: 0.12em; text-transform: uppercase; }
-      .info-row-val { font-size: 13px; color: #F4F4F0; font-weight: 500; }
-      .info-estado {
-        display: inline-flex; align-items: center; gap: 6px;
-        padding: 4px 10px; font-size: 11px; font-weight: 700;
-        letter-spacing: 0.08em; text-transform: uppercase; border: 1px solid;
-      }
-      .info-dot { width: 8px; height: 8px; border-radius: 50%; }
+    ::-webkit-scrollbar-thumb {
+      background: #27272A;
+    }
+  </style>
+</head>
 
-      /* ── LOADING OVERLAY ── */
-      #loading {
-        position: absolute; inset: 0; background: rgba(10,10,11,0.9);
-        display: none; align-items: center; justify-content: center;
-        flex-direction: column; gap: 16px; z-index: 200;
-      }
-      #loading.on { display: flex; }
-      .load-spinner {
-        width: 44px; height: 44px; border: 3px solid #27272A;
-        border-top-color: #FACC15; border-radius: 50%;
-        animation: spin 0.8s linear infinite;
-      }
-      @keyframes spin { to { transform: rotate(360deg); } }
-      .load-txt { font-size: 13px; color: #9A9A95; letter-spacing: 0.08em; text-transform: uppercase; }
+<body>
+  <div id="visor-container">
 
-      /* ── TOAST ── */
-      #toast {
-        position: absolute; bottom: 24px; right: 16px;
-        background: #18181B; border: 1px solid #27272A; border-left: 3px solid #FACC15;
-        padding: 12px 16px; font-size: 12px; font-weight: 600;
-        letter-spacing: 0.05em; text-transform: uppercase;
-        opacity: 0; transform: translateY(10px);
-        transition: all 0.3s; z-index: 300;
-      }
-      #toast.on { opacity: 1; transform: translateY(0); }
-
-      /* ── INSTRUCCIONES ── */
-      #instrucciones {
-        position: absolute; bottom: 16px; left: 396px;
-        font-size: 11px; color: #3F3F46;
-        font-family: monospace; letter-spacing: 0.05em;
-        z-index: 90; line-height: 1.8;
-      }
-    </style>
-    <style>
-@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=Barlow:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
-
-*{box-sizing:border-box;margin:0;padding:0;}
-html,body{height:100%;overflow:hidden;background:#0A0A0B;color:#F4F4F0;font-family:'Barlow',sans-serif;-webkit-font-smoothing:antialiased;}
-
-/* ── LAYOUT ── */
-#app{display:grid;grid-template-rows:52px 1fr;height:100vh;}
-#content{display:grid;grid-template-columns:380px 1fr;overflow:hidden;}
-
-/* ── TOPBAR ── */
-#topbar{
-  background:rgba(10,10,11,0.95);border-bottom:2px solid #FACC15;
-  display:flex;align-items:center;gap:14px;padding:0 20px;
-  backdrop-filter:blur(12px);z-index:100;
-}
-.tb-mark{width:34px;height:34px;background:#FACC15;color:#0A0A0B;display:flex;align-items:center;justify-content:center;font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:13px;flex-shrink:0;}
-.tb-title{font-size:14px;font-weight:700;letter-spacing:0.04em;text-transform:uppercase;}
-.tb-sub{font-size:9px;color:#FACC15;letter-spacing:0.14em;text-transform:uppercase;margin-top:1px;font-family:'JetBrains Mono',monospace;}
-.tb-sep{flex:1;}
-.tb-stats{display:flex;gap:20px;}
-.tb-stat{text-align:center;}
-.tb-stat-val{font-size:18px;font-weight:800;font-family:'Barlow Condensed',sans-serif;line-height:1;}
-.tb-stat-lbl{font-size:8px;color:#52525B;letter-spacing:0.1em;text-transform:uppercase;font-family:'JetBrains Mono',monospace;}
-.tb-btn-volver{padding:7px 14px;background:#18181B;border:1px solid #27272A;color:#9A9A95;font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;cursor:pointer;transition:all 0.2s;}
-.tb-btn-volver:hover{border-color:#FACC15;color:#FACC15;}
-
-/* ── PANEL IZQUIERDO ── */
-#panel{
-  background:#111113;border-right:1px solid #1F1F23;
-  overflow-y:auto;display:flex;flex-direction:column;
-}
-.panel-section{padding:14px 16px;border-bottom:1px solid #1F1F23;}
-.panel-label{font-size:9px;font-weight:700;color:#FACC15;letter-spacing:0.2em;text-transform:uppercase;margin-bottom:10px;display:flex;align-items:center;gap:8px;font-family:'JetBrains Mono',monospace;}
-.panel-label::before{content:'';width:14px;height:1px;background:#FACC15;}
-
-/* Tabs */
-.tabs{display:flex;gap:2px;margin-bottom:12px;}
-.tab{flex:1;padding:8px;background:#18181B;border:1px solid #27272A;color:#52525B;font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;cursor:pointer;text-align:center;transition:all 0.15s;font-family:'Barlow Condensed',sans-serif;}
-.tab:hover{border-color:#FACC15;color:#FACC15;}
-.tab.active{background:#1A180A;border-color:#FACC15;color:#FACC15;}
-
-/* Formulario de vaciado */
-.form-group{margin-bottom:10px;}
-.form-label{font-size:9px;color:#52525B;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:4px;display:block;font-family:'JetBrains Mono',monospace;}
-.form-input{width:100%;padding:8px 10px;background:#18181B;border:1px solid #27272A;color:#F4F4F0;font-size:12px;font-family:'Barlow',sans-serif;transition:border-color 0.15s;outline:none;}
-.form-input:focus{border-color:#FACC15;}
-.form-input::placeholder{color:#3F3F46;}
-.form-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
-.form-select{width:100%;padding:8px 10px;background:#18181B;border:1px solid #27272A;color:#F4F4F0;font-size:12px;font-family:'Barlow',sans-serif;outline:none;cursor:pointer;}
-.form-select:focus{border-color:#FACC15;}
-
-/* Botones */
-.btn-primary{width:100%;padding:12px;background:#FACC15;color:#0A0A0B;border:none;font-size:12px;font-weight:800;letter-spacing:0.1em;text-transform:uppercase;cursor:pointer;transition:all 0.2s;font-family:'Barlow Condensed',sans-serif;}
-.btn-primary:hover{background:#FDE047;}
-.btn-primary:disabled{opacity:0.3;cursor:not-allowed;}
-.btn-secondary{width:100%;padding:10px;background:#18181B;border:1px solid #27272A;color:#9A9A95;font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;cursor:pointer;transition:all 0.2s;font-family:'Barlow Condensed',sans-serif;margin-top:6px;}
-.btn-secondary:hover{border-color:#FACC15;color:#FACC15;}
-
-/* Elementos seleccionados */
-#elementos-sel-list{max-height:100px;overflow-y:auto;}
-.elem-sel-item{display:flex;align-items:center;justify-content:space-between;padding:5px 8px;background:#18181B;border:1px solid #27272A;margin-bottom:3px;font-size:11px;}
-.elem-sel-name{color:#F4F4F0;font-family:'JetBrains Mono',monospace;font-size:10px;}
-.elem-sel-rm{cursor:pointer;color:#52525B;padding:2px 6px;}
-.elem-sel-rm:hover{color:#EF4444;}
-.elem-sel-empty{color:#3F3F46;font-size:11px;text-align:center;padding:12px;font-style:italic;}
-
-/* Lista de vaciados */
-.vaciado-item{padding:10px 12px;border:1px solid #27272A;margin-bottom:6px;cursor:pointer;transition:all 0.15s;position:relative;}
-.vaciado-item:hover{border-color:#FACC15;}
-.vaciado-item.selected{border-color:#FACC15;background:#1A180A;}
-.vaciado-id{font-size:11px;font-weight:700;color:#FACC15;font-family:'JetBrains Mono',monospace;}
-.vaciado-info{font-size:11px;color:#9A9A95;margin-top:2px;}
-.vaciado-estado{position:absolute;top:10px;right:10px;font-size:9px;font-weight:700;padding:3px 8px;letter-spacing:0.06em;text-transform:uppercase;}
-.est-pendiente{background:#1C1208;color:#FB923C;border:1px solid #FB923C;}
-.est-aprobado{background:#052E16;color:#22C55E;border:1px solid #22C55E;}
-.est-reprobado{background:#2D0A0A;color:#EF4444;border:1px solid #EF4444;}
-
-/* Cilindros */
-.cilindro-row{display:grid;grid-template-columns:1fr 1fr 80px;gap:6px;align-items:end;margin-bottom:6px;}
-.cilindro-lbl{font-size:9px;color:#52525B;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:3px;font-family:'JetBrains Mono',monospace;}
-.resultado-badge{padding:6px 8px;font-size:10px;font-weight:700;text-align:center;letter-spacing:0.06em;}
-
-/* Drop IFC */
-.drop-zone{border:1px dashed #3F3F46;background:#18181B;padding:14px;text-align:center;cursor:pointer;transition:all 0.2s;margin-bottom:8px;}
-.drop-zone:hover,.drop-zone.drag{border-color:#FACC15;background:#1A180A;}
-.drop-zone.loaded{border-style:solid;border-color:#22C55E;background:#052E16;}
-.drop-zone input{display:none;}
-.dz-txt{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#F4F4F0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.dz-sub{font-size:9px;color:#52525B;margin-top:2px;font-family:'JetBrains Mono',monospace;}
-
-/* Leyenda colores */
-.leyenda{display:flex;flex-direction:column;gap:5px;}
-.ley-item{display:flex;align-items:center;gap:8px;font-size:11px;color:#9A9A95;}
-.ley-dot{width:12px;height:12px;flex-shrink:0;border-radius:2px;}
-
-/* Alerta cilindros */
-.alerta-box{padding:10px 12px;border-left:3px solid;margin-bottom:6px;}
-.alerta-warn{background:#1C1208;border-color:#FB923C;}
-.alerta-err{background:#2D0A0A;border-color:#EF4444;}
-.alerta-ok{background:#052E16;border-color:#22C55E;}
-.alerta-title{font-size:10px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;}
-.alerta-body{font-size:10px;color:#9A9A95;margin-top:3px;line-height:1.5;}
-
-/* ── PANEL DERECHO — VISOR ── */
-#visor-wrap{position:relative;overflow:hidden;}
-#visor-container{width:100%;height:100%;}
-
-/* Info elemento */
-#info-panel{
-  position:absolute;top:12px;right:12px;width:260px;
-  background:rgba(17,17,19,0.97);border:1px solid #27272A;border-left:3px solid #FACC15;
-  backdrop-filter:blur(12px);display:none;z-index:50;
-}
-.info-head{padding:10px 12px;border-bottom:1px solid #1F1F23;display:flex;justify-content:space-between;align-items:center;}
-.info-id{font-size:10px;color:#FACC15;font-weight:700;font-family:'JetBrains Mono',monospace;}
-.info-close{cursor:pointer;color:#52525B;padding:2px 6px;}
-.info-close:hover{color:#F4F4F0;}
-.info-body{padding:10px 12px;}
-.info-row{margin-bottom:8px;}
-.info-row-lbl{font-size:8px;color:#52525B;letter-spacing:0.12em;text-transform:uppercase;font-family:'JetBrains Mono',monospace;}
-.info-row-val{font-size:12px;color:#F4F4F0;margin-top:2px;}
-.info-btn-vaciar{width:100%;padding:10px;background:#FACC15;color:#0A0A0B;border:none;font-size:11px;font-weight:800;letter-spacing:0.1em;text-transform:uppercase;cursor:pointer;margin-top:8px;font-family:'Barlow Condensed',sans-serif;}
-.info-btn-vaciar:hover{background:#FDE047;}
-
-/* Loading */
-#loading{position:absolute;inset:0;background:rgba(10,10,11,0.92);display:none;align-items:center;justify-content:center;flex-direction:column;gap:14px;z-index:200;}
-#loading.on{display:flex;}
-.spinner{width:40px;height:40px;border:3px solid #27272A;border-top-color:#FACC15;border-radius:50%;animation:spin 0.8s linear infinite;}
-@keyframes spin{to{transform:rotate(360deg);}}
-.load-txt{font-size:11px;color:#9A9A95;letter-spacing:0.1em;text-transform:uppercase;font-family:'JetBrains Mono',monospace;}
-
-/* Toast */
-#toast{position:fixed;bottom:20px;right:16px;background:#18181B;border:1px solid #27272A;border-left:3px solid #FACC15;padding:10px 16px;font-size:11px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;opacity:0;transform:translateY(8px);transition:all 0.3s;z-index:300;font-family:'Barlow Condensed',sans-serif;}
-#toast.on{opacity:1;transform:translateY(0);}
-
-/* Instrucciones visor */
-#instrucciones{position:absolute;bottom:12px;left:12px;font-size:10px;color:#3F3F46;font-family:'JetBrains Mono',monospace;letter-spacing:0.05em;}
-
-/* Scrollbar */
-::-webkit-scrollbar{width:4px;}
-::-webkit-scrollbar-track{background:#111113;}
-::-webkit-scrollbar-thumb{background:#27272A;border-radius:2px;}
-::-webkit-scrollbar-thumb:hover{background:#3F3F46;}
-</style>
-  </head>
-  <body>
-    <div id="modulo-visor" style="display:none"><div id="visor-container">
-
-      <!-- TOPBAR -->
-      <div id="topbar">
-        <div class="tb-mark">LF</div>
-        <div>
-          <div class="tb-title">BIM Visor 3D</div>
-          <div class="tb-sub">LF BIM Studio · That Open Engine</div>
-        </div>
-        <div class="tb-sep"></div>
-        <div class="tb-project" id="tb-project">Carga un modelo IFC y un JSON de avance</div>
+    <div id="topbar">
+      <div class="tb-mark">LF</div>
+      <div>
+        <div class="tb-title">BIM Visor 3D</div>
+        <div class="tb-sub">LF BIM Studio · That Open Engine</div>
       </div>
-
-      <!-- PANEL IZQUIERDO -->
-      <div id="panel-left">
-
-        <!-- Carga IFC -->
-        <div class="pl-section">
-          <div class="pl-label">Modelo IFC</div>
-          <div class="drop-zone" id="dz-ifc"
-               ondragover="dzOver(event,'dz-ifc')" ondragleave="dzOut('dz-ifc')" ondrop="dzDrop(event,'ifc')"
-               onclick="document.getElementById('input-ifc').click()">
-            <input type="file" id="input-ifc" accept=".ifc" onchange="cargarIFC(this.files[0])"/>
-            <div class="dz-icon">🏗</div>
-            <div class="dz-txt" id="dz-ifc-txt">Cargar archivo IFC</div>
-            <div class="dz-sub">Exportado desde Revit</div>
-          </div>
-        </div>
-
-        <!-- Carga JSON -->
-        <div class="pl-section">
-          <div class="pl-label">JSON de avance</div>
-          <div class="drop-zone" id="dz-json"
-               ondragover="dzOver(event,'dz-json')" ondragleave="dzOut('dz-json')" ondrop="dzDrop(event,'json')"
-               onclick="document.getElementById('input-json').click()">
-            <input type="file" id="input-json" accept=".json" onchange="cargarJSON(this.files[0])"/>
-            <div class="dz-icon">📊</div>
-            <div class="dz-txt" id="dz-json-txt">Cargar JSON de avance</div>
-            <div class="dz-sub">BIMMonitorPro_Avance_*.json</div>
-          </div>
-          <button class="btn-cargar" id="btn-colorear" disabled onclick="colorearModelo()">
-            ⚡ Colorear por estado
-          </button>
-          <button class="btn-cargar" id="btn-reset" disabled onclick="resetColores()"
-            style="margin-top:6px;background:#18181B;color:#9A9A95;border:1px solid #3F3F46">
-            ✕ Resetear colores
-          </button>
-          <button class="btn-cargar" id="btn-export-frag" disabled
-            style="margin-top:6px;background:#18181B;color:#FACC15;border:1px solid #FACC15">
-            ↓ Exportar .frag (carga rápida)
-          </button>
-        </div>
-
-        <!-- Stats -->
-        <div class="pl-section">
-          <div class="pl-label">Resumen</div>
-          <div class="stats-grid">
-            <div class="stat-box" style="border-top-color:#FACC15">
-              <div class="stat-val" id="st-total" style="color:#FACC15">—</div>
-              <div class="stat-lbl">Total</div>
-            </div>
-            <div class="stat-box" style="border-top-color:#22C55E">
-              <div class="stat-val" id="st-pct" style="color:#22C55E">—</div>
-              <div class="stat-lbl">Avance</div>
-            </div>
-            <div class="stat-box" style="border-top-color:#FB923C">
-              <div class="stat-val" id="st-proc" style="color:#FB923C">—</div>
-              <div class="stat-lbl">En proceso</div>
-            </div>
-            <div class="stat-box" style="border-top-color:#EF4444">
-              <div class="stat-val" id="st-late" style="color:#EF4444">—</div>
-              <div class="stat-lbl">Atrasados</div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Leyenda / Filtros -->
-        <div class="pl-section" style="flex:1;overflow-y:auto">
-          <div class="pl-label">Filtrar por estado</div>
-          <div class="filtros">
-            <button class="filtro-btn active" onclick="filtrarEstado('todos',this)">
-              <span class="filtro-dot" style="background:#FACC15"></span>
-              Todos los elementos
-            </button>
-            <button class="filtro-btn" onclick="filtrarEstado('Terminado',this)">
-              <span class="filtro-dot" style="background:#22C55E"></span>
-              Terminado
-            </button>
-            <button class="filtro-btn" onclick="filtrarEstado('Inspeccionado',this)">
-              <span class="filtro-dot" style="background:#38BDF8"></span>
-              Inspeccionado
-            </button>
-            <button class="filtro-btn" onclick="filtrarEstado('En proceso',this)">
-              <span class="filtro-dot" style="background:#FB923C"></span>
-              En proceso
-            </button>
-            <button class="filtro-btn" onclick="filtrarEstado('No iniciado',this)">
-              <span class="filtro-dot" style="background:#52525B"></span>
-              No iniciado
-            </button>
-            <button class="filtro-btn" onclick="filtrarEstado('atrasado',this)">
-              <span class="filtro-dot" style="background:#EF4444"></span>
-              ⚠ Atrasados
-            </button>
-          </div>
-        </div>
-
-      </div>
-
-      <!-- PANEL INFO ELEMENTO -->
-      <div id="panel-info">
-        <div class="info-head">
-          <span class="info-id" id="info-id">—</span>
-          <span class="info-close" onclick="cerrarInfo()">✕</span>
-        </div>
-        <div class="info-body">
-          <div class="info-row">
-            <span class="info-row-label">Estado</span>
-            <span id="info-estado-badge"></span>
-          </div>
-          <div class="info-row">
-            <span class="info-row-label">Categoría</span>
-            <span class="info-row-val" id="info-cat">—</span>
-          </div>
-          <div class="info-row">
-            <span class="info-row-label">Nivel</span>
-            <span class="info-row-val" id="info-nivel">—</span>
-          </div>
-          <div class="info-row">
-            <span class="info-row-label">Responsable</span>
-            <span class="info-row-val" id="info-resp">—</span>
-          </div>
-          <div class="info-row">
-            <span class="info-row-label">Frente de trabajo</span>
-            <span class="info-row-val" id="info-frente">—</span>
-          </div>
-          <div class="info-row">
-            <span class="info-row-label">Avance</span>
-            <span class="info-row-val" id="info-pct">—</span>
-          </div>
-          <div class="info-row">
-            <span class="info-row-label">Fin plan / Fin real</span>
-            <span class="info-row-val" id="info-fechas">—</span>
-          </div>
-          <div class="info-row" id="info-obs-row" style="display:none">
-            <span class="info-row-label">Observaciones</span>
-            <span class="info-row-val" id="info-obs" style="font-size:11px;color:#9A9A95;line-height:1.5">—</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- LOADING -->
-      <div id="loading">
-        <div class="load-spinner"></div>
-        <div class="load-txt" id="loading-txt">Cargando modelo...</div>
-      </div>
-
-      <!-- INSTRUCCIONES -->
-      <div id="instrucciones">
-        Click izquierdo + arrastrar: rotar · Rueda: zoom · Click derecho + arrastrar: pan · Click en elemento: info
-      </div>
-
-      <!-- TOAST -->
-      <div id="toast" id="toast-msg">—</div>
-
-    </div></div>
-    <div id="modulo-vaciados" style="display:none"><div id="app">
-
-  <!-- TOPBAR -->
-  <div id="V-topbar">
-    <div class="tb-mark">LF</div>
-    <div>
-      <div class="tb-title">Control de Vaciados</div>
-      <div class="tb-sub">LF BIM Studio · NSR-10 · Trazabilidad de concreto</div>
+      <div class="tb-sep"></div>
+      <div class="tb-project" id="tb-project">Carga un modelo IFC y un JSON de avance</div>
     </div>
-    <div class="tb-sep"></div>
-    <div class="tb-stats">
-      <div class="tb-stat">
-        <div class="tb-stat-val" id="V-st-total" style="color:#FACC15">0</div>
-        <div class="tb-stat-lbl">Vaciados</div>
-      </div>
-      <div class="tb-stat">
-        <div class="tb-stat-val" id="st-aprobados" style="color:#22C55E">0</div>
-        <div class="tb-stat-lbl">Aprobados</div>
-      </div>
-      <div class="tb-stat">
-        <div class="tb-stat-val" id="st-pendientes" style="color:#FB923C">0</div>
-        <div class="tb-stat-lbl">Pendientes</div>
-      </div>
-      <div class="tb-stat">
-        <div class="tb-stat-val" id="st-reprobados" style="color:#EF4444">0</div>
-        <div class="tb-stat-lbl">Reprobados</div>
-      </div>
-    </div>
-    <button class="tb-btn-volver" onclick="window.history.back()">← Suite</button>
-  </div>
 
-  <div id="content">
-
-    <!-- PANEL IZQUIERDO -->
-    <div id="panel">
-
-      <!-- Carga archivos -->
-      <div class="panel-section">
-        <div class="panel-label">Modelo y datos</div>
-        <div class="drop-zone" id="V-dz-ifc"
-             ondragover="dzOver(event,'dz-ifc')" ondragleave="dzOut('dz-ifc')" ondrop="dzDrop(event,'ifc')"
-             onclick="document.getElementById('in-ifc').click()">
-          <input type="file" id="in-ifc" accept=".ifc" onchange="cargarIFC(this.files[0])"/>
-          <div class="dz-txt" id="V-dz-ifc-txt">🏗 Cargar IFC</div>
-          <div class="dz-sub">Modelo estructural</div>
+    <div id="panel-left">
+      <div class="pl-section">
+        <div class="pl-label">Modelo IFC</div>
+        <div class="drop-zone" id="dz-ifc" ondragover="dzOver(event,'dz-ifc')" ondragleave="dzOut('dz-ifc')"
+          ondrop="dzDrop(event,'ifc')" onclick="document.getElementById('input-ifc').click()">
+          <input type="file" id="input-ifc" accept=".ifc" onchange="cargarIFC(this.files[0])" />
+          <div class="dz-icon">🏗</div>
+          <div class="dz-txt" id="dz-ifc-txt">Cargar archivo IFC</div>
+          <div class="dz-sub">Exportado desde Revit</div>
         </div>
-        <div class="drop-zone" id="V-dz-json"
-             ondragover="dzOver(event,'dz-json')" ondragleave="dzOut('dz-json')" ondrop="dzDrop(event,'json')"
-             onclick="document.getElementById('in-json').click()">
-          <input type="file" id="in-json" accept=".json" onchange="cargarJSON(this.files[0])"/>
-          <div class="dz-txt" id="V-dz-json-txt">📊 Cargar JSON de avance</div>
+      </div>
+
+      <div class="pl-section">
+        <div class="pl-label">JSON de avance</div>
+        <div class="drop-zone" id="dz-json" ondragover="dzOver(event,'dz-json')" ondragleave="dzOut('dz-json')"
+          ondrop="dzDrop(event,'json')" onclick="document.getElementById('input-json').click()">
+          <input type="file" id="input-json" accept=".json" onchange="cargarJSON(this.files[0])" />
+          <div class="dz-icon">📊</div>
+          <div class="dz-txt" id="dz-json-txt">Cargar JSON de avance</div>
           <div class="dz-sub">BIMMonitorPro_Avance_*.json</div>
         </div>
+        <button class="btn-cargar" id="btn-colorear" disabled onclick="colorearModelo()">⚡ Colorear por estado</button>
+        <button class="btn-cargar" id="btn-reset" disabled onclick="resetColores()"
+          style="margin-top:6px;background:#18181B;color:#9A9A95;border:1px solid #3F3F46">✕ Resetear colores</button>
+        <button class="btn-cargar" id="btn-export-frag" disabled
+          style="margin-top:6px;background:#18181B;color:#FACC15;border:1px solid #FACC15">↓ Exportar .frag</button>
       </div>
 
-      <!-- Tabs principales -->
-      <div class="panel-section" style="padding-bottom:0;">
-        <div class="tabs">
-          <div class="tab active" id="tab-registrar" onclick="switchTab('registrar')">Registrar</div>
-          <div class="tab" id="tab-vaciados" onclick="switchTab('vaciados')">Vaciados</div>
-          <div class="tab" id="tab-alertas" onclick="switchTab('alertas')">Alertas</div>
-        </div>
-      </div>
-
-      <!-- TAB: REGISTRAR VACIADO -->
-      <div id="pane-registrar" class="panel-section" style="flex:1;">
-        <div class="panel-label">Nuevo vaciado</div>
-
-        <!-- Elementos seleccionados en el modelo -->
-        <div class="form-group">
-          <label class="form-label">Elementos a vaciar (selecciona en el modelo)</label>
-          <div id="elementos-sel-list">
-            <div class="elem-sel-empty" id="elem-empty-msg">Haz click en elementos del modelo 3D</div>
+      <div class="pl-section">
+        <div class="pl-label">Resumen</div>
+        <div class="stats-grid">
+          <div class="stat-box" style="border-top-color:#FACC15">
+            <div class="stat-val" id="st-total" style="color:#FACC15">—</div>
+            <div class="stat-lbl">Total</div>
           </div>
-          <button class="btn-secondary" onclick="limpiarSeleccion()" style="margin-top:4px;">✕ Limpiar selección</button>
-        </div>
-
-        <div class="form-row">
-          <div class="form-group">
-            <label class="form-label">ID Colada</label>
-            <input class="form-input" id="f-id" placeholder="COL-001" type="text"/>
+          <div class="stat-box" style="border-top-color:#22C55E">
+            <div class="stat-val" id="st-pct" style="color:#22C55E">—</div>
+            <div class="stat-lbl">Avance</div>
           </div>
-          <div class="form-group">
-            <label class="form-label">Fecha vaciado</label>
-            <input class="form-input" id="f-fecha" type="date"/>
+          <div class="stat-box" style="border-top-color:#FB923C">
+            <div class="stat-val" id="st-proc" style="color:#FB923C">—</div>
+            <div class="stat-lbl">En proceso</div>
           </div>
-        </div>
-
-        <div class="form-group">
-          <label class="form-label">Proveedor de concreto</label>
-          <input class="form-input" id="f-proveedor" placeholder="Ej: Concretar S.A." type="text"/>
-        </div>
-
-        <div class="form-row">
-          <div class="form-group">
-            <label class="form-label">N° Remisión</label>
-            <input class="form-input" id="f-remision" placeholder="REM-0001" type="text"/>
+          <div class="stat-box" style="border-top-color:#EF4444">
+            <div class="stat-val" id="st-late" style="color:#EF4444">—</div>
+            <div class="stat-lbl">Atrasados</div>
           </div>
-          <div class="form-group">
-            <label class="form-label">F'c especificado</label>
-            <select class="form-select" id="f-fc">
-              <option value="21">21 MPa (3000 psi)</option>
-              <option value="24">24 MPa (3500 psi)</option>
-              <option value="28" selected>28 MPa (4000 psi)</option>
-              <option value="32">32 MPa (4500 psi)</option>
-              <option value="35">35 MPa (5000 psi)</option>
-            </select>
-          </div>
-        </div>
-
-        <div class="form-row">
-          <div class="form-group">
-            <label class="form-label">Slump (cm)</label>
-            <input class="form-input" id="f-slump" placeholder="10" type="number" min="0" max="25"/>
-          </div>
-          <div class="form-group">
-            <label class="form-label">Volumen (m³)</label>
-            <input class="form-input" id="f-volumen" placeholder="5.2" type="number" step="0.1"/>
-          </div>
-        </div>
-
-        <div class="form-group">
-          <label class="form-label">Responsable</label>
-          <input class="form-input" id="f-responsable" placeholder="Ing. Nombre Apellido" type="text"/>
-        </div>
-
-        <!-- Cilindros -->
-        <div class="panel-label" style="margin-top:12px;">Cilindros — NSR-10 C.5.6</div>
-        <div class="cilindro-row">
-          <div>
-            <div class="cilindro-lbl">Resultado 7 días (MPa)</div>
-            <input class="form-input" id="f-cil7" placeholder="—" type="number" step="0.1"/>
-          </div>
-          <div>
-            <div class="cilindro-lbl">Resultado 28 días (MPa)</div>
-            <input class="form-input" id="f-cil28" placeholder="—" type="number" step="0.1"/>
-          </div>
-          <div>
-            <div class="cilindro-lbl">Estado</div>
-            <div class="resultado-badge" id="badge-estado" style="background:#18181B;color:#52525B;border:1px solid #27272A;">—</div>
-          </div>
-        </div>
-        <div style="font-size:9px;color:#3F3F46;font-family:JetBrains Mono,monospace;margin-bottom:10px;">
-          Criterio NSR-10: promedio ≥ F'c · ningún resultado &lt; F'c − 3.5 MPa
-        </div>
-
-        <button class="btn-primary" onclick="registrarVaciado()">⚡ Registrar vaciado</button>
-        <button class="btn-secondary" onclick="colorearPorVaciados()">🎨 Colorear modelo</button>
-      </div>
-
-      <!-- TAB: LISTA DE VACIADOS -->
-      <div id="pane-vaciados" class="panel-section" style="flex:1;display:none;">
-        <div class="panel-label">Vaciados registrados</div>
-        <div id="lista-vaciados">
-          <div class="elem-sel-empty">No hay vaciados registrados aún</div>
-        </div>
-        <button class="btn-secondary" style="margin-top:8px;" onclick="exportarVaciadosJSON()">↓ Exportar registro JSON</button>
-      </div>
-
-      <!-- TAB: ALERTAS -->
-      <div id="pane-alertas" class="panel-section" style="flex:1;display:none;">
-        <div class="panel-label">Alertas NSR-10</div>
-        <div id="lista-alertas">
-          <div class="elem-sel-empty">Sin alertas activas</div>
-        </div>
-
-        <div class="panel-label" style="margin-top:16px;">Leyenda</div>
-        <div class="leyenda">
-          <div class="ley-item"><div class="ley-dot" style="background:#22C55E"></div>Vaciado aprobado — cilindros OK</div>
-          <div class="ley-item"><div class="ley-dot" style="background:#FB923C"></div>Pendiente — esperando resultados</div>
-          <div class="ley-item"><div class="ley-dot" style="background:#EF4444"></div>Reprobado — cilindros fallidos</div>
-          <div class="ley-item"><div class="ley-dot" style="background:#38BDF8"></div>Sin vaciar — programado</div>
-          <div class="ley-item"><div class="ley-dot" style="background:#3F3F46"></div>Sin vaciar — no programado</div>
         </div>
       </div>
 
+      <div class="pl-section" style="flex:1;overflow-y:auto">
+        <div class="pl-label">Filtrar por estado</div>
+        <div class="filtros">
+          <button class="filtro-btn active" onclick="filtrarEstado('todos',this)"><span class="filtro-dot"
+              style="background:#FACC15"></span>Todos</button>
+          <button class="filtro-btn" onclick="filtrarEstado('Terminado',this)"><span class="filtro-dot"
+              style="background:#22C55E"></span>Terminado</button>
+          <button class="filtro-btn" onclick="filtrarEstado('Inspeccionado',this)"><span class="filtro-dot"
+              style="background:#38BDF8"></span>Inspeccionado</button>
+          <button class="filtro-btn" onclick="filtrarEstado('En proceso',this)"><span class="filtro-dot"
+              style="background:#FB923C"></span>En proceso</button>
+          <button class="filtro-btn" onclick="filtrarEstado('No iniciado',this)"><span class="filtro-dot"
+              style="background:#52525B"></span>No iniciado</button>
+          <button class="filtro-btn" onclick="filtrarEstado('atrasado',this)"><span class="filtro-dot"
+              style="background:#EF4444"></span>⚠ Atrasados</button>
+        </div>
+      </div>
     </div>
 
-    <!-- VISOR 3D -->
-    <div id="visor-wrap">
-      <div id="V-visor-container"></div>
-
-      <!-- Panel info elemento -->
-      <div id="info-panel">
-        <div class="info-head">
-          <span class="info-id" id="V-info-id">—</span>
-          <span class="info-close" onclick="cerrarInfo()">✕</span>
-        </div>
-        <div class="info-body">
-          <div class="info-row">
-            <div class="info-row-lbl">Categoría</div>
-            <div class="info-row-val" id="V-info-cat">—</div>
-          </div>
-          <div class="info-row">
-            <div class="info-row-lbl">Nivel</div>
-            <div class="info-row-val" id="V-info-nivel">—</div>
-          </div>
-          <div class="info-row">
-            <div class="info-row-lbl">Estado de avance</div>
-            <div class="info-row-val" id="info-estado">—</div>
-          </div>
-          <div class="info-row" id="info-vaciado-row" style="display:none;">
-            <div class="info-row-lbl">Vaciado</div>
-            <div class="info-row-val" id="info-vaciado">—</div>
-          </div>
-          <div class="info-row" id="info-cil-row" style="display:none;">
-            <div class="info-row-lbl">Cilindros 28 días</div>
-            <div class="info-row-val" id="info-cil">—</div>
-          </div>
-          <button class="info-btn-vaciar" onclick="usarElementoEnFormulario()">+ Agregar a vaciado</button>
-        </div>
+    <div id="panel-info">
+      <div class="info-head">
+        <span class="info-id" id="info-id">—</span>
+        <span class="info-close" onclick="cerrarInfo()">✕</span>
       </div>
-
-      <!-- Loading -->
-      <div id="V-loading">
-        <div class="spinner"></div>
-        <div class="load-txt" id="load-txt">Cargando...</div>
+      <div class="info-body">
+        <div class="info-row"><span class="info-row-label">Estado</span><span id="info-estado-badge"></span></div>
+        <div class="info-row"><span class="info-row-label">Categoría</span><span class="info-row-val"
+            id="info-cat">—</span></div>
+        <div class="info-row"><span class="info-row-label">Nivel</span><span class="info-row-val"
+            id="info-nivel">—</span></div>
+        <div class="info-row"><span class="info-row-label">Responsable</span><span class="info-row-val"
+            id="info-resp">—</span></div>
+        <div class="info-row"><span class="info-row-label">Frente de trabajo</span><span class="info-row-val"
+            id="info-frente">—</span></div>
+        <div class="info-row"><span class="info-row-label">Avance</span><span class="info-row-val"
+            id="info-pct">—</span></div>
+        <div class="info-row"><span class="info-row-label">Fin plan / Fin real</span><span class="info-row-val"
+            id="info-fechas">—</span></div>
+        <div class="info-row" id="info-obs-row" style="display:none"><span
+            class="info-row-label">Observaciones</span><span class="info-row-val" id="info-obs"
+            style="font-size:11px;color:#9A9A95;line-height:1.5">—</span></div>
       </div>
-
-      <div id="V-instrucciones">Click en elemento: info · Click + drag: rotar · Rueda: zoom</div>
     </div>
 
+    <div id="loading">
+      <div class="load-spinner"></div>
+      <div class="load-txt" id="loading-txt">Cargando modelo...</div>
+    </div>
+
+    <div id="instrucciones">Click izquierdo + arrastrar: rotar · Rueda: zoom · Click derecho + arrastrar: pan · Click en
+      elemento: info</div>
+    <div id="toast">—</div>
   </div>
-</div>
+  <script type="module" src="/src/main.js"></script>
+</body>
 
-<div id="V-toast"></div></div>
-    <script type="module" src="/src/main.js"></script>
-  </body>
 </html>

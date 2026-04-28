@@ -963,20 +963,5 @@ window.dzDrop = (e, tipo) => {
   if (tipo === "json") window.cargarJSON(file);
 };
 
-// ══════════════════════════════════════════════════════
-// INICIAR
-// ══════════════════════════════════════════════════════
-
-
-// ══════════════════════════════════════════════════════
-// ROUTER
-// ══════════════════════════════════════════════════════
-if (window.location.pathname.includes('vaciados')) {
-  document.getElementById('modulo-vaciados').style.cssText = 'display:block;width:100%;height:100vh;';
-  document.getElementById('modulo-visor').style.display = 'none';
-  initVaciados().catch(console.error);
-} else {
-  document.getElementById('modulo-visor').style.cssText = 'display:block;width:100vw;height:100vh;position:fixed;inset:0;';
-  document.getElementById('modulo-vaciados').style.display = 'none';
-  initVisor().catch(console.error);
-}
+// Iniciar visor
+initVisor().catch(console.error);
