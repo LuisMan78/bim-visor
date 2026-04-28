@@ -435,14 +435,13 @@ async function iniciarVisor3D(fragUrl) {
     fragments.init(workerUrl);
     const res = await fetch(fragUrl);
     const buffer = await res.arrayBuffer();
-    const data = new Uint8Array(buffer);
 
-    // Esperar que el modelo se cargue via evento
+    // .frag se carga con fragments.load directamente
     const modelPromise = new Promise((resolve) => {
       fragments.list.onItemSet.add(({ value: model }) => resolve(model));
     });
 
-    await fragments.core.load(data, true, 'portal-model');
+    fragments.load(new Uint8Array(buffer));
     const model = await modelPromise;
     model.useCamera(world.camera.three);
     world.scene.three.add(model.object);
