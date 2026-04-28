@@ -126,6 +126,7 @@ html,body{height:100%;background:#0A0A0B;color:#F4F4F0;font-family:'Barlow',sans
     <div class="tb-stat"><div class="tb-stat-val" id="st-respondidos" style="color:#22C55E">0</div><div class="tb-stat-lbl">Respondidos</div></div>
     <div class="tb-stat"><div class="tb-stat-val" id="st-vencidos" style="color:#EF4444">0</div><div class="tb-stat-lbl">Vencidos</div></div>
     <button style="margin-left:16px;padding:7px 14px;background:#18181B;border:1px solid #27272A;color:#9A9A95;font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;cursor:pointer;" onclick="exportarJSON()">↓ Exportar</button>
+    <button style="padding:7px 14px;background:#052E16;border:1px solid #22C55E;color:#22C55E;font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;cursor:pointer;" onclick="sincronizarPortal()">↑ Sincronizar portal</button>
   </div>
 
   <div id="content">
@@ -702,6 +703,61 @@ function toast(msg) {
   t.textContent = msg; t.classList.add('on');
   clearTimeout(t._t); t._t = setTimeout(()=>t.classList.remove('on'), 3500);
 }
+
+window.sincronizarPortal = async function() {
+  if (!RFIS.length) { toast('No hay RFI para sincronizar'); return; }
+
+  let proyectoNombre = null;
+  try {
+    const raw = sessionStorage.getItem('BIM_JSON_DATA');
+    if (raw) proyectoNombre = JSON.parse(raw).proyecto;
+  } catch(e) {}
+
+  if (!proyectoNombre) {
+    toast('⚠ Abre primero el JSON en la Suite para vincular el proyecto');
+    return;
+  }
+
+  toast('Buscando proyecto en portal...');
+
+  try {
+    const res = await fetch('/api/buscar-proyecto?nombre=' + encodeURIComponent(proyectoNombre));
+    const proyecto = await res.json();
+
+    if (!proyecto || proyecto.error) {
+      toast('⚠ Proyecto no encontrado en el portal. Créalo primero en /admin');
+      return;
+    }
+
+    toast('Sincronizando ' + RFIS.length + ' RFI...');
+
+    for (const rfi of RFIS) {
+      await fetch('/api/sync-rfi', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-admin-token': proyectoNombre },
+        body: JSON.stringify({
+          proyecto_id: proyecto.id,
+          rfi_id: rfi.id,
+          titulo: rfi.titulo,
+          pregunta: rfi.pregunta,
+          dirigido_a: rfi.dirigido,
+          disciplina: rfi.disciplina,
+          plano: rfi.plano,
+          solicitante: rfi.solicitante,
+          fecha_solicitud: rfi.fecha,
+          fecha_limite: rfi.limite,
+          impacto: rfi.impacto,
+          estado: rfi.estado,
+          respuesta: rfi.respuesta ? JSON.stringify(rfi.respuesta) : null,
+        }),
+      });
+    }
+
+    toast('✓ ' + RFIS.length + ' RFI sincronizados con el portal');
+  } catch(e) {
+    toast('Error: ' + e.message);
+  }
+};
 
 document.getElementById('f-fecha').value = new Date().toISOString().split('T')[0];
 document.getElementById('resp-fecha').value = new Date().toISOString().split('T')[0];
