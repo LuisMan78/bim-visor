@@ -189,8 +189,8 @@ td{padding:7px 10px;border-bottom:1px solid #18181B;color:#F4F4F0;}
 </div>
 
 <script>
-const SUPABASE_URL = 'https://ewmjiglsnztjzaanzrqt.supabase.co';
-const SUPABASE_ANON = 'sb_publishable_H3MPszKXSOJV_I4e2vTMuA_aFRavJ8i';
+const SUPABASE_URL = window.LF_CONFIG?.SUPABASE_URL || '';
+const SUPABASE_ANON = window.LF_CONFIG?.SUPABASE_ANON || '';
 
 // Obtener slug de la URL: /p/:slug
 const slug = window.location.pathname.split('/p/')[1]?.split('/')[0];
