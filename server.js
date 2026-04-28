@@ -75,8 +75,7 @@ app.patch('/api/proyectos/:id', authAdmin, async (req, res) => {
 })
 
 // Upload archivo a Supabase Storage
-app.post('/api/upload/:bucket/*', authAdmin, async (req, res) => {
-  req.params.path = req.params[0]
+app.post('/api/upload/:bucket/:path', authAdmin, async (req, res) => {
   const chunks = []
   req.on('data', chunk => chunks.push(chunk))
   req.on('end', async () => {
