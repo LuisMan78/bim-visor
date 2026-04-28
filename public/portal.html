@@ -412,6 +412,42 @@ function mostrarError(titulo, sub) {
     <div class="est-sub">${sub}</div>`;
 }
 
+async function iniciarVisor3D(fragUrl) {
+  const section = document.getElementById('section-visor');
+  if (!section) return;
+  section.style.display = 'block';
+  try {
+    const THREE = await import('three');
+    const OBC = await import('@thatopen/components');
+    const OBCF = await import('@thatopen/components-front');
+    const container = document.getElementById('visor-3d');
+    const components = new OBC.Components();
+    const worlds = components.get(OBC.Worlds);
+    const world = worlds.create();
+    world.scene    = new OBC.SimpleScene(components);
+    world.renderer = new OBCF.PostproductionRenderer(components, container);
+    world.camera   = new OBC.OrthoPerspectiveCamera(components);
+    components.init();
+    world.scene.setup();
+    world.scene.three.background = new THREE.Color(0x0A0A0B);
+    const workerUrl = await OBC.FragmentsManager.getWorker();
+    const fragments = components.get(OBC.FragmentsManager);
+    fragments.init(workerUrl);
+    const res = await fetch(fragUrl);
+    const buffer = await res.arrayBuffer();
+    const model = await fragments.core.load(new Uint8Array(buffer));
+    model.useCamera(world.camera.three);
+    world.scene.three.add(model.object);
+    fragments.core.update(true);
+    document.getElementById('visor-loading').style.display = 'none';
+  } catch(e) {
+    console.error('Visor 3D:', e);
+    const l = document.getElementById('visor-loading');
+    if (l) l.innerHTML = '<div style="color:#3F3F46;font-size:11px;font-family:JetBrains Mono,monospace;padding:20px;">Modelo 3D no disponible</div>';
+  }
+}
+
+
 cargarPortal();
 </script>
 </body>
