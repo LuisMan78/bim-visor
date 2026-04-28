@@ -6,7 +6,8 @@ import { readFileSync } from 'fs'
 const app = express()
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
-app.use(express.json({ limit: '50mb' }))
+app.use(express.json({ limit: '100mb' }))
+app.use(express.raw({ limit: '200mb', type: '*/*' }))
 
 const ADMIN_USER       = process.env.ADMIN_USER        || 'lfbim'
 const ADMIN_PASS       = process.env.ADMIN_PASS        || 'LFBim2026!'
@@ -78,26 +79,24 @@ app.patch('/api/proyectos/:id', authAdmin, async (req, res) => {
 app.post(/^\/api\/upload\/([^/]+)\/(.+)$/, authAdmin, async (req, res) => {
   const bucket = req.params[0]
   const filePath = req.params[1]
-  const chunks = []
-  req.on('data', chunk => chunks.push(chunk))
-  req.on('end', async () => {
-    try {
-      const buffer = Buffer.concat(chunks)
-      const r = await fetch(`${SUPABASE_URL}/storage/v1/object/${bucket}/${filePath}`, {
-        method: 'POST',
-        headers: {
-          'apikey': SUPABASE_SERVICE,
-          'Authorization': 'Bearer ' + SUPABASE_SERVICE,
-          'Content-Type': req.headers['content-type'] || 'application/octet-stream',
-        },
-        body: buffer,
-      })
-      const data = await r.text()
-      res.status(r.status).json(data ? JSON.parse(data) : {})
-    } catch(e) {
-      res.status(500).json({ error: e.message })
-    }
-  })
+  try {
+    // El body ya viene parseado por express.raw
+    const buffer = Buffer.isBuffer(req.body) ? req.body : Buffer.from(JSON.stringify(req.body))
+    const r = await fetch(`${SUPABASE_URL}/storage/v1/object/${bucket}/${filePath}`, {
+      method: 'POST',
+      headers: {
+        'apikey': SUPABASE_SERVICE,
+        'Authorization': 'Bearer ' + SUPABASE_SERVICE,
+        'Content-Type': req.headers['content-type'] || 'application/octet-stream',
+        'x-upsert': 'true',
+      },
+      body: buffer,
+    })
+    const data = await r.text()
+    res.status(r.status).json(data ? JSON.parse(data) : {})
+  } catch(e) {
+    res.status(500).json({ error: e.message })
+  }
 })
 
 // ── RUTAS PÁGINAS ───────────────────────────────────────
