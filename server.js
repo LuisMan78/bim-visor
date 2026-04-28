@@ -5,7 +5,7 @@ import { dirname, join } from 'path'
 const app = express()
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
-// Rutas especificas ANTES del static
+// Rutas específicas ANTES del static
 app.get('/', (req, res) => {
   res.sendFile(join(__dirname, 'dist', 'suite.html'))
 })
@@ -15,7 +15,17 @@ app.get('/visor', (req, res) => {
 })
 
 app.get('/vaciados', (req, res) => {
-  res.sendFile(join(__dirname, 'dist', 'vaciados_compiled.html'))
+  res.sendFile(join(__dirname, 'dist', 'vaciados.html'))
+})
+
+// Panel de administración
+app.get('/admin', (req, res) => {
+  res.sendFile(join(__dirname, 'dist', 'admin.html'))
+})
+
+// Portal del cliente — URL única por proyecto
+app.get('/p/:slug', (req, res) => {
+  res.sendFile(join(__dirname, 'dist', 'portal.html'))
 })
 
 // Static para assets JS, CSS, etc
