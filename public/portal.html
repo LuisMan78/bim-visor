@@ -433,15 +433,21 @@ async function iniciarVisor3D(fragUrl) {
     const workerUrl = await OBC.FragmentsManager.getWorker();
     const fragments = components.get(OBC.FragmentsManager);
     fragments.init(workerUrl);
-    fragments.list.onItemSet.add(({ value: model }) => {
-      model.useCamera(world.camera.three);
-      world.scene.three.add(model.object);
-      fragments.core.update(true);
-      document.getElementById('visor-loading').style.display = 'none';
-    });
     const res = await fetch(fragUrl);
     const buffer = await res.arrayBuffer();
-    await fragments.core.load(new Uint8Array(buffer));
+    const data = new Uint8Array(buffer);
+
+    // Esperar que el modelo se cargue via evento
+    const modelPromise = new Promise((resolve) => {
+      fragments.list.onItemSet.add(({ value: model }) => resolve(model));
+    });
+
+    await fragments.core.load(data, true, 'portal-model');
+    const model = await modelPromise;
+    model.useCamera(world.camera.three);
+    world.scene.three.add(model.object);
+    fragments.core.update(true);
+    document.getElementById('visor-loading').style.display = 'none';
   } catch(e) {
     console.error('Visor 3D:', e);
     const l = document.getElementById('visor-loading');
