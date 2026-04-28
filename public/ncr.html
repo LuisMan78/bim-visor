@@ -415,6 +415,17 @@ html,body{height:100%;background:#0A0A0B;color:#F4F4F0;font-family:'Barlow',sans
   </div>
 </div>
 
+<div id="modal-sync" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:500;align-items:center;justify-content:center;">
+  <div style="background:#111113;border:1px solid #27272A;border-top:2px solid #22C55E;width:360px;padding:24px;">
+    <div style="font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;text-transform:uppercase;color:#22C55E;margin-bottom:16px;">Sincronizar con portal</div>
+    <div style="font-size:9px;color:#52525B;letter-spacing:0.1em;text-transform:uppercase;font-family:'JetBrains Mono',monospace;margin-bottom:6px;">Selecciona el proyecto</div>
+    <select id="sync-proyecto-select" style="width:100%;padding:9px 11px;background:#18181B;border:1px solid #27272A;color:#F4F4F0;font-size:12px;outline:none;margin-bottom:16px;font-family:'Barlow',sans-serif;"></select>
+    <div style="display:flex;gap:8px;justify-content:flex-end;">
+      <button onclick="cerrarModalSync()" style="padding:8px 16px;background:#18181B;border:1px solid #27272A;color:#9A9A95;font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;text-transform:uppercase;cursor:pointer;">Cancelar</button>
+      <button onclick="confirmarSync()" style="padding:8px 16px;background:#22C55E;color:#0A0A0B;border:none;font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;text-transform:uppercase;cursor:pointer;">↑ Sincronizar</button>
+    </div>
+  </div>
+</div>
 <div id="toast"></div>
 
 <script>
@@ -930,6 +941,59 @@ document.getElementById('nuevo-fecha').value = new Date().toISOString().split('T
 actualizarStats();
 renderLista();
 if (NCRS.length > 0) verNCR(NCRS[0].id);
+
+// ── Sincronizar NCR con portal ─────────────────────────
+let PROYECTOS_LISTA = [];
+
+function sincronizarPortal() {
+  if (!NCRS.length) { toast('No hay NCR para sincronizar'); return; }
+  fetch('/api/proyectos-publicos')
+    .then(r => r.json())
+    .then(data => {
+      PROYECTOS_LISTA = data;
+      const sel = document.getElementById('sync-proyecto-select');
+      sel.innerHTML = '<option value="">-- Selecciona un proyecto --</option>' +
+        data.map(p => `<option value="${p.id}">${p.nombre}</option>`).join('');
+      document.getElementById('modal-sync').style.display = 'flex';
+    })
+    .catch(e => toast('Error: ' + e.message));
+}
+
+function cerrarModalSync() {
+  document.getElementById('modal-sync').style.display = 'none';
+}
+
+async function confirmarSync() {
+  const proyectoId = document.getElementById('sync-proyecto-select').value;
+  if (!proyectoId) { toast('Selecciona un proyecto'); return; }
+  cerrarModalSync();
+  toast('Sincronizando ' + NCRS.length + ' NCR...');
+  try {
+    for (const ncr of NCRS) {
+      await fetch('/api/sync-ncr', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          proyecto_id: proyectoId,
+          ncr_id: ncr.id,
+          titulo: ncr.titulo,
+          descripcion: ncr.desc,
+          categoria: ncr.categoria,
+          severidad: ncr.severidad,
+          elemento: ncr.elemento,
+          responsable: ncr.responsable,
+          fecha_deteccion: ncr.fecha,
+          fecha_limite: ncr.limite,
+          levantada_por: ncr.levantada,
+          accion: ncr.accion,
+          estado: ncr.estado,
+          timeline: JSON.stringify(ncr.timeline || []),
+        }),
+      });
+    }
+    toast('✓ ' + NCRS.length + ' NCR sincronizadas');
+  } catch(e) { toast('Error: ' + e.message); }
+}
 </script>
 </body>
 </html>
