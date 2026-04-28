@@ -400,6 +400,21 @@ html,body{height:100%;background:#0A0A0B;color:#F4F4F0;font-family:'Barlow',sans
   </div>
 </div>
 
+<!-- Modal selección proyecto -->
+<div id="modal-sync" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:500;align-items:center;justify-content:center;">
+  <div style="background:#111113;border:1px solid #27272A;border-top:2px solid #22C55E;width:360px;padding:24px;">
+    <div style="font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#22C55E;margin-bottom:16px;">Sincronizar con portal</div>
+    <div style="font-size:10px;color:#52525B;letter-spacing:0.1em;text-transform:uppercase;font-family:'JetBrains Mono',monospace;margin-bottom:6px;">Selecciona el proyecto</div>
+    <select id="sync-proyecto-select" style="width:100%;padding:9px 11px;background:#18181B;border:1px solid #27272A;color:#F4F4F0;font-size:12px;font-family:'Barlow',sans-serif;outline:none;margin-bottom:16px;">
+      <option value="">Cargando proyectos...</option>
+    </select>
+    <div style="display:flex;gap:8px;justify-content:flex-end;">
+      <button onclick="cerrarModalSync()" style="padding:8px 16px;background:#18181B;border:1px solid #27272A;color:#9A9A95;font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;text-transform:uppercase;cursor:pointer;">Cancelar</button>
+      <button onclick="confirmarSync()" style="padding:8px 16px;background:#22C55E;color:#0A0A0B;border:none;font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;text-transform:uppercase;cursor:pointer;">↑ Sincronizar</button>
+    </div>
+  </div>
+</div>
+
 <div id="toast"></div>
 
 <script>
