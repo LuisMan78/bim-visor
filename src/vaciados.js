@@ -565,4 +565,499 @@ window.dzDrop = (e, tipo) => {
 // ══════════════════════════════════════════════════════
 // INICIAR
 // ══════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════
+// CARGAR JSON DE VACIADOS DESDE REVIT
+// ══════════════════════════════════════════════════════
+window.cargarJSONVaciados = function(file) {
+  if (!file) return;
+  const r = new FileReader();
+  r.onload = async (e) => {
+    try {
+      const data = JSON.parse(e.target.result);
+      if (!data.vaciados) { V_toast("JSON de vaciados inválido"); return; }
+
+      let importados = 0;
+      for (const v of data.vaciados) {
+        // Evitar duplicados por ID
+        if (STATE.vaciados.find(x => x.id === v.id)) continue;
+
+        STATE.vaciados.push({
+          id: v.id,
+          fecha: v.fecha || '—',
+          proveedor: v.proveedor || '—',
+          remision: v.remision || '—',
+          fc: v.fc || 28,
+          slump: v.slump,
+          volumen: v.volumen,
+          responsable: v.responsable || '—',
+          cil7: v.cil7,
+          cil28: v.cil28,
+          estado: v.estado || 'pendiente',
+          observaciones: v.observaciones || '',
+          categorias: v.categorias || [],
+          niveles: v.niveles || [],
+          elementos: v.elementos || [],
+          elementosInfo: [],
+          fechaRegistro: new Date().toISOString(),
+          origen: 'revit',
+        });
+        importados++;
+      }
+
+      document.getElementById('dz-vaciados').classList.add('loaded');
+      document.getElementById('dz-vaciados-txt').textContent = '✓ ' + file.name;
+
+      actualizarStats();
+      actualizarListaVaciados();
+      actualizarAlertas();
+
+      V_toast('✓ ' + importados + ' vaciados importados desde Revit');
+      switchTab('vaciados');
+    } catch(e) {
+      V_toast('Error: ' + e.message);
+    }
+  };
+  r.readAsText(file);
+};
+
+// ══════════════════════════════════════════════════════
+// REPORTE TÉCNICO PDF — TODOS LOS VACIADOS
+// ══════════════════════════════════════════════════════
+window.generarReportePDF = async function() {
+  if (!STATE.vaciados.length) { V_toast('No hay vaciados para reportar'); return; }
+
+  // Cargar jsPDF
+  if (!window.jspdf) {
+    await new Promise((resolve, reject) => {
+      const s = document.createElement('script');
+      s.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+      s.onload = resolve; s.onerror = reject;
+      document.head.appendChild(s);
+    });
+  }
+
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+  const W = 210, H = 297;
+  let page = 1;
+
+  const proyecto = STATE.jsonData?.proyecto || 'Proyecto';
+  const fecha = new Date().toLocaleDateString('es-CO', { day: '2-digit', month: 'long', year: 'numeric' });
+  const vaciados = STATE.vaciados;
+
+  function header(p) {
+    // Fondo blanco
+    doc.setFillColor(255,255,255);
+    doc.rect(0,0,W,H,'F');
+
+    // Banda superior
+    doc.setFillColor(26,26,26);
+    doc.rect(0,0,W,14,'F');
+    doc.setFillColor(250,204,21);
+    doc.rect(0,0,4,14,'F');
+    doc.setTextColor(255,255,255);
+    doc.setFont('helvetica','bold');
+    doc.setFontSize(9);
+    doc.text('REGISTRO DE VACIADOS DE CONCRETO — NSR-10', 8, 6);
+    doc.setFont('helvetica','normal');
+    doc.setFontSize(7);
+    doc.setTextColor(150,150,150);
+    doc.text(proyecto, 8, 11);
+    doc.text('Pág. ' + p, W-10, 9, { align: 'right' });
+    doc.setTextColor(250,204,21);
+    doc.text('LF BIM Studio', W-10, 12.5, { align: 'right' });
+  }
+
+  function footer() {
+    doc.setFillColor(245,245,245);
+    doc.rect(0,H-10,W,10,'F');
+    doc.setDrawColor(220,220,220);
+    doc.line(0,H-10,W,H-10);
+    doc.setTextColor(150,150,150);
+    doc.setFont('helvetica','normal');
+    doc.setFontSize(6.5);
+    doc.text(
+      'LF BIM Studio  ·  Ing. Luis Manuel Fuentes Perez  ·  Generado: ' + fecha + '  ·  Criterio NSR-10 C.5.6',
+      W/2, H-4, { align: 'center' }
+    );
+  }
+
+  // ── PORTADA ──
+  doc.setFillColor(26,26,26);
+  doc.rect(0,0,W,H,'F');
+  doc.setFillColor(250,204,21);
+  doc.rect(0,0,5,H,'F');
+
+  // Watermark
+  doc.setTextColor(35,35,35);
+  doc.setFont('helvetica','bold');
+  doc.setFontSize(120);
+  doc.text('NSR', W/2+5, H/2+20, { align: 'center' });
+
+  doc.setTextColor(250,204,21);
+  doc.setFontSize(9);
+  doc.text('LF BIM STUDIO', 14, 40);
+  doc.setFontSize(28);
+  doc.text('REGISTRO DE', 14, 58);
+  doc.text('VACIADOS DE', 14, 74);
+  doc.text('CONCRETO', 14, 90);
+
+  doc.setFillColor(40,40,40);
+  doc.rect(14, 100, W-24, 0.5, 'F');
+
+  doc.setTextColor(180,180,180);
+  doc.setFont('helvetica','normal');
+  doc.setFontSize(10);
+  doc.text(proyecto, 14, 112);
+
+  doc.setTextColor(100,100,100);
+  doc.setFontSize(8);
+  doc.text('FECHA DE GENERACIÓN', 14, 128);
+  doc.setTextColor(200,200,200);
+  doc.setFontSize(10);
+  doc.text(fecha, 14, 136);
+
+  doc.setTextColor(100,100,100);
+  doc.setFontSize(8);
+  doc.text('TOTAL COLADAS REGISTRADAS', 14, 152);
+  doc.setTextColor(250,204,21);
+  doc.setFont('helvetica','bold');
+  doc.setFontSize(32);
+  doc.text(vaciados.length.toString(), 14, 168);
+
+  // KPIs portada
+  const aprobados  = vaciados.filter(v=>v.estado==='aprobado').length;
+  const pendientes = vaciados.filter(v=>v.estado==='pendiente').length;
+  const reprobados = vaciados.filter(v=>v.estado==='reprobado').length;
+
+  const kpis = [
+    {l:'Aprobados',v:aprobados,c:[34,197,94]},
+    {l:'Pendientes',v:pendientes,c:[251,146,60]},
+    {l:'Reprobados',v:reprobados,c:[239,68,68]},
+  ];
+  kpis.forEach((k,i) => {
+    const x = 14 + i*60;
+    doc.setFillColor(30,30,30);
+    doc.rect(x, 178, 55, 20, 'F');
+    doc.setFillColor(...k.c);
+    doc.rect(x, 178, 55, 1.5, 'F');
+    doc.setTextColor(...k.c);
+    doc.setFont('helvetica','bold');
+    doc.setFontSize(22);
+    doc.text(k.v.toString(), x+27, 192, { align: 'center' });
+    doc.setTextColor(100,100,100);
+    doc.setFont('helvetica','normal');
+    doc.setFontSize(7);
+    doc.text(k.l.toUpperCase(), x+27, 197, { align: 'center' });
+  });
+
+  doc.setTextColor(50,50,50);
+  doc.setFont('helvetica','normal');
+  doc.setFontSize(7);
+  doc.text('Criterio de aceptación: NSR-10 C.5.6  ·  f'c mínimo según especificaciones', 14, H-20);
+  doc.text('Ing. Luis Manuel Fuentes Perez  ·  LF BIM Studio', 14, H-14);
+
+  // ── PÁGINAS DE VACIADOS ──
+  for (const vac of vaciados) {
+    doc.addPage();
+    page++;
+    header(page);
+    footer();
+
+    let y = 22;
+
+    // Header del vaciado
+    const estColor = vac.estado==='aprobado'?[34,197,94]:vac.estado==='reprobado'?[239,68,68]:[251,146,60];
+    doc.setFillColor(248,248,248);
+    doc.rect(10, y, 190, 12, 'F');
+    doc.setFillColor(...estColor);
+    doc.rect(10, y, 3, 12, 'F');
+    doc.setTextColor(26,26,26);
+    doc.setFont('helvetica','bold');
+    doc.setFontSize(14);
+    doc.text('Colada: ' + vac.id, 16, y+8);
+    doc.setFillColor(...estColor);
+    doc.roundedRect(W-50, y+2, 38, 8, 1, 1, 'F');
+    doc.setTextColor(255,255,255);
+    doc.setFont('helvetica','bold');
+    doc.setFontSize(8);
+    doc.text(vac.estado.toUpperCase(), W-31, y+7, { align: 'center' });
+    y += 16;
+
+    // Info general — grid 3x2
+    const campos = [
+      ['Fecha de vaciado', vac.fecha || '—'],
+      ['Proveedor', vac.proveedor || '—'],
+      ['N° Remisión', vac.remision || '—'],
+      ["F'c especificado", (vac.fc || 28) + ' MPa'],
+      ['Slump', vac.slump ? vac.slump + ' cm' : '—'],
+      ['Volumen (remisión)', vac.volumen ? vac.volumen + ' m³ *' : '—'],
+    ];
+
+    campos.forEach(([lbl, val], i) => {
+      const col = i % 3;
+      const x = 10 + col * 64;
+      if (col === 0 && i > 0) y += 13;
+      doc.setFillColor(252,252,252);
+      doc.setDrawColor(230,230,230);
+      doc.rect(x, y, 60, 11, 'FD');
+      doc.setTextColor(120,120,120);
+      doc.setFont('helvetica','normal');
+      doc.setFontSize(7);
+      doc.text(lbl.toUpperCase(), x+3, y+4);
+      doc.setTextColor(26,26,26);
+      doc.setFont('helvetica','bold');
+      doc.setFontSize(9);
+      doc.text(val.toString().substring(0,22), x+3, y+9.5);
+    });
+    y += 18;
+
+    // Responsable
+    doc.setFillColor(252,252,252);
+    doc.setDrawColor(230,230,230);
+    doc.rect(10, y, 190, 10, 'FD');
+    doc.setFillColor(250,204,21);
+    doc.rect(10, y, 2, 10, 'F');
+    doc.setTextColor(120,120,120);
+    doc.setFont('helvetica','normal');
+    doc.setFontSize(7);
+    doc.text('RESPONSABLE DE VACIADO', 15, y+4);
+    doc.setTextColor(26,26,26);
+    doc.setFont('helvetica','bold');
+    doc.setFontSize(9);
+    doc.text(vac.responsable || '—', 15, y+8.5);
+    y += 14;
+
+    // Elementos afectados
+    if (vac.categorias && vac.categorias.length) {
+      doc.setTextColor(100,100,100);
+      doc.setFont('helvetica','normal');
+      doc.setFontSize(7);
+      doc.text('CATEGORÍAS ESTRUCTURALES: ' + vac.categorias.join(', '), 10, y);
+      y += 5;
+    }
+    if (vac.niveles && vac.niveles.length) {
+      doc.text('NIVELES: ' + vac.niveles.join(', ') + '  ·  ELEMENTOS: ' + (vac.elementos ? vac.elementos.length : '—'), 10, y);
+      y += 8;
+    }
+
+    // Sección cilindros
+    doc.setFillColor(26,26,26);
+    doc.rect(10, y, 190, 7, 'F');
+    doc.setTextColor(255,255,255);
+    doc.setFont('helvetica','bold');
+    doc.setFontSize(8);
+    doc.text('CONTROL DE CILINDROS — NSR-10 C.5.6', 14, y+5);
+    y += 10;
+
+    // Tabla cilindros
+    const cilHeaders = ['Ensayo', 'Resultado (MPa)', "F'c mín. (MPa)", 'Criterio NSR-10', 'Estado'];
+    const cilColX = [10, 52, 90, 128, 170];
+    doc.setFillColor(245,245,245);
+    doc.rect(10, y, 190, 7, 'F');
+    cilHeaders.forEach((h, i) => {
+      doc.setTextColor(80,80,80);
+      doc.setFont('helvetica','bold');
+      doc.setFontSize(7);
+      doc.text(h, cilColX[i]+2, y+5);
+    });
+    y += 7;
+
+    const fcMin = (vac.fc || 28) - 3.5;
+    const cilRows = [
+      ['7 días', vac.cil7, '—', 'Referencia (70% f'c)', vac.cil7 ? (vac.cil7 >= (vac.fc||28)*0.7 ? '✓' : '⚠') : '—'],
+      ['28 días', vac.cil28, fcMin.toFixed(1), 'Ningún result. < f'c − 3.5', vac.cil28 ? (vac.cil28 >= (vac.fc||28) ? '✓ APROBADO' : '✗ REPROBADO') : 'PENDIENTE'],
+    ];
+
+    cilRows.forEach((row, ri) => {
+      doc.setFillColor(ri%2===0?250:255,ri%2===0?250:255,ri%2===0?250:255);
+      doc.rect(10, y, 190, 8, 'F');
+      const cols = row.map(v => v !== null && v !== undefined ? v.toString() : '—');
+      const isAprobado = cols[4].includes('APROBADO');
+      const isReprobado = cols[4].includes('REPROBADO');
+      const isPendiente = cols[4] === 'PENDIENTE';
+      cols.forEach((val, ci) => {
+        const color = ci===4 ? (isAprobado?[34,163,74]:isReprobado?[200,40,40]:isPendiente?[194,100,20]:[80,80,80]) : [60,60,60];
+        doc.setTextColor(...color);
+        doc.setFont('helvetica', ci===4?'bold':'normal');
+        doc.setFontSize(8);
+        doc.text(val.substring(0,25), cilColX[ci]+2, y+5.5);
+      });
+      doc.setDrawColor(230,230,230);
+      doc.line(10, y+8, 200, y+8);
+      y += 8;
+    });
+    y += 6;
+
+    // Observaciones
+    if (vac.observaciones) {
+      doc.setFillColor(255,252,240);
+      doc.setDrawColor(220,200,150);
+      const obsLines = doc.splitTextToSize(vac.observaciones, 182);
+      const obsH = obsLines.length * 5 + 8;
+      doc.roundedRect(10, y, 190, obsH, 1, 1, 'FD');
+      doc.setFillColor(250,204,21);
+      doc.rect(10, y, 2, obsH, 'F');
+      doc.setTextColor(80,80,80);
+      doc.setFont('helvetica','bold');
+      doc.setFontSize(7);
+      doc.text('OBSERVACIONES', 15, y+5);
+      doc.setFont('helvetica','normal');
+      doc.setFontSize(8);
+      doc.setTextColor(50,50,50);
+      doc.text(obsLines, 15, y+10);
+      y += obsH + 8;
+    }
+
+    // Nota volumen
+    doc.setTextColor(150,150,150);
+    doc.setFont('helvetica','italic');
+    doc.setFontSize(6.5);
+    doc.text('* El volumen indicado corresponde al volumen de remisión registrado en campo, no al volumen calculado del modelo BIM.', 10, y+5);
+    y += 12;
+
+    // Firmas
+    const firmaY = Math.max(y+10, H-55);
+    doc.setFillColor(248,248,248);
+    doc.setDrawColor(220,220,220);
+    doc.roundedRect(10, firmaY, 58, 28, 1, 1, 'FD');
+    doc.roundedRect(76, firmaY, 58, 28, 1, 1, 'FD');
+    doc.roundedRect(142, firmaY, 58, 28, 1, 1, 'FD');
+    doc.setTextColor(120,120,120);
+    doc.setFont('helvetica','normal');
+    doc.setFontSize(7);
+    doc.text('Residente BIM', 39, firmaY+5, { align: 'center' });
+    doc.text('Laboratorio', 105, firmaY+5, { align: 'center' });
+    doc.text('Interventoría', 171, firmaY+5, { align: 'center' });
+    doc.setDrawColor(180,180,180);
+    doc.line(18, firmaY+20, 60, firmaY+20);
+    doc.line(84, firmaY+20, 126, firmaY+20);
+    doc.line(150, firmaY+20, 192, firmaY+20);
+    doc.setTextColor(150,150,150);
+    doc.setFontSize(6.5);
+    doc.text(vac.responsable ? vac.responsable.substring(0,20) : '—', 39, firmaY+24, { align: 'center' });
+    doc.text('Firma laboratorio', 105, firmaY+24, { align: 'center' });
+    doc.text('Firma interventoría', 171, firmaY+24, { align: 'center' });
+  }
+
+  // ── RESUMEN FINAL ──
+  doc.addPage();
+  page++;
+  header(page);
+  footer();
+
+  let y = 22;
+  doc.setFillColor(26,26,26);
+  doc.rect(10, y, 190, 8, 'F');
+  doc.setTextColor(250,204,21);
+  doc.setFont('helvetica','bold');
+  doc.setFontSize(9);
+  doc.text('RESUMEN EJECUTIVO — REGISTRO DE VACIADOS', 14, y+5.5);
+  y += 12;
+
+  // Tabla resumen
+  const headers = ['ID Colada', 'Fecha', 'Proveedor', "F'c", '7d (MPa)', '28d (MPa)', 'Estado'];
+  const colX = [10, 38, 70, 116, 132, 152, 172];
+  doc.setFillColor(240,240,240);
+  doc.rect(10, y, 190, 7, 'F');
+  headers.forEach((h, i) => {
+    doc.setTextColor(60,60,60);
+    doc.setFont('helvetica','bold');
+    doc.setFontSize(7);
+    doc.text(h, colX[i]+1, y+5);
+  });
+  y += 7;
+
+  vaciados.forEach((v, ri) => {
+    if (y > H-30) return;
+    doc.setFillColor(ri%2===0?250:245,ri%2===0?250:245,ri%2===0?250:245);
+    doc.rect(10, y, 190, 7, 'F');
+    const estC = v.estado==='aprobado'?[34,163,74]:v.estado==='reprobado'?[200,40,40]:[194,100,20];
+    const vals = [
+      v.id,
+      v.fecha||'—',
+      (v.proveedor||'—').substring(0,18),
+      (v.fc||28)+' MPa',
+      v.cil7?v.cil7+' MPa':'—',
+      v.cil28?v.cil28+' MPa':'—',
+      v.estado.toUpperCase(),
+    ];
+    vals.forEach((val, ci) => {
+      doc.setTextColor(ci===6?...estC:[60,60,60]);
+      doc.setFont('helvetica', ci===0||ci===6?'bold':'normal');
+      doc.setFontSize(7.5);
+      doc.text(val.toString(), colX[ci]+1, y+5);
+    });
+    doc.setDrawColor(230,230,230);
+    doc.line(10, y+7, 200, y+7);
+    y += 7;
+  });
+
+  const nombre = 'RegistroVaciados_' + (proyecto.replace(/[^\w]/g,'_')) + '_' + new Date().toISOString().split('T')[0] + '.pdf';
+  doc.save(nombre);
+  V_toast('✓ Reporte técnico exportado: ' + nombre);
+};
+
+// Helpers locales
+function actualizarStats() {
+  const total      = STATE.vaciados.length;
+  const aprobados  = STATE.vaciados.filter(v => v.estado === 'aprobado').length;
+  const pendientes = STATE.vaciados.filter(v => v.estado === 'pendiente').length;
+  const reprobados = STATE.vaciados.filter(v => v.estado === 'reprobado').length;
+  document.getElementById('st-total').textContent      = total;
+  document.getElementById('st-aprobados').textContent  = aprobados;
+  document.getElementById('st-pendientes').textContent = pendientes;
+  document.getElementById('st-reprobados').textContent = reprobados;
+}
+
+function actualizarListaVaciados() {
+  const lista = document.getElementById('lista-vaciados');
+  if (!STATE.vaciados.length) {
+    lista.innerHTML = '<div class="elem-sel-empty">No hay vaciados registrados aún</div>';
+    return;
+  }
+  lista.innerHTML = STATE.vaciados.slice().reverse().map(v => `
+    <div class="vaciado-item" onclick="verVaciado('${v.id}')">
+      <div class="vaciado-id">${v.id}</div>
+      <div class="vaciado-info">${v.fecha} · ${v.proveedor}</div>
+      <div class="vaciado-info">${v.elementos ? v.elementos.length : 0} elementos · F'c ${v.fc} MPa</div>
+      <div class="vaciado-estado est-${v.estado}">${v.estado.toUpperCase()}</div>
+    </div>
+  `).join('');
+}
+
+function actualizarAlertas() {
+  const lista = document.getElementById('lista-alertas');
+  const alertas = [];
+  for (const v of STATE.vaciados) {
+    if (v.estado === 'pendiente') {
+      const fechaVac = new Date(v.fecha);
+      const hoy = new Date();
+      const dias = Math.floor((hoy - fechaVac) / (1000 * 60 * 60 * 24));
+      if (dias >= 25) {
+        alertas.push({ tipo: 'warn', titulo: v.id + ' — Resultado 28 días próximo', body: dias + ' días transcurridos. Solicitar al laboratorio.' });
+      }
+    }
+    if (v.estado === 'reprobado') {
+      alertas.push({ tipo: 'err', titulo: v.id + ' — CILINDROS REPROBADOS ⚠', body: "F'c: " + v.fc + ' MPa · Resultado: ' + v.cil28 + ' MPa' });
+    }
+  }
+  if (!alertas.length) {
+    lista.innerHTML = '<div class="elem-sel-empty">Sin alertas activas</div>';
+    return;
+  }
+  lista.innerHTML = alertas.map(a => `
+    <div class="alerta-box alerta-${a.tipo}">
+      <div class="alerta-title">${a.titulo}</div>
+      <div class="alerta-body">${a.body}</div>
+    </div>
+  `).join('');
+}
+
+function V_toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('on');
+  clearTimeout(t._timer); t._timer = setTimeout(() => t.classList.remove('on'), 3500);
+}
+
 initVisor().catch(console.error);
