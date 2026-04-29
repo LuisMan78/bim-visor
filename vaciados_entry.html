@@ -204,13 +204,6 @@ html,body{height:100%;overflow:hidden;background:#0A0A0B;color:#F4F4F0;font-fami
           <div class="dz-txt" id="dz-json-txt">📊 Cargar JSON de avance</div>
           <div class="dz-sub">BIMMonitorPro_Avance_*.json</div>
         </div>
-        <div class="drop-zone" id="dz-vaciados"
-             ondragover="dzOver(event,'dz-vaciados')" ondragleave="dzOut('dz-vaciados')" ondrop="dzDrop(event,'vaciados')"
-             onclick="document.getElementById('in-vaciados').click()">
-          <input type="file" id="in-vaciados" accept=".json" onchange="cargarJSONVaciados(this.files[0])"/>
-          <div class="dz-txt" id="dz-vaciados-txt">🧪 Cargar JSON de vaciados</div>
-          <div class="dz-sub">LFVaciados_*.json — Exportado desde Revit</div>
-        </div>
       </div>
 
       <!-- Tabs principales -->
@@ -315,7 +308,6 @@ html,body{height:100%;overflow:hidden;background:#0A0A0B;color:#F4F4F0;font-fami
           <div class="elem-sel-empty">No hay vaciados registrados aún</div>
         </div>
         <button class="btn-secondary" style="margin-top:8px;" onclick="exportarVaciadosJSON()">↓ Exportar registro JSON</button>
-        <button class="btn-primary" style="margin-top:6px;background:#38BDF8;color:#0A0A0B;" onclick="generarReportePDF()">↓ Reporte técnico PDF</button>
       </div>
 
       <!-- TAB: ALERTAS -->
@@ -386,6 +378,6 @@ html,body{height:100%;overflow:hidden;background:#0A0A0B;color:#F4F4F0;font-fami
 
 <div id="toast"></div>
 
-<script type="module" src="/vaciados.js"></script>
+<script type="module" src="/src/vaciados.js"></script>
 </body>
 </html>
